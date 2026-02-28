@@ -51,3 +51,8 @@ C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensag
 C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\obj\Debug\net6.0\ProjetoMetaMensagem.WebAPI.pdb
 C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\obj\Debug\net6.0\ProjetoMetaMensagem.WebAPI.genruntimeconfig.cache
 C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\obj\Debug\net6.0\ref\ProjetoMetaMensagem.WebAPI.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\bin\Debug\net6.0\Microsoft.Extensions.Configuration.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\bin\Debug\net6.0\Microsoft.Extensions.Configuration.Abstractions.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\bin\Debug\net6.0\Microsoft.Extensions.Options.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\bin\Debug\net6.0\Microsoft.Extensions.Primitives.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.WebAPI\bin\Debug\net6.0\System.Runtime.CompilerServices.Unsafe.dll
