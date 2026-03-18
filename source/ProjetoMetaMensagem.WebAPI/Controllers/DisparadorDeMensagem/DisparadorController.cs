@@ -1,7 +1,7 @@
 ﻿using ProjetoMetaMensagem.Dominio.Exemplo;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
-using ProjetoMetaMensagem.Dominio.UseCases.EnviarMensagemMeta;
 using Microsoft.AspNetCore.Mvc;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 
 namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
 {

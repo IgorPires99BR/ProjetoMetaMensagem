@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjetoMetaMensagem.Dominio.UseCases.EnviarMensagemMeta
+namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
 {
     public class EnviarMensagemMetaCommand : IRequest<Response<EnviarMensagemMetaResult>>
     {
