@@ -2,10 +2,12 @@ using Microsoft.Extensions.Options;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
+using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
 using ProjetoMetaMensagem.Dominio.UseCases.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Meta;
-using ProjetoMetaMensagem.Servico.WPPConnect;
+using ProjetoMetaMensagem.Servico.Twilio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,24 +21,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<ApiWhatsappConnectionConfiguration>(
     builder.Configuration.GetSection("ApiWhatsappConnection"));
 
-builder.Services.AddHttpClient<WPPConnectService>();
+builder.Services.AddHttpClient<TwilioService>();
 
-builder.Services.AddScoped<IWhatsappService>(sp =>
-{
-    var settings = sp
-        .GetRequiredService<IOptions<ApiWhatsappConnectionConfiguration>>()
-    .Value;
-
-    return settings.Provider switch
-    {
-        "WPPConnect" => sp.GetRequiredService<WPPConnectService>(),
-        _ => throw new NotImplementedException("Provider não configurado")
-    };
-});
 //mediator
 builder.Services.AddScoped<IMediator, Mediator>();
 
 //servicos
+builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
 builder.Services.AddHttpClient<IMetaService, MetaService>();
 
 
@@ -44,6 +35,8 @@ builder.Services.AddHttpClient<IMetaService, MetaService>();
 
 //UseCases
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();
+builder.Services.AddScoped<IRequestHandler<EsqueceuASenhaCommand, Response<EsqueceuASenhaResult>>, EsqueceuASenhaHandler>();
+builder.Services.AddScoped<IRequestHandler<LoginCommand, Response<LoginResult>>, LoginHandler>();
 
 
 var app = builder.Build();

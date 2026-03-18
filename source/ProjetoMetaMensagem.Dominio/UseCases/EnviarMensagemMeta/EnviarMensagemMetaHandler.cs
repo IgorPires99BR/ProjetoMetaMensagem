@@ -11,9 +11,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.EnviarMensagemMeta
 {
     public class EnviarMensagemMetaHandler : IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>
     {
-        private readonly IWhatsappService _whatsappService;
+        private readonly IMetaService _whatsappService;
 
-        public EnviarMensagemMetaHandler(IWhatsappService whatsappService)
+        public EnviarMensagemMetaHandler(IMetaService whatsappService)
         {
             _whatsappService = whatsappService;
         }
@@ -32,7 +32,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.EnviarMensagemMeta
             //}
 
             // 2. Chamada ao serviço de integração com a Meta
-            var sucesso = await _whatsappService.EnviarMensagemAsync(request.Celular, request.Template);
+            var sucesso = await _whatsappService.EnviarTemplateAsync(request.Celular, request.Template);
 
             if (sucesso == null)
             {
