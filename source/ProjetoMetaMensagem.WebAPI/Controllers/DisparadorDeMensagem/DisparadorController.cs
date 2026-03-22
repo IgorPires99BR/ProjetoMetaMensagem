@@ -1,5 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.Exemplo;
-using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+﻿using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 

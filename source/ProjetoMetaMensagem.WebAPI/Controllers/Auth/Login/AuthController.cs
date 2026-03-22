@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
+using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
 {
@@ -16,7 +17,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
         }
 
         [HttpPost("/api/auth/login")]
-        public async Task<IActionResult> Enviar([FromBody] EsqueceuASenhaCommand command)
+        public async Task<IActionResult> Enviar([FromBody] LoginCommand command)
         {
             var resultado = await _mediator.Send(command);
 

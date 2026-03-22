@@ -1,6 +1,11 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using ProjetoMetaMensagem.Data;
+using ProjetoMetaMensagem.Data.Repositorios;
 using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
@@ -25,6 +30,10 @@ builder.Services.AddHttpClient<TwilioService>();
 
 //mediator
 builder.Services.AddScoped<IMediator, Mediator>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+//Banco
+builder.Services.AddScoped<DbSession>();
 
 //servicos
 builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
@@ -32,6 +41,8 @@ builder.Services.AddHttpClient<IMetaService, MetaService>();
 
 
 //repositorios
+
+builder.Services.AddScoped<ICompaniesRepository, CompaniesRepository>();
 
 //UseCases
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();

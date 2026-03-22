@@ -9,5 +9,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     public interface IMetaService
     {
         Task<bool> EnviarTemplateAsync(string celulcar, string nomeTemplate);
+        Task<bool> EnviarTextoLivreAsync(string celular, string mensagem);
     }
 }

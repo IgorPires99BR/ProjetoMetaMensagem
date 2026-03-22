@@ -1,0 +1,15 @@
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.AssemblyInfoInputs.cache
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.AssemblyInfo.cs
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\bin\Debug\net6.0\ProjetoMetaMensagem.Data.deps.json
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\bin\Debug\net6.0\ProjetoMetaMensagem.Data.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\bin\Debug\net6.0\ProjetoMetaMensagem.Data.pdb
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\bin\Debug\net6.0\ProjetoMetaMensagem.Dominio.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\bin\Debug\net6.0\ProjetoMetaMensagem.Dominio.pdb
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.csproj.CopyComplete
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\refint\ProjetoMetaMensagem.Data.dll
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ProjetoMetaMensagem.Data.pdb
+C:\Users\Administrator\source\repos\ProjetoMetaMensagem\source\ProjetoMetaMensagem.Data\obj\Debug\net6.0\ref\ProjetoMetaMensagem.Data.dll

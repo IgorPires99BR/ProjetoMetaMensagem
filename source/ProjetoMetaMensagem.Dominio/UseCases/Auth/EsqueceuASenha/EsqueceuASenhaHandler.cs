@@ -1,7 +1,6 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
-using ProjetoMetaMensagem.Dominio.UseCases.EnviarMensagemMeta;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ProjetoMetaMensagem.Data\ProjetoMetaMensagem.Data.csproj" />
     <ProjectReference Include="..\ProjetoMetaMensagem.Dominio\ProjetoMetaMensagem.Dominio.csproj" />
     <ProjectReference Include="..\ProjetoMetaMensagem.Servico\ProjetoMetaMensagem.Servico.csproj" />
   </ItemGroup>

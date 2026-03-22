@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaEmpresa
 {
-    internal class ListaEmpresaPorIdHandler
+    public class ListaEmpresaPorIdHandler
     {
     }
 }

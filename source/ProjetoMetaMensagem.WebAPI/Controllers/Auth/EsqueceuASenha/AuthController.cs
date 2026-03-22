@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
-using ProjetoMetaMensagem.Dominio.UseCases.EnviarMensagemMeta;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.EsqueceuASenha
 {
