@@ -7,8 +7,14 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.CriaEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.DeletaEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.ObtemEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
+using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
+using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Meta;
@@ -39,15 +45,36 @@ builder.Services.AddScoped<DbSession>();
 builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
 builder.Services.AddHttpClient<IMetaService, MetaService>();
 
+//Configurações
+
+builder.Services.Configure<GmailConfiguration>(
+    builder.Configuration.GetSection("GmailConfig"));
+
 
 //repositorios
 
 builder.Services.AddScoped<ICompaniesRepository, CompaniesRepository>();
+builder.Services.AddScoped<IFlowsRepository, FlowsRepository>();
 
-//UseCases
+//Injeção de dependência de Mensagens e disparos do Core
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();
+
+
+//Estrutura de Login e esqueci minha senha montada
 builder.Services.AddScoped<IRequestHandler<EsqueceuASenhaCommand, Response<EsqueceuASenhaResult>>, EsqueceuASenhaHandler>();
 builder.Services.AddScoped<IRequestHandler<LoginCommand, Response<LoginResult>>, LoginHandler>();
+
+
+//Registros de Companies
+builder.Services.AddScoped<IRequestHandler<DeletaEmpresaCommand, Response<DeletaEmpresaResult>>, DeletaEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<AlteraEmpresaCommand, Response<AlteraEmpresaResult>>, AlteraEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemEmpresaCommand, Response<List<ObtemEmpresaResult>>>, ObtemEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<CriaEmpresaCommand, Response<CriaEmpresaResult>>, CriaEmpresaHandler>();
+
+//Registros de Flows
+
+builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();
+builder.Services.AddScoped<IRequestHandler<CriaFlowCommand, Response<CriaFlowResult>>, CriaFlowHandler>();
 
 
 var app = builder.Build();

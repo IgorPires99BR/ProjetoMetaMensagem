@@ -10,6 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
     public interface IUnitOfWork : IDisposable
     {
         ICompaniesRepository CompaniesRepository { get; }
+        IFlowsRepository FlowsRepository { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();

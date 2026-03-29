@@ -11,5 +11,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
     {
         Task<int> Incluir(Companies empresa);
         Task<Companies> Login(string email, string senha);
+        Task Alterar(int companyId, Companies command);
+        Task Deletar(int companyId);
+        Task<List<Companies>> Obter();
     }
 }

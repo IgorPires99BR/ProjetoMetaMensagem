@@ -13,12 +13,15 @@ namespace ProjetoMetaMensagem.Data
         private readonly DbSession _session;
 
         public ICompaniesRepository CompaniesRepository { get; set; }
+        public IFlowsRepository FlowsRepository { get; set; }
 
         public UnitOfWork(DbSession session,
-            ICompaniesRepository companiesRepository)
+            ICompaniesRepository companiesRepository,
+            IFlowsRepository flowsRepository)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
+            FlowsRepository = flowsRepository;
         }
 
         public void Commit()
