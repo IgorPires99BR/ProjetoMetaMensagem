@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Servico.Configuration;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Servico.Email
 {
-    public class EmailService
+    public class EmailService : IEmailService
     {
         // Configurações vindas do seu Gmail
         private readonly GmailConfiguration _config;

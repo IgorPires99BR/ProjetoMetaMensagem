@@ -17,6 +17,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Servico.Configuration;
+using ProjetoMetaMensagem.Servico.Email;
 using ProjetoMetaMensagem.Servico.Meta;
 using ProjetoMetaMensagem.Servico.Twilio;
 
@@ -44,6 +45,7 @@ builder.Services.AddScoped<DbSession>();
 //servicos
 builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
 builder.Services.AddHttpClient<IMetaService, MetaService>();
+builder.Services.AddHttpClient<IEmailService, EmailService>();
 
 //Configurações
 

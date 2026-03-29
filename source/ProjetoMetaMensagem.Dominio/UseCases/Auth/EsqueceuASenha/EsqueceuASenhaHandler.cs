@@ -11,17 +11,33 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha
 {
     public class EsqueceuASenhaHandler : IRequestHandler<EsqueceuASenhaCommand, Response<EsqueceuASenhaResult>>
     {
-        private readonly IMetaService _whatsappService;
-
-        public EsqueceuASenhaHandler(IMetaService whatsappService)
+        private readonly IEmailService _emailService;
+        private readonly int tamanhoSenha = 8;
+        public EsqueceuASenhaHandler(IEmailService whatsappService)
         {
-            _whatsappService = whatsappService;
+            _emailService = whatsappService;
         }
 
-        public async Task<Response<EsqueceuASenhaResult>> Handle(EsqueceuASenhaCommand request)
+        public async Task<Response<EsqueceuASenhaResult>> Handle(EsqueceuASenhaCommand command)
         {
             var response = new Response<EsqueceuASenhaResult>();
 
+
+            //var validator = new CriaClienteValidator();
+            //var validateResult = validator.Validate(request);
+
+            //if (!validateResult.IsValid)
+            //{
+            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+            //    return response;
+            //}
+
+            const string caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            var senha = new string(Enumerable.Repeat(caracteres, tamanhoSenha)
+                    .Select(s => s[random.Next(s.Length)]).ToArray());
+
+            var email = await _emailService.EnviarEmailAsync(command.Email, senha);
             return response;
         }
     }
