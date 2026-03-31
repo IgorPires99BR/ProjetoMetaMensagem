@@ -9,7 +9,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
 {
     public interface IConversationsRepository
     {
-        Task<List<Conversations>> Obter();
+        Task<List<Conversations>> Obter(string companyId);
 
         Task<int> Incluir(Conversations conversations);
     }

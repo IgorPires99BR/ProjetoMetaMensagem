@@ -11,6 +11,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
     {
         ICompaniesRepository CompaniesRepository { get; }
         IFlowsRepository FlowsRepository { get; }
+        IConversationsRepository ConversationsRepository { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();

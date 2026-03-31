@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
+using ProjetoMetaMensagem.WebAPI.Common;
+using System.Net;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.EsqueceuASenha
 {
@@ -21,9 +23,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.EsqueceuASenha
             var resultado = await _mediator.Send(command);
 
             if (resultado != null)
-                return Ok(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
 
-            return BadRequest(resultado);
+            return this.ValidateResponse((int)HttpStatusCode.BadRequest, resultado);
         }
     }
 }

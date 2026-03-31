@@ -15,6 +15,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
+using ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Email;
@@ -22,6 +23,17 @@ using ProjetoMetaMensagem.Servico.Meta;
 using ProjetoMetaMensagem.Servico.Twilio;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173", "http://localhost:3000") // Portas comuns do React/Vite
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 // Add services to the container.
 
@@ -57,6 +69,7 @@ builder.Services.Configure<GmailConfiguration>(
 
 builder.Services.AddScoped<ICompaniesRepository, CompaniesRepository>();
 builder.Services.AddScoped<IFlowsRepository, FlowsRepository>();
+builder.Services.AddScoped<IConversationsRepository, ConversationsRepository>();
 
 //Injeção de dependência de Mensagens e disparos do Core
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();
@@ -78,6 +91,9 @@ builder.Services.AddScoped<IRequestHandler<CriaEmpresaCommand, Response<CriaEmpr
 builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();
 builder.Services.AddScoped<IRequestHandler<CriaFlowCommand, Response<CriaFlowResult>>, CriaFlowHandler>();
 
+//Registros de Convcrsations
+
+builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<List<ListaConversaPorIdResult>>>, ListaConversaPorIdHandler>();
 
 var app = builder.Build();
 
@@ -88,7 +104,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseCors("AllowReactApp");
+
+//app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

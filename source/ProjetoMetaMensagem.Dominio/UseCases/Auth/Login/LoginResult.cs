@@ -12,11 +12,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
     {
         public LoginResult(Companies company)
         {
-            Status = "success";
-            CompanyId = "Master";
-            CompanyName = "Administrador Geral";
-            Role = "admin";
-            Email = company.email;
+            this.CompanyId = company.id;
+            this.CompanyName = company.name;
+            this.Email = company.email;
+
+            var admins = new[] { "MASTER", "IGOR_SOCIO", "JOSE_SOCIO" };
+
+            if (admins.Contains(company.id?.ToUpper()))
+            {
+                this.Role = "admin";
+                this.Status = "success";
+            }
+            else
+            {
+                this.Role = "client";
+                this.Status = "success";
+            }
         }
 
         [JsonProperty("status")]

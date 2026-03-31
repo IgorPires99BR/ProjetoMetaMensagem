@@ -11,6 +11,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
     public class LoginCommand : IRequest<Response<LoginResult>>
     {
         public string email { get; set; }
-        public string senha { get; set; }
+        public string password { get; set; }
     }
 }

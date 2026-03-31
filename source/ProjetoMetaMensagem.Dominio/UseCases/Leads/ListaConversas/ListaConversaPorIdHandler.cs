@@ -33,7 +33,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas
             //    return response;
             //}
 
-            var flows = await _unitOfWork.FlowsRepository.Obtem(command.CompanyId);
+            var conversations = await _unitOfWork.ConversationsRepository.Obter(command.CompanyId);
+
+
+            foreach(var conversation in conversations)
+            {
+
+                listaResultados.Add(new ListaConversaPorIdResult(conversation));
+            }
+
+            response.AddValue(listaResultados);
 
             return response;
         }

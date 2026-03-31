@@ -2,11 +2,12 @@
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
+using ProjetoMetaMensagem.WebAPI.Common;
+using System.Net;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
 {
     [ApiController]
-    [Route("[controller]")]
     public class AuthController : Controller
     {
         private readonly IMediator _mediator;
@@ -16,15 +17,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
             _mediator = mediator;
         }
 
-        [HttpPost("/api/auth/login")]
+        [HttpPost("api/auth/login")]
         public async Task<IActionResult> Enviar([FromBody] LoginCommand command)
         {
             var resultado = await _mediator.Send(command);
 
             if (resultado != null)
-                return Ok(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
 
-            return BadRequest(resultado);
+            return this.ValidateResponse((int)HttpStatusCode.BadRequest, null);
         }
     }
 }
