@@ -15,16 +15,31 @@ namespace ProjetoMetaMensagem.Data
         public ICompaniesRepository CompaniesRepository { get; set; }
         public IFlowsRepository FlowsRepository { get; set; }
         public IConversationsRepository ConversationsRepository { get; set; }
+        public IEmpresaRepository Empresa { get; set; }
+        public IUsuarioRepository Usuario { get; set; }
+        public IContatoRepository Contato { get; set; }
+        public INumeroRepository Numero{ get; set; }
+        public ITemplateRepository Template { get; set; }
 
         public UnitOfWork(DbSession session,
             ICompaniesRepository companiesRepository,
             IFlowsRepository flowsRepository,
-            IConversationsRepository conversationsRepository)
+            IConversationsRepository conversationsRepository,
+            IEmpresaRepository empresaRepository,
+            IUsuarioRepository usuarioRepository,
+            IContatoRepository contatoRepository,
+            INumeroRepository numeroRepository,
+            ITemplateRepository templateRepository)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
             FlowsRepository = flowsRepository;
             ConversationsRepository = conversationsRepository;
+            Empresa = empresaRepository;
+            Usuario = usuarioRepository;
+            Contato = contatoRepository;
+            Numero = numeroRepository;
+            Template = templateRepository;
         }
 
         public void Commit()

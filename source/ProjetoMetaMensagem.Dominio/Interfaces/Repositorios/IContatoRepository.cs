@@ -1,0 +1,19 @@
+﻿using ProjetoMetaMensagem.Dominio.Entidades;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
+{
+    public interface IContatoRepository
+    {
+        Task Incluir(Contato contato);
+        Task Alterar(Contato contato);
+        Task Excluir(int id);
+        Task<Contato?> ObterPorId(int id);
+        Task<IEnumerable<Contato>> Obter();
+        Task<IEnumerable<Contato>> ObterPorUsuario(string usuarioId);
+    }
+}

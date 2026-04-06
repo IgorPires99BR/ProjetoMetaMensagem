@@ -12,4 +12,12 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="UseCases\Empresa\" />
+    <Folder Include="UseCases\Contato\" />
+    <Folder Include="UseCases\Template\" />
+    <Folder Include="UseCases\Numero\" />
+    <Folder Include="UseCases\Usuario\" />
+  </ItemGroup>
+
 </Project>

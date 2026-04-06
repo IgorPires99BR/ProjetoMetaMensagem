@@ -42,8 +42,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.Configure<ApiWhatsappConnectionConfiguration>(
-    builder.Configuration.GetSection("ApiWhatsappConnection"));
+builder.Services.Configure<ApiWhatsappConnectionConfiguration>(builder.Configuration.GetSection("ApiWhatsappConnectionConfiguration"));
 
 builder.Services.AddHttpClient<TwilioService>();
 
@@ -53,6 +52,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 //Banco
 builder.Services.AddScoped<DbSession>();
+
+
 
 //servicos
 builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
@@ -70,6 +71,10 @@ builder.Services.Configure<GmailConfiguration>(
 builder.Services.AddScoped<ICompaniesRepository, CompaniesRepository>();
 builder.Services.AddScoped<IFlowsRepository, FlowsRepository>();
 builder.Services.AddScoped<IConversationsRepository, ConversationsRepository>();
+builder.Services.AddScoped<IEmpresaRepository, EmpresaRepository>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IContatoRepository, ContatoRepository>();
+builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
 
 //Injeção de dependência de Mensagens e disparos do Core
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();

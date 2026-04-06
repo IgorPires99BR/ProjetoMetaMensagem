@@ -9,22 +9,26 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 using ProjetoMetaMensagem.Dominio.Entidades.Meta;
+using ProjetoMetaMensagem.Servico.Configuration;
+using Microsoft.Extensions.Options;
+using System.Runtime;
 
 namespace ProjetoMetaMensagem.Servico.Meta
 {
     public class MetaService : IMetaService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _phoneNumberId = "956946084171393";
-        private readonly string _accessToken = "EAANhG9OKJisBRI7pIeRxGYRZB5HP7ZCCFQvAhhLJsZB4nWfoid7t0EfjrFFi7k0PrU4NvZCcQ7fgVUtLWMnc9M3tGcO0BEVpsaAj4ZAzFqOZAGeuYgJcAlNrnJ2KqJNuDOYWqi05JZC3qKduOZBZA0bEd8sE7qZChWyrZCtvqxupxALC78Bq0zGU0YsFjUn6ZBdsyNRf7qBpRzLMtFUWVZCAmNFYXSD0lypUGMb0mMK9JNbzKzr2b3OWoGBzDCLgj9WqPaD7ngZCTEFcK67RXxf4mUy57TFuQU0e2z3Lp2aFIZD";
+        private readonly ApiWhatsappConnectionConfiguration _configuration;
 
-        public MetaService(HttpClient httpClient)
+        public MetaService(HttpClient httpClient, IOptions<ApiWhatsappConnectionConfiguration> options)
         {
             _httpClient = httpClient;
+            _configuration = options.Value;
+
             // Ajustado para v19.0 como no seu Python
-            _httpClient.BaseAddress = new Uri("https://graph.facebook.com/v19.0/");
+            _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
             _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _accessToken);
+                new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
         }
 
         public async Task<bool> EnviarTemplateAsync(string celular, string nomeTemplate)
@@ -44,8 +48,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
             var json = JsonConvert.SerializeObject(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // A URL final será: BaseAddress + {phoneNumberId}/messages
-            var response = await _httpClient.PostAsync($"{_phoneNumberId}/messages", content);
+            var response = await _httpClient.PostAsync($"{_configuration.PhoneNumberId}/messages", content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -74,7 +77,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // 3. Envia para o endpoint de mensagens
-            var response = await _httpClient.PostAsync($"{_phoneNumberId}/messages", content);
+            var response = await _httpClient.PostAsync($"{_configuration.PhoneNumberId}/messages", content);
 
             if (!response.IsSuccessStatusCode)
             {

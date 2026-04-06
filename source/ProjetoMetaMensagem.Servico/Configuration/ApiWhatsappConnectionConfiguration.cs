@@ -9,8 +9,8 @@ namespace ProjetoMetaMensagem.Servico.Configuration
 {
     public class ApiWhatsappConnectionConfiguration
     {
-        public string AccountSid { get; set; }
-        public string AuthToken { get; set; }
-        public string FromNumber { get; set; }
+        public string BaseUrl { get; set; }
+        public string AccessToken { get; set; }
+        public string PhoneNumberId { get; set; }
     }
 }
