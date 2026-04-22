@@ -22,9 +22,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
         }
 
         [HttpGet("api/contato/obter-por-usuario/{usuarioId}")]
-        public async Task<IActionResult> ObterPorUsuario(string usuarioId)
+        public async Task<IActionResult> ObterPorUsuario(Guid usuarioId)
         {
-            var resultado = await _mediator.Send(new ObtemContatoCommand());
+            var resultado = await _mediator.Send(new ObtemContatoCommand(usuarioId));
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
 

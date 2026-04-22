@@ -12,7 +12,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
     {
         public LoginResult(Companies company)
         {
-            this.CompanyId = company.id;
+            //this.CompanyId = company.id;
             this.CompanyName = company.name;
             this.Email = company.email;
 
@@ -30,11 +30,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             }
         }
 
+        public LoginResult(Entidades.Usuario usuario)
+        {
+            CompanyId = usuario.EmpresaId;
+            Email = usuario.Email;
+            this.Role = "admin";
+            this.Status = "success";
+        }
+
         [JsonProperty("status")]
         public string Status { get; set; } = "success";
 
         [JsonProperty("companyId")]
-        public string CompanyId { get; set; } = null!;
+        public Guid CompanyId { get; set; }
 
         [JsonProperty("companyName")]
         public string CompanyName { get; set; } = null!;

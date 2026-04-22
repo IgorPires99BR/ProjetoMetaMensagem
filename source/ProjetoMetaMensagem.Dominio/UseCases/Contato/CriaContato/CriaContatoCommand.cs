@@ -12,7 +12,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
 {
     public class CriaContatoCommand : IRequest<Response<CriaContatoResult>>
     {
-        public string UsuarioId { get; set; }
+        public Guid UsuarioId { get; set; }
         public string Telefone { get; set; }
         public string? Nome { get; set; }
         public string? Email { get; set; }

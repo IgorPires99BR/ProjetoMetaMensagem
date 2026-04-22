@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
-using ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.ObtemNumero;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
 
@@ -23,7 +23,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
         [HttpGet("api/numero/obter-por-usuario/{usuarioId}")]
         public async Task<IActionResult> ObterPorUsuario(string usuarioId)
         {
-            var resultado = await _mediator.Send(new ObtemContatoCommand());
+            var resultado = await _mediator.Send(new ObtemNumeroCommand(usuarioId));
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
     }

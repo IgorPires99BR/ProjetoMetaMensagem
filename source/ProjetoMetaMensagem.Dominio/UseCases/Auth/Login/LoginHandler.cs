@@ -31,7 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             //    return response;
             //}
 
-            var login = await _unitOfWork.CompaniesRepository.Login(request.email, request.password);
+            var login = await _unitOfWork.Usuario.Logar(request.email, request.password);
 
             if (login == null)
                 throw new Exception("Usuario e senha não encontrados no banco de dados.");

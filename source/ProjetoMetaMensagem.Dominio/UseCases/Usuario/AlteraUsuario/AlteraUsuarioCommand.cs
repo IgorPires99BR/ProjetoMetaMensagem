@@ -11,7 +11,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
     public class AlteraUsuarioCommand : IRequest<Response<AlteraUsuarioResult>>
     {
         public Guid Id { get; set; }
-        public string EmpresaId { get; set; }
+        public Guid EmpresaId { get; set; }
 
         public string Nome { get; set; }
 

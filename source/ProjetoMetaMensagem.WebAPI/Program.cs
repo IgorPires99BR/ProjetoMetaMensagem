@@ -121,19 +121,19 @@ builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.
 builder.Services.AddScoped<IRequestHandler<CriaUsuarioCommand, Response<CriaUsuarioResult>>, CriaUsuarioHandler>();
 builder.Services.AddScoped<IRequestHandler<AlteraUsuarioCommand, Response<AlteraUsuarioResult>>, AlteraUsuarioHandler>();
 builder.Services.AddScoped<IRequestHandler<DeletaUsuarioCommand, Response<DeletaUsuarioResult>>, DeletaUsuarioHandler>();
-builder.Services.AddScoped<IRequestHandler<ObtemUsuarioCommand, Response<ObtemUsuarioResult>>, ObtemUsuarioHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemUsuarioCommand, Response<List<ObtemUsuarioResult>>>, ObtemUsuarioHandler>();
 
 //Registros de Numero
 builder.Services.AddScoped<IRequestHandler<CriaNumeroCommand, Response<CriaNumeroResult>>, CriaNumeroHandler>();
 builder.Services.AddScoped<IRequestHandler<AlteraNumeroCommand, Response<AlteraNumeroResult>>, AlteraNumeroHandler>();
 builder.Services.AddScoped<IRequestHandler<DeletaNumeroCommand, Response<DeletaNumeroResult>>, DeletaNumeroHandler>();
-builder.Services.AddScoped<IRequestHandler<ObtemNumeroCommand, Response<ObtemNumeroResult>>, ObtemNumeroHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemNumeroCommand, Response<List<ObtemNumeroResult>>>, ObtemNumeroHandler>();
 
 //Registros de Contato
 builder.Services.AddScoped<IRequestHandler<CriaContatoCommand, Response<CriaContatoResult>>, CriaContatoHandler>();
 builder.Services.AddScoped<IRequestHandler<AlteraContatoCommand, Response<AlteraContatoResult>>, AlteraContatoHandler>();
 builder.Services.AddScoped<IRequestHandler<DeletaContatoCommand, Response<DeletaContatoResult>>, DeletaContatoHandler>();
-builder.Services.AddScoped<IRequestHandler<ObtemContatoCommand, Response<ObtemContatoResult>>, ObtemContatoHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemContatoCommand, Response<List<ObtemContatoResult>>>, ObtemContatoHandler>();
 
 
 builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();

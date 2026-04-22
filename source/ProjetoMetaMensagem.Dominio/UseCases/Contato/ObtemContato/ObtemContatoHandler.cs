@@ -10,7 +10,7 @@ using ProjetoMetaMensagem.Dominio.Help.Error;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 {
-    public class ObtemContatoHandler : IRequestHandler<ObtemContatoCommand, Response<ObtemContatoResult>>
+    public class ObtemContatoHandler : IRequestHandler<ObtemContatoCommand, Response<List<ObtemContatoResult>>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -19,9 +19,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Response<ObtemContatoResult>> Handle(ObtemContatoCommand command)
+        public async Task<Response<List<ObtemContatoResult>>> Handle(ObtemContatoCommand command)
         {
-            var response = new Response<ObtemContatoResult>();
+            var response = new Response<List<ObtemContatoResult>>();
+            var listaContato = new List<ObtemContatoResult>();
 
             var validator = new ObtemContatoValidator();
             var validateResult = validator.Validate(command);
@@ -32,12 +33,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
                 return response;
             }
 
-            var contatos = await _unitOfWork.Contato.Obter();
+            var contatos = await _unitOfWork.Contato.ObterPorUsuario(command.IdEmpresa);
 
             foreach (var contato in contatos)
             {
-                response.AddValue(new ObtemContatoResult());
+                listaContato.Add(new ObtemContatoResult(contato));
             }
+
+            response.AddValue(listaContato);
 
             return response;
         }

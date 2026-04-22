@@ -22,7 +22,6 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = $@"
                 INSERT INTO {nameof(Usuario)} (
-                    {nameof(Usuario.Id)}, 
                     {nameof(Usuario.EmpresaId)}, 
                     {nameof(Usuario.Nome)}, 
                     {nameof(Usuario.Email)}, 
@@ -30,7 +29,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Usuario.DataCriacao)}
                 ) 
                 VALUES (
-                    @Id, @EmpresaId, @Nome, @Email, @SenhaHash, @DataCriacao
+                    @EmpresaId, @Nome, @Email, @SenhaHash, @DataCriacao
                 )";
 
             var parameters = new DynamicParameters();
@@ -57,27 +56,41 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session._connection.ExecuteAsync(sql, usuario, transaction: _session.Transaction);
         }
 
+        public async Task<Usuario?> Logar(string email, string senhaHash)
+        {
+            var sql = $@"
+             SELECT * FROM {nameof(Usuario)} 
+             WHERE {nameof(Usuario.Email)} = @Email 
+               AND {nameof(Usuario.SenhaHash)} = @SenhaHash";
+
+            return await _session._connection.QueryFirstOrDefaultAsync<Usuario>(
+                sql,
+                new { Email = email, SenhaHash = senhaHash },
+                transaction: _session.Transaction
+            );
+        }
+
         public async Task Excluir(string id)
         {
             var sql = $"DELETE FROM Usuarios WHERE {nameof(Usuario.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
-        public async Task<IEnumerable<Usuario>> ObterPorEmpresa(string id)
+        public async Task<IEnumerable<Usuario>> ObterPorEmpresa(Guid id)
         {
-            var sql = $"SELECT * FROM Usuarios WHERE {nameof(Usuario.Id)} = @Id";
+            var sql = $"SELECT * FROM Usuario WHERE {nameof(Usuario.Id)} = @Id";
             return await _session._connection.QueryAsync<Usuario>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Usuario>> Obter()
         {
-            var sql = $"SELECT * FROM Usuarios ORDER BY {nameof(Usuario.Nome)}";
+            var sql = $"SELECT * FROM Usuario ORDER BY {nameof(Usuario.Nome)}";
             return await _session._connection.QueryAsync<Usuario>(sql, transaction: _session.Transaction);
         }
 
-        public async Task<Usuario?> ObterPorId(string id)
+        public async Task<Usuario?> ObterPorId(Guid id)
         {
-            var sql = $"SELECT * FROM Usuarios WHERE {nameof(Usuario.Id)} = @Id";
+            var sql = $"SELECT * FROM Usuario WHERE {nameof(Usuario.Id)} = @Id";
             return await _session._connection.QueryFirstAsync<Usuario>(sql, transaction: _session.Transaction);
         }
     }

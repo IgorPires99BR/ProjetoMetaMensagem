@@ -19,7 +19,6 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public Contato(CriaContatoCommand command)
         {
-            Id = Guid.NewGuid().ToString();
             UsuarioId = command.UsuarioId;
             Telefone = command.Telefone;
             Nome = command.Nome;
@@ -37,10 +36,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             DataCriacao = DateTime.Now;
         }
         [Key]
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
         [Required]
-        public string UsuarioId { get; set; }
+        public Guid UsuarioId { get; set; }
 
         [ForeignKey("UsuarioId")]
         public Usuario Usuario { get; set; }
@@ -55,6 +54,6 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         [MaxLength(255)]
         public string? Email { get; set; }
 
-        public DateTimeOffset DataCriacao { get; set; } = DateTimeOffset.Now;
+        public DateTime DataCriacao { get; set; }
     }
 }

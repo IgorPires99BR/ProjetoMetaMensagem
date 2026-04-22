@@ -8,7 +8,12 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 {
-    public class ObtemContatoCommand : IRequest<Response<ObtemContatoResult>>
+    public class ObtemContatoCommand : IRequest<Response<List<ObtemContatoResult>>>
     {
+        public ObtemContatoCommand(Guid empresaId)
+        {
+            IdEmpresa = empresaId;
+        }
+        public Guid IdEmpresa { get; set; }
     }
 }

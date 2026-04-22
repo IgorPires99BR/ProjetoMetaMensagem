@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
 {
-    public class ObtemUsuarioHandler : IRequestHandler<ObtemUsuarioCommand, Response<ObtemUsuarioResult>>
+    public class ObtemUsuarioHandler : IRequestHandler<ObtemUsuarioCommand, Response<List<ObtemUsuarioResult>>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -20,9 +20,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Response<ObtemUsuarioResult>> Handle(ObtemUsuarioCommand command)
+        public async Task<Response<List<ObtemUsuarioResult>>> Handle(ObtemUsuarioCommand command)
         {
-            var response = new Response<ObtemUsuarioResult>();
+            var response = new Response<List<ObtemUsuarioResult>>();
+            var listaUsuarios = new List<ObtemUsuarioResult>();
 
             var validator = new ObtemUsuarioValidator();
             var validateResult = validator.Validate(command);
@@ -33,12 +34,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
                 return response;
             }
 
-            var listaEmpresa = await _unitOfWork.Empresa.Obter();
+            var usuariosBanco = await _unitOfWork.Usuario.Obter();
 
-            foreach (var empresa in listaEmpresa)
+            foreach (var usuario in usuariosBanco)
             {
-                response.AddValue(new ObtemUsuarioResult());
+                listaUsuarios.Add(new ObtemUsuarioResult(usuario));
             }
+
+            response.AddValue(listaUsuarios);
 
             return response;
         }

@@ -11,10 +11,13 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
     {
         Task Incluir(Usuario usuario);
         Task Alterar(Usuario usuario);
+
+        Task<Usuario?> Logar(string email, string senhaHash);
+
         Task Excluir(string id);
-        Task<Usuario?> ObterPorId(string id);
+        Task<Usuario?> ObterPorId(Guid id);
         Task<IEnumerable<Usuario>> Obter();
         // Método adicional comum para usuários
-        Task<IEnumerable<Usuario>> ObterPorEmpresa(string empresaId);
+        Task<IEnumerable<Usuario>> ObterPorEmpresa(Guid empresaId);
     }
 }

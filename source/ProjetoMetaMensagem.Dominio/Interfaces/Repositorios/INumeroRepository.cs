@@ -14,6 +14,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task Excluir(string id);
         Task<Numero?> ObterPorId(int id);
         Task<IEnumerable<Numero>> Obter();
-        Task<IEnumerable<Numero>> ObterPorUsuario(string usuarioId);
+        Task<IEnumerable<Numero>> ObterPorUsuario(Guid usuarioId);
     }
 }

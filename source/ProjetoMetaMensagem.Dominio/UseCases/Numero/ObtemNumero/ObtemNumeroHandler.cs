@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ObtemNumero
 {
-    public class ObtemNumeroHandler : IRequestHandler<ObtemNumeroCommand, Response<ObtemNumeroResult>>
+    public class ObtemNumeroHandler : IRequestHandler<ObtemNumeroCommand, Response<List<ObtemNumeroResult>>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -21,9 +21,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ObtemNumero
         }
 
 
-        public async Task<Response<ObtemNumeroResult>> Handle(ObtemNumeroCommand command)
+        public async Task<Response<List<ObtemNumeroResult>>> Handle(ObtemNumeroCommand command)
         {
-            var response = new Response<ObtemNumeroResult>();
+            var response = new Response<List<ObtemNumeroResult>>();
+            var listaNumeros = new List<ObtemNumeroResult>();
 
             var validator = new ObtemNumeroValidator();
             var validateResult = validator.Validate(command);
@@ -34,12 +35,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ObtemNumero
                 return response;
             }
 
-            var listaEmpresa = await _unitOfWork.Empresa.Obter();
+            var listaNumeroBanco = await _unitOfWork.Numero.ObterPorUsuario(command.IdEmpresa);
 
-            foreach (var empresa in listaEmpresa)
+            foreach (var numero in listaNumeroBanco)
             {
-                response.AddValue(new ObtemNumeroResult());
+                listaNumeros.Add(new ObtemNumeroResult(numero));
             }
+
+            response.AddValue(listaNumeros);
 
             return response;
         }

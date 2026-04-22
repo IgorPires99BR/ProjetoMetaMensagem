@@ -10,8 +10,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
 {
     public class AlteraContatoCommand : IRequest<Response<AlteraContatoResult>>
     {
-        public string Id { get; set; }
-        public string UsuarioId { get; set; }
+        public Guid Id { get; set; }
+        public Guid UsuarioId { get; set; }
         public string Telefone { get; set; }
         public string? Nome { get; set; }
         public string? Email { get; set; }

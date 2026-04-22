@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
 {
-    public class ObtemUsuarioCommand : IRequest<Response<ObtemUsuarioResult>>
+    public class ObtemUsuarioCommand : IRequest<Response<List<ObtemUsuarioResult>>>
     {
 
     }

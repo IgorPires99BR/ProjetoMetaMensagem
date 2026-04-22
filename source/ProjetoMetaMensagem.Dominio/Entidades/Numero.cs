@@ -20,39 +20,42 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public Numero(CriaNumeroCommand command)
         {
-            Id = Guid.NewGuid().ToString();
             UsuarioId = command.UsuarioId;
-            NumeroTelefone = command.NumeroTelefone;
+            Telefone = command.NumeroTelefone;
             Descricao = command.Descricao;
             InstanciaId = command.InstanciaId;
+            DataCriacao = DateTime.Now;
         }
 
         public Numero(AlteraNumeroCommand command)
         {
-            Id = Guid.NewGuid().ToString();
+            Id = command.Id;
             UsuarioId = command.UsuarioId;
-            NumeroTelefone = command.NumeroTelefone;
+            Telefone = command.NumeroTelefone;
             Descricao = command.Descricao;
             InstanciaId = command.InstanciaId;
+            DataAtualizacao = DateTime.Now;
         }
 
         [Key]
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
         [Required]
-        public string UsuarioId { get; set; }
+        public Guid UsuarioId { get; set; }
 
         [ForeignKey("UsuarioId")]
         public Usuario Usuario { get; set; }
 
         [Required]
         [MaxLength(50)]
-        public string NumeroTelefone { get; set; }
+        public string Telefone { get; set; }
 
         [MaxLength(100)]
         public string? Descricao { get; set; }
 
         [MaxLength(255)]
         public string? InstanciaId { get; set; }
+        public DateTime DataCriacao { get; set; }
+        public DateTime? DataAtualizacao { get; set; }
     }
 }
