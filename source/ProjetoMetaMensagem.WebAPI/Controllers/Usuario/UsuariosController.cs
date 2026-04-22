@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario;
+using ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
 
@@ -12,7 +14,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
         public UsuariosController(IMediator mediator) => _mediator = mediator;
 
         [HttpPost("api/usuario/incluir")]
-        public async Task<IActionResult> Incluir([FromBody] IncluirUsuarioCommand command)
+        public async Task<IActionResult> Incluir([FromBody] CriaUsuarioCommand command)
         {
             var resultado = await _mediator.Send(command);
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
@@ -21,7 +23,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
         [HttpGet("api/usuario/obter-por-id/{id}")]
         public async Task<IActionResult> ObterPorId(string id)
         {
-            var resultado = await _mediator.Send(new ObterUsuarioPorIdQuery { Id = id });
+            var resultado = await _mediator.Send(new ObtemUsuarioCommand());
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.OK : (int)HttpStatusCode.NotFound, resultado);
         }
     }

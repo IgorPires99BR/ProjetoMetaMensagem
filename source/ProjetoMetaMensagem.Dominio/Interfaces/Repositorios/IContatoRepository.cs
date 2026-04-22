@@ -11,7 +11,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
     {
         Task Incluir(Contato contato);
         Task Alterar(Contato contato);
-        Task Excluir(int id);
+        Task Excluir(string id);
         Task<Contato?> ObterPorId(int id);
         Task<IEnumerable<Contato>> Obter();
         Task<IEnumerable<Contato>> ObterPorUsuario(string usuarioId);

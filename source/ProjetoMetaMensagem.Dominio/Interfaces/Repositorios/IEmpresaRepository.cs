@@ -13,6 +13,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task Alterar(Empresa empresa);
         Task Excluir(string id);
         Task<Empresa?> ObterPorId(string id);
-        Task<IEnumerable<Empresa>> Obter();
+        Task<List<Empresa>> Obter();
     }
 }

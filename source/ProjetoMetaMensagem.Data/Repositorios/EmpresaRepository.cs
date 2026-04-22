@@ -67,10 +67,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session._connection.QueryFirstOrDefaultAsync<Empresa>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
-        public async Task<IEnumerable<Empresa>> Obter()
+        public async Task<List<Empresa>> Obter()
         {
             var sql = $"SELECT * FROM Empresas ORDER BY {nameof(Empresa.Nome)}";
-            return await _session._connection.QueryAsync<Empresa>(sql, transaction: _session.Transaction);
+            var retorno =  await _session._connection.QueryAsync<Empresa>(sql, transaction: _session.Transaction);
+
+            return retorno.ToList();
         }
     }
 }

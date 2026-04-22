@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
+using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Data.Repositorios
 {
-    public class NumeroRepository
+    public class NumeroRepository : INumeroRepository
     {
         private readonly DbSession _session;
 
@@ -29,7 +30,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 VALUES (@UsuarioId, @NumeroTelefone, @Descricao, @InstanciaId);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
-            numero.Id = await _session._connection.QuerySingleAsync<int>(sql, numero, transaction: _session.Transaction);
+            await _session._connection.QuerySingleAsync<int>(sql, numero, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Numero numero)
@@ -45,7 +46,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session._connection.ExecuteAsync(sql, numero, transaction: _session.Transaction);
         }
 
-        public async Task Excluir(int id)
+        public async Task Excluir(string id)
         {
             var sql = $"DELETE FROM Numeros WHERE {nameof(Numero.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);

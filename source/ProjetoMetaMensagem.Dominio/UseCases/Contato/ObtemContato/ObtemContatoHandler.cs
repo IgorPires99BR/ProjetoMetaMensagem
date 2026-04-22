@@ -1,0 +1,45 @@
+﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ProjetoMetaMensagem.Dominio.Help.Error;
+
+namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
+{
+    public class ObtemContatoHandler : IRequestHandler<ObtemContatoCommand, Response<ObtemContatoResult>>
+    {
+        private readonly IUnitOfWork _unitOfWork;
+
+        public ObtemContatoHandler(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<Response<ObtemContatoResult>> Handle(ObtemContatoCommand command)
+        {
+            var response = new Response<ObtemContatoResult>();
+
+            var validator = new ObtemContatoValidator();
+            var validateResult = validator.Validate(command);
+
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
+            var contatos = await _unitOfWork.Contato.Obter();
+
+            foreach (var contato in contatos)
+            {
+                response.AddValue(new ObtemContatoResult());
+            }
+
+            return response;
+        }
+    }
+}

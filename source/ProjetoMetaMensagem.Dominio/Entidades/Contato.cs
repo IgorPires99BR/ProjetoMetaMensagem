@@ -5,13 +5,39 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato;
+using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
 
 namespace ProjetoMetaMensagem.Dominio.Entidades
 {
     public class Contato
     {
+        public Contato()
+        {
+            
+        }
+
+        public Contato(CriaContatoCommand command)
+        {
+            Id = Guid.NewGuid().ToString();
+            UsuarioId = command.UsuarioId;
+            Telefone = command.Telefone;
+            Nome = command.Nome;
+            Email = command.Email;
+            DataCriacao = DateTime.Now;
+        }
+
+        public Contato(AlteraContatoCommand command)
+        {
+            Id = command.Id;
+            UsuarioId = command.UsuarioId;
+            Telefone = command.Telefone;
+            Nome = command.Nome;
+            Email = command.Email;
+            DataCriacao = DateTime.Now;
+        }
         [Key]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         [Required]
         public string UsuarioId { get; set; }

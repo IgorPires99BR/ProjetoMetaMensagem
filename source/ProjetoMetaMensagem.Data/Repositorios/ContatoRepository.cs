@@ -42,7 +42,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 DataCriacao = DateTimeOffset.Now
             };
 
-            contato.Id = await _session._connection.QuerySingleAsync<int>(sql, parameters, transaction: _session.Transaction);
+            await _session._connection.QuerySingleAsync<int>(sql, parameters, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Contato contato)
@@ -58,7 +58,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session._connection.ExecuteAsync(sql, contato, transaction: _session.Transaction);
         }
 
-        public async Task Excluir(int id)
+        public async Task Excluir(string id)
         {
             var sql = $"DELETE FROM Contatos WHERE {nameof(Contato.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);

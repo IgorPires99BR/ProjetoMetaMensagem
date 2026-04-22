@@ -13,11 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="UseCases\Empresa\" />
-    <Folder Include="UseCases\Contato\" />
     <Folder Include="UseCases\Template\" />
-    <Folder Include="UseCases\Numero\" />
-    <Folder Include="UseCases\Usuario\" />
   </ItemGroup>
 
 </Project>

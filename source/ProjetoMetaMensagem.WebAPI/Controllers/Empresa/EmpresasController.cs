@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
 
@@ -13,38 +16,38 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
 
         public EmpresasController(IMediator mediator) => _mediator = mediator;
 
-        [HttpPost("api/empresa/incluir")]
-        public async Task<IActionResult> Incluir([FromBody] IncluirEmpresaCommand command)
-        {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
-        }
+        //[HttpPost("api/v2/empresa/incluir")]
+        //public async Task<IActionResult> Incluir([FromBody] CriaEmpresaCommand command)
+        //{
+        //    var resultado = await _mediator.Send(command);
+        //    return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+        //}
 
-        [HttpPut("api/empresa/alterar")]
-        public async Task<IActionResult> Alterar([FromBody] AlterarEmpresaCommand command)
-        {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
-        }
+        //[HttpPut("api/v2/empresa/alterar")]
+        //public async Task<IActionResult> Alterar([FromBody] AlteraEmpresaCommand command)
+        //{
+        //    var resultado = await _mediator.Send(command);
+        //    return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+        //}
 
-        [HttpDelete("api/empresa/excluir/{id}")]
+        [HttpDelete("api/v2/empresa/excluir/{id}")]
         public async Task<IActionResult> Excluir(string id)
         {
-            var resultado = await _mediator.Send(new ExcluirEmpresaCommand { Id = id });
+            var resultado = await _mediator.Send(new DeletaEmpresaCommand { IdEmpresa = id });
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
 
-        [HttpGet("api/empresa/obter-por-id/{id}")]
-        public async Task<IActionResult> ObterPorId(string id)
-        {
-            var resultado = await _mediator.Send(new ObterEmpresaPorIdQuery { Id = id });
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.OK : (int)HttpStatusCode.NotFound, resultado);
-        }
+        //[HttpGet("api/empresa/obter-por-id/{id}")]
+        //public async Task<IActionResult> ObterPorId(string id)
+        //{
+        //    var resultado = await _mediator.Send(new ObterEmpresaPorIdQuery { Id = id });
+        //    return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.OK : (int)HttpStatusCode.NotFound, resultado);
+        //}
 
-        [HttpGet("api/empresa/obter")]
+        [HttpGet("api/v2/empresa/obter")]
         public async Task<IActionResult> Obter()
         {
-            var resultado = await _mediator.Send(new ObterEmpresasQuery());
+            var resultado = await _mediator.Send(new ObtemEmpresaCommand());
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
     }

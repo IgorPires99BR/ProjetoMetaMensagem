@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -9,6 +10,15 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 {
     public class Empresa
     {
+            public Empresa(CriaEmpresaCommand command)
+            {
+                Id = command.Id;
+                Nome = command.Nome;
+                Email = command.Email;
+                Telefone = command.Telefone;
+                DataCriacao = DateTime.Now;
+            }
+
             [Key]
             public string Id { get; set; } = Guid.NewGuid().ToString();
 
