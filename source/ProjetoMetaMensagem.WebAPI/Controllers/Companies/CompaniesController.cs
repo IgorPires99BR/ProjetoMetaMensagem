@@ -19,51 +19,51 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Companies
             _mediator = mediator;
         }
 
-        [HttpDelete("{company_id}")]
-        public async Task<IActionResult> Deletar([FromRoute] int company_id)
-        {
+        //[HttpDelete("{company_id}")]
+        //public async Task<IActionResult> Deletar([FromRoute] int company_id)
+        //{
 
-            var resultado = await _mediator.Send(new DeletaEmpresaCommand(company_id));
+        //    var resultado = await _mediator.Send(new DeletaEmpresaCommand(company_id));
 
-            if (resultado != null)
-                return Ok(resultado);
+        //    if (resultado != null)
+        //        return Ok(resultado);
 
-            return BadRequest(resultado);
-        }
+        //    return BadRequest(resultado);
+        //}
 
-        [HttpPut("{company_id}")]
-        public async Task<IActionResult> Alterar([FromRoute] int company_id, AlteraEmpresaCommand command)
-        {
-            command.Id = company_id;
-            var resultado = await _mediator.Send(command);
+        //[HttpPut("{company_id}")]
+        //public async Task<IActionResult> Alterar([FromRoute] int company_id, AlteraEmpresaCommand command)
+        //{
+        //    command.Id = company_id;
+        //    var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+        //    if (resultado != null)
+        //        return Ok(resultado);
 
-            return BadRequest(resultado);
-        }
+        //    return BadRequest(resultado);
+        //}
 
-        [HttpGet]
-        public async Task<IActionResult> Obtem()
-        {
-            ObtemEmpresaCommand command = new ObtemEmpresaCommand();
-            var resultado = await _mediator.Send(command);
+        //[HttpGet]
+        //public async Task<IActionResult> Obtem()
+        //{
+        //    ObtemEmpresaCommand command = new ObtemEmpresaCommand();
+        //    var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+        //    if (resultado != null)
+        //        return Ok(resultado);
 
-            return BadRequest(resultado);
-        }
+        //    return BadRequest(resultado);
+        //}
 
-        [HttpPost]
-        public async Task<IActionResult> Incluir(CriaEmpresaCommand command)
-        {
-            var resultado = await _mediator.Send(command);
+        //[HttpPost]
+        //public async Task<IActionResult> Incluir(CriaEmpresaCommand command)
+        //{
+        //    var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+        //    if (resultado != null)
+        //        return Ok(resultado);
 
-            return BadRequest(resultado);
-        }
+        //    return BadRequest(resultado);
+        //}
     }
 }

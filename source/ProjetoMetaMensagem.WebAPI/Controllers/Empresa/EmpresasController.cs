@@ -16,12 +16,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
 
         public EmpresasController(IMediator mediator) => _mediator = mediator;
 
-        //[HttpPost("api/v2/empresa/incluir")]
-        //public async Task<IActionResult> Incluir([FromBody] CriaEmpresaCommand command)
-        //{
-        //    var resultado = await _mediator.Send(command);
-        //    return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
-        //}
+        [HttpPost("api/v2/empresa/incluir")]
+        public async Task<IActionResult> Incluir([FromBody] CriaEmpresaCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+        }
 
         //[HttpPut("api/v2/empresa/alterar")]
         //public async Task<IActionResult> Alterar([FromBody] AlteraEmpresaCommand command)

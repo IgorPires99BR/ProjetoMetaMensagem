@@ -12,7 +12,6 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
     {
             public Empresa(CriaEmpresaCommand command)
             {
-                Id = command.Id;
                 Nome = command.Nome;
                 Email = command.Email;
                 Telefone = command.Telefone;

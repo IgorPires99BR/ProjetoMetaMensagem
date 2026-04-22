@@ -22,21 +22,19 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = $@"
                 INSERT INTO {nameof(Empresa)} (
-                    {nameof(Empresa.Id)}, 
                     {nameof(Empresa.Nome)}, 
                     {nameof(Empresa.Email)}, 
                     {nameof(Empresa.Telefone)}, 
                     {nameof(Empresa.DataCriacao)}
                 ) 
-                VALUES (@Id, @Nome, @Email, @Telefone, @DataCriacao)";
+                VALUES (@Nome, @Email, @Telefone, @DataCriacao)";
 
             var parameters = new
             {
-                empresa.Id,
                 empresa.Nome,
                 empresa.Email,
                 empresa.Telefone,
-                DataCriacao = DateTimeOffset.Now
+                DataCriacao = DateTime.Now
             };
 
             await _session._connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
