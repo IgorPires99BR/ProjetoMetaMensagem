@@ -24,6 +24,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 using ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
@@ -95,6 +96,7 @@ builder.Services.AddScoped<INumeroRepository, NumeroRepository>();
 
 //Injeção de dependência de Mensagens e disparos do Core
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();
+builder.Services.AddScoped<IRequestHandler<CriarTemplateMetaCommand, Response<CriarTemplateMetaResult>>, CriarTemplateMetaHandler>();
 
 
 //Estrutura de Login e esqueci minha senha montada

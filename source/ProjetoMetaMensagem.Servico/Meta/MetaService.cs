@@ -1,17 +1,13 @@
 ﻿using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
-using ProjetoMetaMensagem.Servico.Meta.EnviarTemplate;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 using ProjetoMetaMensagem.Dominio.Entidades.Meta;
 using ProjetoMetaMensagem.Servico.Configuration;
 using Microsoft.Extensions.Options;
-using System.Runtime;
+using ProjetoMetaMensagem.Servico.Meta.EnviarMensagem;
+using ProjetoMetaMensagem.Servico.Meta.CriarTemplate;
+using ProjetoMetaMensagem.Dominio.Entidades.Meta.Template;
 
 namespace ProjetoMetaMensagem.Servico.Meta
 {
@@ -37,15 +33,19 @@ namespace ProjetoMetaMensagem.Servico.Meta
             var payload = new MetaMessageRequest
             {
                 To = celular,
+                Type = "template",
                 Template = new TemplateRequest
                 {
-                    Name = "hello_world",
-                    Language = new LanguageRequest { Code = "en_US" }
+                    Name = nomeTemplate, // Agora usa o que vem do Swagger
+                    Language = new LanguageRequest { Code = "pt_BR" } // Ajuste conforme sua necessidade
                 }
             };
 
-            // 2. Serializa e envia
-            var json = JsonConvert.SerializeObject(payload);
+            var json = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
+            {
+                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+            });
+
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync($"{_configuration.PhoneNumberId}/messages", content);
@@ -87,6 +87,35 @@ namespace ProjetoMetaMensagem.Servico.Meta
             }
 
             return response.IsSuccessStatusCode;
+        }
+
+        public async Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate)
+        {
+            // A criação de templates é feita no endpoint do WABA_ID (WhatsApp Business Account)
+            // Se o seu PhoneNumberId for o mesmo que o WABA, pode manter, 
+            // caso contrário, adicione o WabaId na sua ApiWhatsappConnectionConfiguration.
+            var endpoint = $"{_configuration.PhoneNumberId}/message_templates";
+
+
+
+            var json = JsonConvert.SerializeObject(novoTemplate, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore // Ignora campos nulos como 'format' no Body
+            });
+
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync(endpoint, content);
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Erro ao criar template na Meta: {responseContent}");
+            }
+
+            // Retorna o ID do template criado ou o JSON de sucesso
+            return responseContent;
         }
     }
 }

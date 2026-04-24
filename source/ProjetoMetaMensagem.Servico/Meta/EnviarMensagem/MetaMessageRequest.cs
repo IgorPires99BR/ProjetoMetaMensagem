@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjetoMetaMensagem.Servico.Meta.EnviarTemplate
+namespace ProjetoMetaMensagem.Servico.Meta.EnviarMensagem
 {
     public class MetaMessageRequest
     {
@@ -14,7 +14,7 @@ namespace ProjetoMetaMensagem.Servico.Meta.EnviarTemplate
         [JsonProperty("to")]
         public string To { get; set; }
         [JsonProperty("type")]
-        public string Type => "template";
+        public string Type;
         [JsonProperty("template")]
         public TemplateRequest Template { get; set; }
     }

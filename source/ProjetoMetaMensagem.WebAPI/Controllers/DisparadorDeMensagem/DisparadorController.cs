@@ -1,6 +1,7 @@
 ﻿using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 
 namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
 {
@@ -17,6 +18,17 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
 
         [HttpPost("enviar-meta")]
         public async Task<IActionResult> Enviar([FromBody] EnviarMensagemMetaCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+
+            if (resultado != null)
+                return Ok(resultado);
+
+            return BadRequest(resultado);
+        }
+
+        [HttpPost("CriaTemplate")]
+        public async Task<IActionResult> CriaTemplate([FromBody] CriarTemplateMetaCommand command)
         {
             var resultado = await _mediator.Send(command);
 
