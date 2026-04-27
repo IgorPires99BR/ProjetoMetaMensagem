@@ -116,7 +116,7 @@ builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaHandler>();
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaHandler>();
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa.DeletaEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa.DeletaEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa.DeletaEmpresaHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaHandler>();
 
 
 //Registros de Usuario

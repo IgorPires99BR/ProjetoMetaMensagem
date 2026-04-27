@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
 {
-    public class ObtemEmpresaHandler : IRequestHandler<ObtemEmpresaCommand, Response<ObtemEmpresaResult>>
+    public class ObtemEmpresaHandler : IRequestHandler<ObtemEmpresaCommand, Response<List<ObtemEmpresaResult>>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -21,9 +21,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
         }
 
 
-        public async Task<Response<ObtemEmpresaResult>> Handle(ObtemEmpresaCommand command)
+        public async Task<Response<List<ObtemEmpresaResult>>> Handle(ObtemEmpresaCommand command)
         {
-            var response = new Response<ObtemEmpresaResult>();
+            var response = new Response<List<ObtemEmpresaResult>>();
+            var listaEmpresa = new List<ObtemEmpresaResult>();
 
             // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
             var validator = new ObtemEmpresaValidator();
@@ -35,12 +36,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
                 return response;
             }
 
-            var listaEmpresa = await _unitOfWork.Empresa.Obter();
+            var empresaBanco = await _unitOfWork.Empresa.Obter();
 
-            foreach(var empresa in listaEmpresa)
+            foreach(var empresa in empresaBanco)
             {
-                response.AddValue(new ObtemEmpresaResult(empresa));
+                listaEmpresa.Add(new ObtemEmpresaResult(empresa));
             }
+
+            response.AddValue(listaEmpresa);
 
             return response;
         }

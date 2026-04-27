@@ -10,16 +10,22 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 {
     public class Empresa
     {
-            public Empresa(CriaEmpresaCommand command)
+        public Empresa()
+        {
+            
+        }
+
+        public Empresa(CriaEmpresaCommand command)
             {
                 Nome = command.Nome;
                 Email = command.Email;
+                Cnpj = command.Cnpj;
                 Telefone = command.Telefone;
                 DataCriacao = DateTime.Now;
             }
 
             [Key]
-            public string Id { get; set; } = Guid.NewGuid().ToString();
+            public Guid Id { get; set; }
 
             [Required]
             [MaxLength(255)]
@@ -27,6 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
             [MaxLength(255)]
             public string? Email { get; set; }
+            public string Cnpj { get; set; }
 
             [MaxLength(50)]
             public string? Telefone { get; set; }

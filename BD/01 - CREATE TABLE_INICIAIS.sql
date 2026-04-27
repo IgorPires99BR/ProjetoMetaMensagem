@@ -8,6 +8,7 @@ BEGIN
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         Nome NVARCHAR(255) NOT NULL,
         Email NVARCHAR(255),
+		Cnpj NVARCHAR(20),
         Telefone NVARCHAR(50),
         DataCriacao DATETIME DEFAULT GETDATE(),
         DataAtualizacao DATETIME NULL

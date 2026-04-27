@@ -24,15 +24,17 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 INSERT INTO {nameof(Empresa)} (
                     {nameof(Empresa.Nome)}, 
                     {nameof(Empresa.Email)}, 
+                    {nameof(Empresa.Cnpj)}, 
                     {nameof(Empresa.Telefone)}, 
                     {nameof(Empresa.DataCriacao)}
                 ) 
-                VALUES (@Nome, @Email, @Telefone, @DataCriacao)";
+                VALUES (@Nome, @Email,@Cnpj, @Telefone, @DataCriacao)";
 
             var parameters = new
             {
                 empresa.Nome,
                 empresa.Email,
+                empresa.Cnpj,
                 empresa.Telefone,
                 DataCriacao = DateTime.Now
             };
@@ -55,19 +57,19 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Excluir(string id)
         {
-            var sql = $"DELETE FROM Empresas WHERE {nameof(Empresa.Id)} = @Id";
+            var sql = $"DELETE FROM Empresa WHERE {nameof(Empresa.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<Empresa?> ObterPorId(string id)
         {
-            var sql = $"SELECT * FROM Empresas WHERE {nameof(Empresa.Id)} = @Id";
+            var sql = $"SELECT * FROM Empresa WHERE {nameof(Empresa.Id)} = @Id";
             return await _session._connection.QueryFirstOrDefaultAsync<Empresa>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<List<Empresa>> Obter()
         {
-            var sql = $"SELECT * FROM Empresas ORDER BY {nameof(Empresa.Nome)}";
+            var sql = $"SELECT * FROM Empresa ORDER BY {nameof(Empresa.Nome)}";
             var retorno =  await _session._connection.QueryAsync<Empresa>(sql, transaction: _session.Transaction);
 
             return retorno.ToList();

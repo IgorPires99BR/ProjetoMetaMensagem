@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
 {
-    public class ObtemEmpresaCommand : IRequest<Response<ObtemEmpresaResult>>
+    public class ObtemEmpresaCommand : IRequest<Response<List<ObtemEmpresaResult>>>
     {
 
     }
