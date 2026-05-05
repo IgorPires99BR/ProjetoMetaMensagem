@@ -1,0 +1,26 @@
+﻿version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      # Caminho relativo da raiz até ao ficheiro Dockerfile
+      dockerfile: Apresentacao/ProjetoMetaMensagem.WebAPI/.dockerfile
+    container_name: contact_solution_api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Nome do serviço 'sql_server' usado como Host na string de conexão
+      - ConnectionStrings__ContactSolutionDB=Server=sql_server;Database=ContactSolutionDB;User Id=sa;Password=SuaSenhaForte123!;TrustServerCertificate=True
+    depends_on:
+      - sql_server
+
+  sql_server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql_server
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=SuaSenhaForte123!

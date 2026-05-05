@@ -1,32 +1,27 @@
 # Estágio de Build
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 
-# 1. Copia os arquivos de projeto (.csproj) respeitando a estrutura de pastas
-# Isso permite o cache de camadas do Docker para um restore mais rápido
-COPY ["source/ProjetoMetaMensagem.WebAPI/ProjetoMetaMensagem.WebAPI.csproj", "source/ProjetoMetaMensagem.WebAPI/"]
-COPY ["source/ProjetoMetaMensagem.Dominio/ProjetoMetaMensagem.Dominio.csproj", "source/ProjetoMetaMensagem.Dominio/"]
-COPY ["source/ProjetoMetaMensagem.Servico/ProjetoMetaMensagem.Servico.csproj", "source/ProjetoMetaMensagem.Servico/"]
-COPY ["source/ProjetoMetaMensagem.Data/ProjetoMetaMensagem.Data.csproj", "source/ProjetoMetaMensagem.Data/"]
+# 1. Copia os projetos respeitando a sua estrutura de pastas
+COPY ["Apresentacao/ProjetoMetaMensagem.WebAPI/ProjetoMetaMensagem.WebAPI.csproj", "Apresentacao/ProjetoMetaMensagem.WebAPI/"]
+COPY ["Dominio/ProjetoMetaMensagem.Dominio.csproj", "Dominio/"]
+COPY ["Infraestrutura/ProjetoMetaMensagem.Infraestrutura.csproj", "Infraestrutura/"]
 
-# 2. Restaura as dependências do projeto principal
-RUN dotnet restore "source/ProjetoMetaMensagem.WebAPI/ProjetoMetaMensagem.WebAPI.csproj"
+# 2. Restaura as dependências
+RUN dotnet restore "Apresentacao/ProjetoMetaMensagem.WebAPI/ProjetoMetaMensagem.WebAPI.csproj"
 
-# 3. Copia todo o conteúdo da solução para dentro do container
+# 3. Copia todo o conteúdo e compila
 COPY . .
-
-# 4. Muda o diretório de trabalho para onde está o projeto WebAPI
-WORKDIR "/src/source/ProjetoMetaMensagem.WebAPI"
-
-# 5. Compila e publica os arquivos em modo Release
+WORKDIR "/src/Apresentacao/ProjetoMetaMensagem.WebAPI"
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# Estágio Final
+# Estágio Final - Rodando em .NET 6.0
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Define o fuso horário (opcional, mas útil para logs no Brasil)
-ENV TZ=America/Sao_Paulo
+# No .NET 6, a porta padrão é a 80
+ENV ASPNETCORE_URLS=http://+:80
+EXPOSE 80
 
 ENTRYPOINT ["dotnet", "ProjetoMetaMensagem.WebAPI.dll"]
