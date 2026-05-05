@@ -12,7 +12,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task Incluir(Empresa empresa);
         Task Alterar(Empresa empresa);
         Task Excluir(string id);
-        Task<Empresa?> ObterPorId(string id);
+        Task<Empresa?> ObterPorId(Guid id);
         Task<List<Empresa>> Obter();
     }
 }

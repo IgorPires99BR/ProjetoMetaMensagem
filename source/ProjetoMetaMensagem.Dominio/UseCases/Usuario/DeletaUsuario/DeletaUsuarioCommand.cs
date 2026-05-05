@@ -10,6 +10,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
 {
     public class DeletaUsuarioCommand : IRequest<Response<DeletaUsuarioResult>>
     {
+        public DeletaUsuarioCommand(Guid id)
+        {
+            Id = id;
+        }
         public Guid Id { get; set; }
     }
 }

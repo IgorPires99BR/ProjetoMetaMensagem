@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato;
@@ -16,6 +17,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
 
         [HttpPost("api/contato/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaContatoCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+        }
+
+        [HttpPut("api/contato/alterar")]
+        public async Task<IActionResult> Alterar([FromBody] AlteraContatoCommand command)
         {
             var resultado = await _mediator.Send(command);
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);

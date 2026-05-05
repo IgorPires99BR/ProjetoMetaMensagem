@@ -33,7 +33,6 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 )";
 
             var parameters = new DynamicParameters();
-            parameters.Add("Id", usuario.Id);
             parameters.Add("EmpresaId", usuario.EmpresaId);
             parameters.Add("Nome", usuario.Nome);
             parameters.Add("Email", usuario.Email);
@@ -72,7 +71,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Excluir(string id)
         {
-            var sql = $"DELETE FROM Usuarios WHERE {nameof(Usuario.Id)} = @Id";
+            var sql = $"DELETE FROM Usuario WHERE {nameof(Usuario.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 

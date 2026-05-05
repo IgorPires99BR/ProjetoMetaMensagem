@@ -45,6 +45,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
             existente.Nome = command.Nome;
             existente.Email = command.Email;
             existente.Telefone = command.Telefone;
+            existente.Cnpj = command.Cnpj;
             
             await _unitOfWork.Empresa.Alterar(existente);
 

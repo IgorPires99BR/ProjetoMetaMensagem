@@ -23,12 +23,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
         }
 
-        //[HttpPut("api/v2/empresa/alterar")]
-        //public async Task<IActionResult> Alterar([FromBody] AlteraEmpresaCommand command)
-        //{
-        //    var resultado = await _mediator.Send(command);
-        //    return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
-        //}
+        [HttpPut("api/v2/empresa/alterar")]
+        public async Task<IActionResult> Alterar([FromBody] AlteraEmpresaCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+        }
 
         [HttpDelete("api/v2/empresa/excluir/{id}")]
         public async Task<IActionResult> Excluir(string id)

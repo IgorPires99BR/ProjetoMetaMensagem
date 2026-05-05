@@ -12,7 +12,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
     public class AlteraEmpresaCommand : IRequest<Response<AlteraEmpresaResult>>
     {
         [Required]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public Guid Id { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -23,5 +23,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
 
         [MaxLength(50)]
         public string? Telefone { get; set; }
+        public string Cnpj { get; set; }
     }
 }

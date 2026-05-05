@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario;
+using ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
@@ -15,6 +17,22 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
 
         [HttpPost("api/usuario/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaUsuarioCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+        }
+
+        [HttpDelete("api/usuario/excluir/{id}")]
+        public async Task<IActionResult> Deletar(Guid id)
+        {
+            DeletaUsuarioCommand command = new DeletaUsuarioCommand(id);
+
+            var resultado = await _mediator.Send(command);
+            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+        }
+
+        [HttpPut("api/usuario/alterar")]
+        public async Task<IActionResult> Alterar([FromBody] AlteraUsuarioCommand command)
         {
             var resultado = await _mediator.Send(command);
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);

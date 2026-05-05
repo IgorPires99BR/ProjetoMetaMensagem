@@ -61,7 +61,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
-        public async Task<Empresa?> ObterPorId(string id)
+        public async Task<Empresa?> ObterPorId(Guid id)
         {
             var sql = $"SELECT * FROM Empresa WHERE {nameof(Empresa.Id)} = @Id";
             return await _session._connection.QueryFirstOrDefaultAsync<Empresa>(sql, new { Id = id }, transaction: _session.Transaction);
