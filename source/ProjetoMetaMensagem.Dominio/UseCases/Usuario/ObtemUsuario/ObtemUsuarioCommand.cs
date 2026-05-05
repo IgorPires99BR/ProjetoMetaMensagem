@@ -10,6 +10,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
 {
     public class ObtemUsuarioCommand : IRequest<Response<List<ObtemUsuarioResult>>>
     {
+        public ObtemUsuarioCommand(Guid idUsuario)
+        {
+            IdUsuario = idUsuario;
+        }
 
+        public Guid IdUsuario{ get; set; }
     }
 }

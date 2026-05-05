@@ -34,7 +34,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
                 return response;
             }
 
-            var usuariosBanco = await _unitOfWork.Usuario.Obter();
+            var usuariosBanco = await _unitOfWork.Usuario.ObterPorEmpresa(command.IdUsuario);
 
             foreach (var usuario in usuariosBanco)
             {

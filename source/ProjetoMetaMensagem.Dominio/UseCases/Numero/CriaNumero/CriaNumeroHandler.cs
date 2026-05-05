@@ -7,16 +7,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProjetoMetaMensagem.Dominio.Help.Error;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
 {
     public class CriaNumeroHandler : IRequestHandler<CriaNumeroCommand, Response<CriaNumeroResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMetaService _metaService;
 
-        public CriaNumeroHandler(IUnitOfWork unitOfWork)
+        public CriaNumeroHandler(IUnitOfWork unitOfWork, IMetaService metaService)
         {
             _unitOfWork = unitOfWork;
+            _metaService = metaService;
         }
 
         public async Task<Response<CriaNumeroResult>> Handle(CriaNumeroCommand command)
@@ -32,10 +35,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
                 return response;
             }
 
-            // Lógica de persistência (Exemplo)
-            // var novoNumero = new EntidadeNumero(command.Propriedade);
+
             await _unitOfWork.Numero.Incluir(new Entidades.Numero(command));
-            // await _unitOfWork.Commit();
 
             response.AddValue(new CriaNumeroResult());
 

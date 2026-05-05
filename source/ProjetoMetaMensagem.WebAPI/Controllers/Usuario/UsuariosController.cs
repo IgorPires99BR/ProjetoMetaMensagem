@@ -38,10 +38,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
         }
 
-        [HttpGet("api/usuario/obter-por-id/{id}")]
-        public async Task<IActionResult> ObterPorId(string id)
+        [HttpGet("api/usuario/obter-por-empresa/{idEmpresa}")]
+        public async Task<IActionResult> ObterPorId(Guid idEmpresa)
         {
-            var resultado = await _mediator.Send(new ObtemUsuarioCommand());
+            var resultado = await _mediator.Send(new ObtemUsuarioCommand(idEmpresa));
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.OK : (int)HttpStatusCode.NotFound, resultado);
         }
     }

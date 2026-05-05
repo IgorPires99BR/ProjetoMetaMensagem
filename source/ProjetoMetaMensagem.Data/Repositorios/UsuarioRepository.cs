@@ -77,7 +77,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<IEnumerable<Usuario>> ObterPorEmpresa(Guid id)
         {
-            var sql = $"SELECT * FROM Usuario WHERE {nameof(Usuario.Id)} = @Id";
+            var sql = $"SELECT * FROM Usuario WHERE {nameof(Usuario.EmpresaId)} = @Id";
             return await _session._connection.QueryAsync<Usuario>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 

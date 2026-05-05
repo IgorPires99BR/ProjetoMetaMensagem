@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using ProjetoMetaMensagem.Servico.Meta.EnviarMensagem;
 using ProjetoMetaMensagem.Servico.Meta.CriarTemplate;
 using ProjetoMetaMensagem.Dominio.Entidades.Meta.Template;
+using ProjetoMetaMensagem.Dominio.Entidades;
 
 namespace ProjetoMetaMensagem.Servico.Meta
 {
@@ -25,6 +26,38 @@ namespace ProjetoMetaMensagem.Servico.Meta
             _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
+        }
+
+        public async Task<bool> CadastrarNumeroAsync(Numero numero)
+        {
+            var endpoint = $"{numero.InstanciaId}/register";
+
+            var payload = new
+            {
+                messaging_product = "whatsapp",
+                pin = "123456" // TODO: Idealmente, este PIN deveria vir de uma configuração ou do objeto 'numero'
+            };
+
+            var json = JsonConvert.SerializeObject(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync(endpoint, content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Erro ao registrar número na Meta: {errorContent}");
+                }
+
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                // Tratamento de erro conforme o padrão do seu projeto
+                throw new Exception($"Falha na comunicação com a Meta: {ex.Message}");
+            }
         }
 
         public async Task<bool> EnviarTemplateAsync(string celular, string nomeTemplate)
