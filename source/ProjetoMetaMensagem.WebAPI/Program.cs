@@ -147,9 +147,6 @@ builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<L
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()) // Geralmente habilitamos apenas em Dev
-{
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -158,7 +155,9 @@ if (app.Environment.IsDevelopment()) // Geralmente habilitamos apenas em Dev
         // Se preferir acessar via /swagger, comente a linha abaixo.
         c.RoutePrefix = string.Empty;
     });
-}
+
+
+
 app.UseCors("AllowReactApp");
 
 //app.UseHttpsRedirection();
