@@ -18,8 +18,11 @@ namespace ProjetoMetaMensagem.Data
         public DbSession(IConfiguration configuration)
         {
             _configuration = configuration;
-
-            var connectionSQLServer = configuration.GetConnectionString("ContactSolutionDB");
+            #if DEBUG
+            var connectionSQLServer = configuration.GetConnectionString("ContactProdDB"); //ContactSolutionDB
+#else
+            var connectionSQLServer = configuration.GetConnectionString("ContactProdDB");
+#endif
             _connection = new SqlConnection(connectionSQLServer);
             _connection.Open();
 

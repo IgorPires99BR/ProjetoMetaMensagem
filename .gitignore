@@ -1,5 +1,44 @@
 ﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+# .NET Core & Visual Studio
 ################################################################################
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.doccache
+.DS_Store
+out/
 
-/.vs/ProjetoMetaMensagem/FileContentIndex/cb8b1fb2-8c72-47e3-9887-737e610d0ff5.vsidx
+################################################################################
+# Arquivos de Configuração Sensíveis (SEGURANÇA)
+################################################################################
+# Ignora o arquivo com suas senhas da Azure, Meta e Gmail
+appsettings.json
+
+# Se você quiser manter um modelo para outros devs, mantenha o Development
+# appsettings.Development.json
+
+################################################################################
+# Docker
+################################################################################
+.dockerignore
+# Se você tiver senhas no docker-compose local, pode ignorar também:
+# docker-compose.override.yml
+
+################################################################################
+# Node / Angular (Caso o Front-end esteja na mesma pasta)
+################################################################################
+node_modules/
+dist/
+.angular/
+.npm/
+npm-debug.log*
+
+################################################################################
+# Outros
+################################################################################
+.idea/
+.vscode/
+*.swp
+*.bak

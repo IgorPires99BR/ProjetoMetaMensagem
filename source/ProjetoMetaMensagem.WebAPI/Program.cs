@@ -148,13 +148,17 @@ builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<L
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+if (app.Environment.IsDevelopment()) // Geralmente habilitamos apenas em Dev
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Sua API v1");
-    c.RoutePrefix = string.Empty; // Opcional: faz o Swagger abrir direto no localhost:5000/
-});
-
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Projeto Meta Mensagem V1");
+        // Se quiser que abra direto ao iniciar, deixe vazio. 
+        // Se preferir acessar via /swagger, comente a linha abaixo.
+        c.RoutePrefix = string.Empty;
+    });
+}
 app.UseCors("AllowReactApp");
 
 //app.UseHttpsRedirection();
