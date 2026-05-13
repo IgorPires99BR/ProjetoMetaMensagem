@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
@@ -18,8 +19,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
 
     public class ComponenteTemplateCommand
     {
+        [JsonPropertyName("tipo")] // Mapeia a entrada do JSON 'tipo' para a propriedade 'Tipo'
         public string Tipo { get; set; } // BODY, HEADER, etc.
         public string? Formato { get; set; } // TEXT, IMAGE (Opcional)
+        [JsonPropertyName("texto")] // Mapeia a entrada do JSON 'tipo' para a propriedade 'Tipo'
         public string? Texto { get; set; } // Opcional (ex: botões não têm texto aqui)
         public List<BotaoTemplateCommand>? Botoes { get; set; } // Opcional
     }

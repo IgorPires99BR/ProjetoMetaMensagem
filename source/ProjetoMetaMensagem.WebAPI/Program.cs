@@ -26,6 +26,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 using ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero;
@@ -103,15 +104,6 @@ builder.Services.AddScoped<IRequestHandler<CriarTemplateMetaCommand, Response<Cr
 builder.Services.AddScoped<IRequestHandler<EsqueceuASenhaCommand, Response<EsqueceuASenhaResult>>, EsqueceuASenhaHandler>();
 builder.Services.AddScoped<IRequestHandler<LoginCommand, Response<LoginResult>>, LoginHandler>();
 
-
-//Registros de Companies
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.DeletaEmpresa.DeletaEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.DeletaEmpresa.DeletaEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.DeletaEmpresa.DeletaEmpresaHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa.AlteraEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa.AlteraEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa.AlteraEmpresaHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.ObtemEmpresa.ObtemEmpresaCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.ObtemEmpresa.ObtemEmpresaResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.ObtemEmpresa.ObtemEmpresaHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.CriaEmpresa.CriaEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.CriaEmpresa.CriaEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.CriaEmpresa.CriaEmpresaHandler>();
-
-//Registros de Flows
-
 //Registros de Empresas
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaHandler>();
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaHandler>();
@@ -137,6 +129,9 @@ builder.Services.AddScoped<IRequestHandler<AlteraContatoCommand, Response<Altera
 builder.Services.AddScoped<IRequestHandler<DeletaContatoCommand, Response<DeletaContatoResult>>, DeletaContatoHandler>();
 builder.Services.AddScoped<IRequestHandler<ObtemContatoCommand, Response<List<ObtemContatoResult>>>, ObtemContatoHandler>();
 
+//Registros de Mensagem
+builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaCommand, Response<EnviarMensagemTemplateMetaResult>>, EnviarMensagemTemplateMetaHandler>();
+
 
 builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();
 builder.Services.AddScoped<IRequestHandler<CriaFlowCommand, Response<CriaFlowResult>>, CriaFlowHandler>();
@@ -146,7 +141,7 @@ builder.Services.AddScoped<IRequestHandler<CriaFlowCommand, Response<CriaFlowRes
 builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<List<ListaConversaPorIdResult>>>, ListaConversaPorIdHandler>();
 
 var app = builder.Build();
-
+ 
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {

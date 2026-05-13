@@ -9,6 +9,7 @@ using ProjetoMetaMensagem.Servico.Meta.EnviarMensagem;
 using ProjetoMetaMensagem.Servico.Meta.CriarTemplate;
 using ProjetoMetaMensagem.Dominio.Entidades.Meta.Template;
 using ProjetoMetaMensagem.Dominio.Entidades;
+using ProjetoMetaMensagem.Dominio.Entidades.Meta.Template.EnviarMensagemTemplate;
 
 namespace ProjetoMetaMensagem.Servico.Meta
 {
@@ -60,38 +61,32 @@ namespace ProjetoMetaMensagem.Servico.Meta
             }
         }
 
-        public async Task<bool> EnviarTemplateAsync(string celular, string nomeTemplate)
+        public async Task<bool> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao)
         {
-            // 1. Monta o objeto exatamente como o Python
-            var payload = new MetaMessageRequest
+            // 2. Serializa ignorando campos nulos (importante para não enviar 'sub_type' em textos simples)
+            var settings = new JsonSerializerSettings
             {
-                To = celular,
-                Type = "template",
-                Template = new TemplateRequest
-                {
-                    Name = nomeTemplate, // Agora usa o que vem do Swagger
-                    Language = new LanguageRequest { Code = "pt_BR" } // Ajuste conforme sua necessidade
-                }
+                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
+                NullValueHandling = NullValueHandling.Ignore
             };
 
-            var json = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
-            {
-                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
-            });
-
+            var json = JsonConvert.SerializeObject(requisicao, settings);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
+            // 3. Dispara para o endpoint da Meta usando o PhoneNumberId da sua configuração
             var response = await _httpClient.PostAsync($"{_configuration.PhoneNumberId}/messages", content);
 
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception(errorContent);
+                // Logar o errorContent aqui ajuda muito no debug da Contact Solution
+                throw new Exception($"Erro na API da Meta: {errorContent}");
             }
 
             return response.IsSuccessStatusCode;
         }
 
+        //Só é possivel enviar mensagem com texto Livre Quando há uma janela de conversa aberta
         public async Task<bool> EnviarTextoLivreAsync(string celular, string mensagem)
         {
             // 1. Monta o objeto seguindo a estrutura exata da Meta para texto livre
@@ -124,22 +119,27 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
         public async Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate)
         {
-            // A criação de templates é feita no endpoint do WABA_ID (WhatsApp Business Account)
-            // Se o seu PhoneNumberId for o mesmo que o WABA, pode manter, 
-            // caso contrário, adicione o WabaId na sua ApiWhatsappConnectionConfiguration.
-            var endpoint = $"{_configuration.PhoneNumberId}/message_templates";
+            // IMPORTANTE: Use o WABA_ID aqui, não o PhoneNumberId
+            var wabaId = _configuration.WabaID;
 
+            var endpoint = $"https://graph.facebook.com/v20.0/{wabaId}/message_templates";
 
-
+            // Serializa garantindo que campos nulos não sejam enviados (como 'format' vazio)
             var json = JsonConvert.SerializeObject(novoTemplate, new JsonSerializerSettings
             {
-                NullValueHandling = NullValueHandling.Ignore // Ignora campos nulos como 'format' no Body
+                NullValueHandling = NullValueHandling.Ignore,
+                ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver
+                {
+                    NamingStrategy = new Newtonsoft.Json.Serialization.SnakeCaseNamingStrategy()
+                }
             });
 
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync(endpoint, content);
+            // Adicione o Header de Autenticação se não estiver no HttpClient global
+            // _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
 
+            var response = await _httpClient.PostAsync(endpoint, content);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
@@ -147,7 +147,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 throw new Exception($"Erro ao criar template na Meta: {responseContent}");
             }
 
-            // Retorna o ID do template criado ou o JSON de sucesso
             return responseContent;
         }
     }

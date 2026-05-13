@@ -1,4 +1,5 @@
 ﻿using ProjetoMetaMensagem.Dominio.Entidades.Meta.Template;
+using ProjetoMetaMensagem.Dominio.Entidades.Meta.Template.EnviarMensagemTemplate;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 {
     public interface IMetaService
     {
-        Task<bool> EnviarTemplateAsync(string celulcar, string nomeTemplate);
+        Task<bool> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao);
         Task<bool> EnviarTextoLivreAsync(string celular, string mensagem);
 
         Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate);

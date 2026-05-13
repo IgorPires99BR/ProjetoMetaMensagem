@@ -32,7 +32,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
             //}
 
             // 2. Chamada ao serviço de integração com a Meta
-            var sucesso = await _whatsappService.EnviarTemplateAsync(request.Celular, request.Template);
+            var sucesso = await _whatsappService.EnviarTextoLivreAsync(request.Celular, request.Template);
 
             if (sucesso == null)
             {

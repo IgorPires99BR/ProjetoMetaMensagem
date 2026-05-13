@@ -1,27 +1,21 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
-using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
+namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta
 {
-    public class CriarTemplateMetaHandler : IRequestHandler<CriarTemplateMetaCommand, Response<CriarTemplateMetaResult>>
+    public class EnviarMensagemTemplateMetaHandler : IRequestHandler<EnviarMensagemTemplateMetaCommand, Response<EnviarMensagemTemplateMetaResult>>
     {
         private readonly IMetaService _whatsappService;
 
-        public CriarTemplateMetaHandler(IMetaService whatsappService)
+        public EnviarMensagemTemplateMetaHandler(IMetaService whatsappService)
         {
             _whatsappService = whatsappService;
         }
 
-        public async Task<Response<CriarTemplateMetaResult>> Handle(CriarTemplateMetaCommand command)
+        public async Task<Response<EnviarMensagemTemplateMetaResult>> Handle(EnviarMensagemTemplateMetaCommand command)
         {
-            var response = new Response<CriarTemplateMetaResult>();
+            var response = new Response<EnviarMensagemTemplateMetaResult>();
 
             //var validator = new CriaClienteValidator();
             //var validateResult = validator.Validate(request);
@@ -35,7 +29,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
             try
             {
                 // 2. Chamada ao serviço de integração com a Meta
-                var sucesso = await _whatsappService.CriarTemplateMetaAsync(new Entidades.Meta.Template.CreateTemplateRequisicao(command));
+                var sucesso = await _whatsappService.EnviarTemplateAsync(new Entidades.Meta.Template.EnviarMensagemTemplate.EnviarMensagemTemplateRequisicao(command));
 
                 if (sucesso == null)
                 {
@@ -43,8 +37,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
                     return response;
                 }
 
-            } catch (Exception ex) 
-            { 
+            }
+            catch (Exception ex)
+            {
                 response.AddErro("Erro ao criar template na Meta:" + ex.Message);
             }
 
