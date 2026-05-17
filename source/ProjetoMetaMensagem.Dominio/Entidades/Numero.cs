@@ -22,8 +22,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         {
             UsuarioId = command.UsuarioId;
             Telefone = command.NumeroTelefone;
-            Descricao = command.Descricao;
-            InstanciaId = command.InstanciaId;
+            Descricao = command.NomeEmpresa;
             DataCriacao = DateTime.Now;
         }
 
@@ -55,6 +54,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         [MaxLength(255)]
         public string? InstanciaId { get; set; }
+
+        public string? StatusMeta { get; set; }
+
+        public string? QualidadeMeta { get; set; }
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
     }

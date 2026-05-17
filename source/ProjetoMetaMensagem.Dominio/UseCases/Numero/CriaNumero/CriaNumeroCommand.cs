@@ -16,8 +16,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
 
         public string NumeroTelefone { get; set; }
 
-        public string? Descricao { get; set; }
-
-        public string? InstanciaId { get; set; }
+        public string? NomeEmpresa { get; set; }
     }
 }

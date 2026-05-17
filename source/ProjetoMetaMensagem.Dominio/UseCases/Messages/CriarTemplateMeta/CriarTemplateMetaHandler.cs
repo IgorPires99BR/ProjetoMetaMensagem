@@ -35,7 +35,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
             try
             {
                 // 2. Chamada ao serviço de integração com a Meta
-                var sucesso = await _whatsappService.CriarTemplateMetaAsync(new Entidades.Meta.Template.CreateTemplateRequisicao(command));
+                var sucesso = await _whatsappService.CriarTemplateMetaAsync(new Entidades.Servico.Meta.Template.CreateTemplateRequisicao(command));
 
                 if (sucesso == null)
                 {

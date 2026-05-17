@@ -1,7 +1,6 @@
 ﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa;
 using System;
 using System.Collections.Generic;
 using System.Linq;

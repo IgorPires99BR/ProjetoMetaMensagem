@@ -32,7 +32,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria, @Idioma, @Status);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
-            template.Id = await _session._connection.QuerySingleAsync<int>(sql, template, transaction: _session.Transaction);
+            await _session._connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Template template)
@@ -49,26 +49,26 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session._connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
         }
 
-        public async Task Excluir(int id)
+        public async Task Excluir(Guid id)
         {
-            var sql = $"DELETE FROM Templates WHERE {nameof(Template.Id)} = @Id";
+            var sql = $"DELETE FROM Template WHERE {nameof(Template.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<Template?> ObterPorId(int id)
         {
-            var sql = $"SELECT * FROM Templates WHERE {nameof(Template.Id)} = @Id";
+            var sql = $"SELECT * FROM Template WHERE {nameof(Template.Id)} = @Id";
             return await _session._connection.QueryFirstOrDefaultAsync<Template>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Template>> Obter()
         {
-            return await _session._connection.QueryAsync<Template>("SELECT * FROM Templates", transaction: _session.Transaction);
+            return await _session._connection.QueryAsync<Template>("SELECT * FROM Template", transaction: _session.Transaction);
         }
 
-        public async Task<IEnumerable<Template>> ObterPorEmpresa(string empresaId)
+        public async Task<IEnumerable<Template>> ObterPorEmpresa(Guid empresaId)
         {
-            var sql = $"SELECT * FROM Templates WHERE {nameof(Template.EmpresaId)} = @EmpresaId";
+            var sql = $"SELECT * FROM Template WHERE {nameof(Template.EmpresaId)} = @EmpresaId";
             return await _session._connection.QueryAsync<Template>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
     }

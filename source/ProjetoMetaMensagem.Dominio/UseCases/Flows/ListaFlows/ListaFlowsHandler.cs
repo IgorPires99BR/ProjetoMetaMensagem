@@ -1,7 +1,6 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.ObtemEmpresa;
 using System;
 using System.Collections.Generic;
 using System.Linq;

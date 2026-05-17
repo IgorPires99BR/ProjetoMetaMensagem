@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
-using ProjetoMetaMensagem.Dominio.UseCases.Numero.ObtemNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
 {
@@ -20,10 +21,17 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
         }
 
-        [HttpGet("api/numero/obter-por-usuario/{usuarioId}")]
-        public async Task<IActionResult> ObterPorUsuario(string usuarioId)
+        [HttpGet("api/numero/ListarNumeros/{usuarioId}")]
+        public async Task<IActionResult> ListarNumeros(Guid usuarioId)
         {
-            var resultado = await _mediator.Send(new ObtemNumeroCommand(usuarioId));
+            var resultado = await _mediator.Send(new ListarNumerosCommand(usuarioId));
+            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+        }
+
+        [HttpGet("api/numero/AtualizarNumerosMeta/{usuarioId}")]
+        public async Task<IActionResult> AtualizarNumerosMeta(Guid usuarioId)
+        {
+            var resultado = await _mediator.Send(new AtualizaNumeroMetaCommand(usuarioId));
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
     }

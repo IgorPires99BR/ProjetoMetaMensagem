@@ -29,7 +29,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             try
             {
                 // 2. Chamada ao serviço de integração com a Meta
-                var sucesso = await _whatsappService.EnviarTemplateAsync(new Entidades.Meta.Template.EnviarMensagemTemplate.EnviarMensagemTemplateRequisicao(command));
+                var sucesso = await _whatsappService.EnviarTemplateAsync(new Entidades.Servico.Meta.Template.EnviarMensagemTemplate.EnviarMensagemTemplateRequisicao(command));
 
                 if (sucesso == null)
                 {

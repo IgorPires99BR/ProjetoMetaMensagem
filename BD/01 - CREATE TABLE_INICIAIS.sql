@@ -1,4 +1,4 @@
-USE ContactSolutionDB;
+﻿USE ContactSolutionDB;
 GO
 
 -- 1. Tabela 'Empresa'
@@ -8,10 +8,18 @@ BEGIN
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         Nome NVARCHAR(255) NOT NULL,
         Email NVARCHAR(255),
-		Cnpj NVARCHAR(20),
+        WabaId NVARCHAR(100),       -- Mantido (ID da Conta Comercial do WhatsApp)
+        Cnpj NVARCHAR(20),
         Telefone NVARCHAR(50),
         DataCriacao DATETIME DEFAULT GETDATE(),
-        DataAtualizacao DATETIME NULL
+        DataAtualizacao DATETIME NULL,
+
+        -- 🚀 NOVOS CAMPOS ADICIONADOS:
+        MetaAccessToken NVARCHAR(MAX) NULL,             -- Armazena o token permanente (System User Token) de cada cliente
+        AppIdMeta NVARCHAR(100) NULL,                   -- ID do App da Meta vinculado (útil para rastreamento e segurança)
+        StatusAccount NVARCHAR(50) DEFAULT 'Ativo',     -- Controle administrativo do SaaS (Ex: Ativo, Suspenso, Inadimplente)
+        TokenWebhookLocal UNIQUEIDENTIFIER DEFAULT NEWID(), -- GUID único por tenant para isolar e validar as rotas de Webhook de entrada
+        PlanoId NVARCHAR(50) DEFAULT 'Bronze'           -- Define o limite e os recursos de disparos no C# (Ex: Bronze, Prata, Ouro)
     );
 END
 GO
@@ -43,6 +51,8 @@ BEGIN
         Telefone NVARCHAR(50) NOT NULL,
         Descricao NVARCHAR(100),
         InstanciaId NVARCHAR(255),
+        StatusMeta NVARCHAR(50),    -- Ex: CONNECTED, PENDING, FLAGGED
+        QualidadeMeta NVARCHAR(50), -- Ex: GREEN, YELLOW, RED
         DataCriacao DATETIME DEFAULT GETDATE(),
         DataAtualizacao DATETIME NULL,
 

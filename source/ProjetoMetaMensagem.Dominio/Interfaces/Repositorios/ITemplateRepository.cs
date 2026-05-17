@@ -11,9 +11,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
     {
         Task Incluir(Template template);
         Task Alterar(Template template);
-        Task Excluir(int id);
+        Task Excluir(Guid id);
         Task<Template?> ObterPorId(int id);
         Task<IEnumerable<Template>> Obter();
-        Task<IEnumerable<Template>> ObterPorEmpresa(string empresaId);
+        Task<IEnumerable<Template>> ObterPorEmpresa(Guid empresaId);
     }
 }

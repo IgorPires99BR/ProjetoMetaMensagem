@@ -11,13 +11,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
     public class Template
     {
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         [Required]
-        public string EmpresaId { get; set; }
-
-        [ForeignKey("EmpresaId")]
-        public Empresa Empresa { get; set; }
+        public Guid EmpresaId { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -34,5 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         [MaxLength(50)]
         public string? Status { get; set; }
+        public DateTime DataCriacao { get; set; }
+        public DateTime? DataAtualizacao { get; set; }
     }
 }

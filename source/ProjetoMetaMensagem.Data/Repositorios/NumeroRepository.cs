@@ -26,9 +26,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Numero.Telefone)}, 
                     {nameof(Numero.Descricao)}, 
                     {nameof(Numero.InstanciaId)},
+                    {nameof(Numero.StatusMeta)},
+                    {nameof(Numero.QualidadeMeta)},
                     {nameof(Numero.DataCriacao)}
                 ) 
-                VALUES (@UsuarioId, @Telefone, @Descricao, @InstanciaId, @DataCriacao);
+                VALUES (@UsuarioId, @Telefone, @Descricao, @InstanciaId,@StatusMeta,@QualidadeMeta, @DataCriacao);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             await _session._connection.QuerySingleAsync<Numero>(sql, numero, transaction: _session.Transaction);
@@ -41,13 +43,15 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SET 
                     {nameof(Numero.Telefone)} = @Telefone, 
                     {nameof(Numero.Descricao)} = @Descricao, 
-                    {nameof(Numero.InstanciaId)} = @InstanciaId
+                    {nameof(Numero.InstanciaId)} = @InstanciaId,
+                    {nameof(Numero.StatusMeta)} = @StatusMeta,
+                    {nameof(Numero.QualidadeMeta)} = @QualidadeMeta
                 WHERE {nameof(Numero.Id)} = @Id";
 
             await _session._connection.ExecuteAsync(sql, numero, transaction: _session.Transaction);
         }
 
-        public async Task Excluir(string id)
+        public async Task Excluir(Guid id)
         {
             var sql = $"DELETE FROM Numero WHERE {nameof(Numero.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);

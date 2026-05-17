@@ -1,6 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.CriaEmpresa;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,23 +14,6 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             
         }
 
-        public Companies(AlteraEmpresaCommand command)
-        {
-            name = command.Nome;
-            email = command.Email;
-            bot_whatsapp = command.BotWhatsapp;
-            phone = command.Telefone;
-            created_at = DateTime.Now;
-        }
-
-        public Companies(CriaEmpresaCommand command)
-        {
-            name = command.Nome;
-            email = command.Email;
-            bot_whatsapp = command.BotWhatsapp;
-            phone = command.Telefone;
-            created_at = DateTime.Now;
-        }
 
         public string id { get; set; } = null!;
         public string name { get; set; } = null!;

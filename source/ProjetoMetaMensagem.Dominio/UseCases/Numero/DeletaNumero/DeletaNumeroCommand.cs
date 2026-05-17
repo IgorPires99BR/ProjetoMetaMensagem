@@ -10,6 +10,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero
 {
     public class DeletaNumeroCommand : IRequest<Response<DeletaNumeroResult>>
     {
-        public string Id{ get; set; }
+        public Guid Id{ get; set; }
     }
 }

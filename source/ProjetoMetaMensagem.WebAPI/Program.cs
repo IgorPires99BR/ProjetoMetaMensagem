@@ -7,10 +7,6 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.AlteraEmpresa;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.CriaEmpresa;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.DeletaEmpresa;
-using ProjetoMetaMensagem.Dominio.UseCases.Admin.Companies.ObtemEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
@@ -30,7 +26,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero;
-using ProjetoMetaMensagem.Dominio.UseCases.Numero.ObtemNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario;
@@ -39,6 +35,11 @@ using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Email;
 using ProjetoMetaMensagem.Servico.Meta;
 using ProjetoMetaMensagem.Servico.Twilio;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,10 +106,10 @@ builder.Services.AddScoped<IRequestHandler<EsqueceuASenhaCommand, Response<Esque
 builder.Services.AddScoped<IRequestHandler<LoginCommand, Response<LoginResult>>, LoginHandler>();
 
 //Registros de Empresas
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa.CriaEmpresaHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa.AlteraEmpresaHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa.DeletaEmpresaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa.DeletaEmpresaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa.DeletaEmpresaHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa.ObtemEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<CriaEmpresaCommand, Response<CriaEmpresaResult>>, CriaEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<AlteraEmpresaCommand, Response<AlteraEmpresaResult>>, AlteraEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<DeletaEmpresaCommand, Response<DeletaEmpresaResult>>, DeletaEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler< ObtemEmpresaCommand, Response<List<ObtemEmpresaResult>>>, ObtemEmpresaHandler>();
 
 
 //Registros de Usuario
@@ -121,7 +122,15 @@ builder.Services.AddScoped<IRequestHandler<ObtemUsuarioCommand, Response<List<Ob
 builder.Services.AddScoped<IRequestHandler<CriaNumeroCommand, Response<CriaNumeroResult>>, CriaNumeroHandler>();
 builder.Services.AddScoped<IRequestHandler<AlteraNumeroCommand, Response<AlteraNumeroResult>>, AlteraNumeroHandler>();
 builder.Services.AddScoped<IRequestHandler<DeletaNumeroCommand, Response<DeletaNumeroResult>>, DeletaNumeroHandler>();
-builder.Services.AddScoped<IRequestHandler<ObtemNumeroCommand, Response<List<ObtemNumeroResult>>>, ObtemNumeroHandler>();
+builder.Services.AddScoped<IRequestHandler<ListarNumerosCommand, Response<List<ListarNumerosResult>>>, ListarNumerosHandler>();
+builder.Services.AddScoped<IRequestHandler<AtualizaNumeroMetaCommand, Response<List<AtualizaNumeroMetaResult>>>, AtualizaNumeroMetaHandler>();
+
+//Registros de Template
+builder.Services.AddScoped<IRequestHandler<CriaTemplateCommand, Response<CriaTemplateResult>>, CriaTemplateHandler>();
+builder.Services.AddScoped<IRequestHandler<DeletaTemplateCommand, Response<DeletaTemplateResult>>, DeletaTemplateHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaTemplateCommand, Response<List<ListaTemplateResult>>>, ListaTemplateHandler>();
+builder.Services.AddScoped<IRequestHandler<AtualizaTemplateMetaCommand, Response<AtualizaTemplateMetaResult>>, AtualizaTemplateMetaHandler>();
+
 
 //Registros de Contato
 builder.Services.AddScoped<IRequestHandler<CriaContatoCommand, Response<CriaContatoResult>>, CriaContatoHandler>();

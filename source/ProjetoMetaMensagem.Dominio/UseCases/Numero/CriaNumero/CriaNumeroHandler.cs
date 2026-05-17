@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
 {
@@ -35,10 +36,45 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
                 return response;
             }
 
+            try
+            {
+                // 2. Monta a requisição de domínio e envia para a Meta
+                var requisicaoMeta = new CriaNumeroMetaRequisicao
+                {
+                    Telefone = command.NumeroTelefone,
+                    NomeVerificado = command.NomeEmpresa,
+                    CodigoPais = "55"
+                };
 
-            await _unitOfWork.Numero.Incluir(new Entidades.Numero(command));
+                var respostaMeta = await _metaService.CriarNumeroMetaAsync(requisicaoMeta);
 
-            response.AddValue(new CriaNumeroResult());
+                if (respostaMeta == null || string.IsNullOrEmpty(respostaMeta.Id))
+                {
+                    response.AddErro("A Meta aceitou a requisição, mas não retornou um identificador válido.");
+                    return response;
+                }
+
+                var novoNumero = new Entidades.Numero
+                {
+                    Id = Guid.NewGuid(),
+                    UsuarioId = command.UsuarioId,
+                    Telefone = command.NumeroTelefone,
+                    Descricao = command.NomeEmpresa, // Usando o nome verificado como descrição inicial
+                    InstanciaId = respostaMeta.Id,       // O Phone Number ID retornado pela Meta
+                    StatusMeta = "PENDING",             // Status inicial padrão de onboarding
+                    QualidadeMeta = "UNKNOWN",          // Qualidade inicial até a Meta analisar o chip
+                    DataCriacao = DateTime.Now
+                };
+
+                // 4. Salva no banco de dados utilizando seu Unit of Work
+                await _unitOfWork.Numero.Incluir(novoNumero);
+
+            }
+            catch (Exception ex)
+            {
+                // Captura falhas de comunicação com a API ou erros internos do banco
+                response.AddErro($"Falha ao cadastrar número: {ex.Message}");
+            }
 
             return response;
         }
