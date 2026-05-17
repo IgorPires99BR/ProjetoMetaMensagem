@@ -19,6 +19,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public Contato(CriaContatoCommand command)
         {
+            Id = Guid.NewGuid();
             UsuarioId = command.UsuarioId;
             Telefone = command.Telefone;
             Nome = command.Nome;

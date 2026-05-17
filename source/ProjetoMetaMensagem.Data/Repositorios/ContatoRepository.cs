@@ -42,7 +42,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 DataCriacao = DateTimeOffset.Now
             };
 
-            await _session._connection.QuerySingleAsync<int>(sql, parameters, transaction: _session.Transaction);
+            await _session._connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Contato contato)

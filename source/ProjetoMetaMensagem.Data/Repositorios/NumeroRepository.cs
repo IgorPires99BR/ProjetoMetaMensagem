@@ -33,7 +33,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 VALUES (@UsuarioId, @Telefone, @Descricao, @InstanciaId,@StatusMeta,@QualidadeMeta, @DataCriacao);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
-            await _session._connection.QuerySingleAsync<Numero>(sql, numero, transaction: _session.Transaction);
+            await _session._connection.ExecuteAsync(sql, numero, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Numero numero)
