@@ -33,7 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
             }
 
             // Lógica para adicionar o contato via UnitOfWork aqui
-            _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
+            await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
 
             response.AddValue(new CriaContatoResult());
             return response;
