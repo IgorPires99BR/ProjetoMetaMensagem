@@ -14,6 +14,7 @@ using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
 using ProjetoMetaMensagem.Servico.Meta.Templates.ObtemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
 using ProjetoMetaMensagem.Servico.Meta.WhatsappAccount.BuscarWabaIDMeta;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplateLote;
 
 namespace ProjetoMetaMensagem.Servico.Meta
 {
@@ -280,8 +281,44 @@ namespace ProjetoMetaMensagem.Servico.Meta
             return responseContent;
         }
 
+        public async Task<Dictionary<string, bool>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote)
+        {
+            var resultadoLote = new Dictionary<string, bool>();
+
+            // 1. Explode o lote utilizando a inteligência que criamos na classe de domínio
+            var requisicoesIndividuais = requisicaoLote.GerarRequisicoesIndividuais();
+
+            // 2. Processa os envios em paralelo aproveitando a concorrência do HttpClient
+            var tarefas = requisicoesIndividuais.Select(async req =>
+            {
+                try
+                {
+                    // Reaproveita diretamente a sua lógica e tratamento de erro do EnviarTemplateAsync
+                    var sucesso = await EnviarTemplateAsync(req);
+                    return new { Telefone = req.Para, Sucesso = sucesso };
+                }
+                catch
+                {
+                    return new { Telefone = req.Para, Sucesso = false };
+                }
+            });
+
+            var respostas = await Task.WhenAll(tarefas);
+
+            // 3. Alimenta o dicionário limpando chaves duplicadas
+            foreach (var resposta in respostas)
+            {
+                if (!resultadoLote.ContainsKey(resposta.Telefone))
+                {
+                    resultadoLote.Add(resposta.Telefone, resposta.Sucesso);
+                }
+            }
+
+            return resultadoLote;
+        }
+
         #endregion
 
-        
+
     }
 }

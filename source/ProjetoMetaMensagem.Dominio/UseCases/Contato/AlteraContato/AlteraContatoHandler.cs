@@ -33,7 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
             }
 
             // Lógica para atualizar o contato via UnitOfWork aqui
-            _unitOfWork.Contato.Alterar(new Entidades.Contato(command));
+            await _unitOfWork.Contato.Alterar(new Entidades.Contato(command));
 
 
             response.AddValue(new AlteraContatoResult());

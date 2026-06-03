@@ -10,6 +10,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
 {
     public class EnviarMensagemTemplateRequisicao
     {
+        public EnviarMensagemTemplateRequisicao()
+        {
+            
+        }
         public EnviarMensagemTemplateRequisicao(EnviarMensagemTemplateMetaCommand command)
         {
             if (command == null) return;
