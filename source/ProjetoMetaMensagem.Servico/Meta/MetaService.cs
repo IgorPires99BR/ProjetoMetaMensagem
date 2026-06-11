@@ -15,6 +15,8 @@ using ProjetoMetaMensagem.Servico.Meta.Templates.ObtemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
 using ProjetoMetaMensagem.Servico.Meta.WhatsappAccount.BuscarWabaIDMeta;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplateLote;
+using ProjetoMetaMensagem.Servico.Meta.Mensagens.EnviarMensagemTemplate;
+using ProjetoMetaMensagem.Dominio.Common;
 
 namespace ProjetoMetaMensagem.Servico.Meta
 {
@@ -148,8 +150,21 @@ namespace ProjetoMetaMensagem.Servico.Meta
         #endregion
 
         #region TEMPLATES
-        public async Task<bool> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao)
+        public async Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao)
         {
+
+            var requestMeta = new EnviarMensagemTemplateRequest
+            {
+                To = requisicao.Para,
+                Template = new TemplateDataRequest
+                {
+                    Name = requisicao.Template.Nome,
+                    Language = new LanguageDataRequest { Code = requisicao.Template.Idioma?.Codigo },
+                    // Converte os componentes tipados do domínio para a lista genérica aceita pela infraestrutura
+                    Components = requisicao.Template.Componentes?.Cast<object>().ToList()
+                }
+            };
+
             // 2. Serializa ignorando campos nulos (importante para não enviar 'sub_type' em textos simples)
             var settings = new JsonSerializerSettings
             {
@@ -157,20 +172,32 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 NullValueHandling = NullValueHandling.Ignore
             };
 
-            var json = JsonConvert.SerializeObject(requisicao, settings);
+            var json = JsonConvert.SerializeObject(requestMeta, settings);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // 3. Dispara para o endpoint da Meta usando o PhoneNumberId da sua configuração
             var response = await _httpClient.PostAsync($"{_configuration.PhoneNumberId}/messages", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                // Logar o errorContent aqui ajuda muito no debug da Contact Solution
-                throw new Exception($"Erro na API da Meta: {errorContent}");
+                // Em vez de estourar uma exception que quebra o lote todo, devolvemos o objeto encapsulando a falha
+                return new EnviarMensagemTemplateResposta
+                {
+                    Sucesso = false,
+                    Erro = $"Erro na API da Meta: {responseContent}"
+                };
             }
 
-            return response.IsSuccessStatusCode;
+            // Deserializa o JSON de sucesso usando a sua nova classe Response da Meta
+            var metaResponse = JsonConvert.DeserializeObject<EnviarMensagemTemplateResponse>(responseContent);
+            var wamid = metaResponse?.Messages?.FirstOrDefault()?.Id;
+
+            return new EnviarMensagemTemplateResposta
+            {
+                Sucesso = true,
+                WamidMeta = wamid
+            };
         }
 
         public async Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync()
@@ -281,11 +308,11 @@ namespace ProjetoMetaMensagem.Servico.Meta
             return responseContent;
         }
 
-        public async Task<Dictionary<string, bool>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote)
+        public async Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote)
         {
-            var resultadoLote = new Dictionary<string, bool>();
+            var resultadoLote = new Dictionary<string, EnviarMensagemTemplateResposta>();
 
-            // 1. Explode o lote utilizando a inteligência que criamos na classe de domínio
+            // 1. Explode o lote utilizando a inteligência da sua classe de domínio
             var requisicoesIndividuais = requisicaoLote.GerarRequisicoesIndividuais();
 
             // 2. Processa os envios em paralelo aproveitando a concorrência do HttpClient
@@ -293,24 +320,46 @@ namespace ProjetoMetaMensagem.Servico.Meta
             {
                 try
                 {
-                    // Reaproveita diretamente a sua lógica e tratamento de erro do EnviarTemplateAsync
-                    var sucesso = await EnviarTemplateAsync(req);
-                    return new { Telefone = req.Para, Sucesso = sucesso };
+                    // Mapeia o objeto do seu domínio diretamente para o DTO de Request do Serviço de Infraestrutura
+                    var requestMeta = new EnviarMensagemTemplateRequisicao
+                    {
+                        Para = req.Para,
+                        Template = new TemplateData
+                        {
+                            Nome = req.Template.Nome,
+                            Idioma = new LanguageData { Codigo = req.Template.Idioma?.Codigo },
+                            // Cast simples ou mapeamento dos componentes gerados pela classe de domínio
+                            Componentes = req.Template.Componentes.Cast<ComponenteEnvio>().ToList()
+                        }
+                    };
+
+                    // Reaproveita a lógica que dispara para a API da Meta e extrai o wamid
+                    var respostaIndividual = await EnviarTemplateAsync(requestMeta);
+
+                    return new { Telefone = req.Para, Resposta = respostaIndividual };
                 }
-                catch
+                catch (Exception ex)
                 {
-                    return new { Telefone = req.Para, Sucesso = false };
+                    return new
+                    {
+                        Telefone = req.Para,
+                        Resposta = new EnviarMensagemTemplateResposta
+                        {
+                            Sucesso = false,
+                            Erro = ex.Message
+                        }
+                    };
                 }
             });
 
             var respostas = await Task.WhenAll(tarefas);
 
             // 3. Alimenta o dicionário limpando chaves duplicadas
-            foreach (var resposta in respostas)
+            foreach (var item in respostas)
             {
-                if (!resultadoLote.ContainsKey(resposta.Telefone))
+                if (!resultadoLote.ContainsKey(item.Telefone))
                 {
-                    resultadoLote.Add(resposta.Telefone, resposta.Sucesso);
+                    resultadoLote.Add(item.Telefone, item.Resposta);
                 }
             }
 

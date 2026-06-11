@@ -97,6 +97,8 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IContatoRepository, ContatoRepository>();
 builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
 builder.Services.AddScoped<INumeroRepository, NumeroRepository>();
+builder.Services.AddScoped<IHistoricoDisparoRepository, HistoricoDisparoRepository>();
+builder.Services.AddScoped<IFlowRepository, FlowRepository>();
 
 //Injeção de dependência de Mensagens e disparos do Core
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();

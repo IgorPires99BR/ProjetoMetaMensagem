@@ -14,11 +14,11 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 {
     public interface IMetaService
     {
-        Task<bool> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao);
+        Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao);
         Task<bool> EnviarTextoLivreAsync(string celular, string mensagem);
 
-        Task<Dictionary<string, bool>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote);
-
+        // Ajustado o retorno para o Dictionary mapeando a resposta detalhada por telefone
+        Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote);
         Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate);
 
         Task<string?> BuscarWabaIdDaMetaAsync(string accessToken);

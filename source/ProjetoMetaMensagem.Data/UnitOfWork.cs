@@ -20,6 +20,7 @@ namespace ProjetoMetaMensagem.Data
         public IContatoRepository Contato { get; set; }
         public INumeroRepository Numero{ get; set; }
         public ITemplateRepository Template { get; set; }
+        public IHistoricoDisparoRepository HistoricoDisparo { get; set; }
 
         public UnitOfWork(DbSession session,
             ICompaniesRepository companiesRepository,
@@ -29,7 +30,8 @@ namespace ProjetoMetaMensagem.Data
             IUsuarioRepository usuarioRepository,
             IContatoRepository contatoRepository,
             INumeroRepository numeroRepository,
-            ITemplateRepository templateRepository)
+            ITemplateRepository templateRepository,
+            IHistoricoDisparoRepository historicoDisparo)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
@@ -40,6 +42,7 @@ namespace ProjetoMetaMensagem.Data
             Contato = contatoRepository;
             Numero = numeroRepository;
             Template = templateRepository;
+            HistoricoDisparo = historicoDisparo;
         }
 
         public void Commit()

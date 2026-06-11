@@ -17,6 +17,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
         IContatoRepository Contato { get; }
         INumeroRepository Numero { get; }
         ITemplateRepository Template { get; }
+        IHistoricoDisparoRepository HistoricoDisparo { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();

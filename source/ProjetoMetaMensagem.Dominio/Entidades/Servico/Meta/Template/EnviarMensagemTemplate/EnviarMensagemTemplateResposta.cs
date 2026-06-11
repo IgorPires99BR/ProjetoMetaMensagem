@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta
+namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplate
 {
-    public class EnviarMensagemTemplateMetaResult
+    public class EnviarMensagemTemplateResposta
     {
         public bool Sucesso { get; set; }
         public string WamidMeta { get; set; }
+        public string Erro { get; set; }
     }
 }
