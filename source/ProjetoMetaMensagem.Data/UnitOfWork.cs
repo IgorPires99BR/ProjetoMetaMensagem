@@ -14,6 +14,7 @@ namespace ProjetoMetaMensagem.Data
 
         public ICompaniesRepository CompaniesRepository { get; set; }
         public IFlowsRepository FlowsRepository { get; set; }
+        public IFlowRepository Flow { get; set; }
         public IConversationsRepository ConversationsRepository { get; set; }
         public IEmpresaRepository Empresa { get; set; }
         public IUsuarioRepository Usuario { get; set; }
@@ -31,7 +32,8 @@ namespace ProjetoMetaMensagem.Data
             IContatoRepository contatoRepository,
             INumeroRepository numeroRepository,
             ITemplateRepository templateRepository,
-            IHistoricoDisparoRepository historicoDisparo)
+            IHistoricoDisparoRepository historicoDisparo,
+            IFlowRepository flow)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
@@ -43,6 +45,7 @@ namespace ProjetoMetaMensagem.Data
             Numero = numeroRepository;
             Template = templateRepository;
             HistoricoDisparo = historicoDisparo;
+            Flow = flow;
         }
 
         public void Commit()

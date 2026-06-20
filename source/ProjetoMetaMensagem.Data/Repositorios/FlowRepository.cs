@@ -59,13 +59,38 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<IEnumerable<Flow>> ObterTodosPorEmpresa(Guid empresaId)
         {
-            var sql = $@"
-                SELECT * FROM {nameof(Flow)} 
-                WHERE {nameof(Flow.EmpresaId)} = @{nameof(Flow.EmpresaId)}
-                ORDER BY {nameof(Flow.DataCriacao)} DESC;";
+            var sql = @"
+                SELECT f.*, fe.*
+                FROM Flow f
+                LEFT JOIN FlowEtapa fe ON f.Id = fe.FlowId
+                WHERE f.EmpresaId = @IdEmpresa;";
 
-            return await _session._connection.QueryAsync<Flow>(
-                sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
+            var lookup = new Dictionary<Guid, Flow>();
+
+            await _session._connection.QueryAsync<Flow, FlowEtapa, Flow>(
+                sql,
+                (flow, etapa) =>
+                {
+                    if (!lookup.TryGetValue(flow.Id, out var flowExistente))
+                    {
+                        flowExistente = flow;
+                        flowExistente.Etapas = new List<FlowEtapa>();
+                        lookup.Add(flowExistente.Id, flowExistente);
+                    }
+
+                    if (etapa != null)
+                    {
+                        flowExistente.Etapas.Add(etapa);
+                    }
+
+                    return flowExistente;
+                },
+                new { IdEmpresa = empresaId },
+                transaction: _session.Transaction,
+                splitOn: "Id" // Divide as tabelas a partir da coluna Id da FlowEtapa
+            );
+
+            return lookup.Values;
         }
 
         public async Task Incluir(Flow flow)
@@ -89,6 +114,39 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 );";
 
             await _session._connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
+        }
+
+        public async Task IncluirEtapa(FlowEtapa etapa)
+        {
+            var sql = $@"
+        INSERT INTO {nameof(FlowEtapa)} (
+            {nameof(etapa.Id)}, 
+            {nameof(etapa.FlowId)}, 
+            {nameof(etapa.TemplateId)}, 
+            {nameof(etapa.NomeEtapa)}, 
+            {nameof(etapa.ConteudoLivre)}, 
+            {nameof(etapa.GatilhoResposta)}, 
+            {nameof(etapa.ProximaEtapaId)}, 
+            {nameof(etapa.EhEtapaInicial)}
+        ) 
+        VALUES (
+            @{nameof(etapa.Id)}, 
+            @{nameof(etapa.FlowId)}, 
+            @{nameof(etapa.TemplateId)}, 
+            @{nameof(etapa.NomeEtapa)}, 
+            @{nameof(etapa.ConteudoLivre)}, 
+            @{nameof(etapa.GatilhoResposta)}, 
+            @{nameof(etapa.ProximaEtapaId)}, 
+            @{nameof(etapa.EhEtapaInicial)}
+        );";
+
+            await _session._connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
+        }
+
+        public async Task ExcluirEtapasPorFlowId(Guid flowId)
+        {
+            var sql = $@"DELETE FROM {nameof(FlowEtapa)} WHERE {nameof(FlowEtapa.FlowId)} = @FlowId;";
+            await _session._connection.ExecuteAsync(sql, new { FlowId = flowId }, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Flow flow)

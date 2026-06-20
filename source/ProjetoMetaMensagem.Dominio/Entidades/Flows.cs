@@ -16,11 +16,6 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public Flows(CriaFlowCommand command)
         {
-            id = command.Id;
-            company_id = command.CompanyId;
-            name = command.Name;
-            messages = command.Messages;
-            updated_at = DateTime.Now;
         }
 
         public string id { get; set; } = null!;

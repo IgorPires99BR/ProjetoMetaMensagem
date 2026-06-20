@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 
@@ -17,9 +18,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
         }
 
         [HttpGet]
-        public async Task<IActionResult> Listar(ListaFlowsCommand command)
+        [Route("{IdEmpresa}")]
+        public async Task<IActionResult> Listar(Guid IdEmpresa)
         {
-            var resultado = await _mediator.Send(command);
+            var resultado = await _mediator.Send(new ListaFlowsCommand(IdEmpresa));
 
             if (resultado != null)
                 return Ok(resultado);
@@ -29,6 +31,17 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
 
         [HttpPost]
         public async Task<IActionResult> Incluir(CriaFlowCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+
+            if (resultado != null)
+                return Ok(resultado);
+
+            return BadRequest(resultado);
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Alterar(AlteraFlowCommand command)
         {
             var resultado = await _mediator.Send(command);
 

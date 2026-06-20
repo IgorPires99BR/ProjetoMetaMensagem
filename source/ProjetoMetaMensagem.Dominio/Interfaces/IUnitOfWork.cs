@@ -11,6 +11,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
     {
         ICompaniesRepository CompaniesRepository { get; }
         IFlowsRepository FlowsRepository { get; }
+        IFlowRepository Flow { get; }
         IConversationsRepository ConversationsRepository { get; }
         IEmpresaRepository Empresa { get; }
         IUsuarioRepository Usuario { get; }

@@ -10,7 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
     {
         public FlowEtapa()
         {
-            Id = Guid.NewGuid();
+
         }
 
         public Guid Id { get; set; }

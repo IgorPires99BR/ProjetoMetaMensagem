@@ -32,8 +32,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
             //    return response;
             //}
 
-            var flows = await _unitOfWork.FlowsRepository.Obtem(command.CompanyId);
-
+            var flows = await _unitOfWork.Flow.ObterTodosPorEmpresa(command.IdEmpresa);
 
             foreach (var flow in flows)
             {

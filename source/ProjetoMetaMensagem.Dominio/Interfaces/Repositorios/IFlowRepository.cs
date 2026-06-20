@@ -16,6 +16,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
 
         // Métodos de escrita (Persistência)
         Task Incluir(Flow flow);
+        Task IncluirEtapa(FlowEtapa etapa);
+
+        Task ExcluirEtapasPorFlowId(Guid flowId);
         Task Alterar(Flow flow);
         Task Excluir(Guid id);
     }

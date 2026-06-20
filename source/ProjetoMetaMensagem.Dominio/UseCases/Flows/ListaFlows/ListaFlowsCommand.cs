@@ -10,6 +10,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
 {
     public class ListaFlowsCommand : IRequest<Response<List<ListaFlowsResult>>>
     {
-        public string CompanyId { get; set; }
+        public ListaFlowsCommand(Guid idEmpresa)
+        {
+            IdEmpresa = idEmpresa;
+        }
+        public Guid IdEmpresa { get; set; }
     }
 }

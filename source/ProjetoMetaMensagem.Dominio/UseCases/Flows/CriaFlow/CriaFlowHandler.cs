@@ -1,4 +1,5 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 
@@ -16,20 +17,60 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         {
             var response = new Response<CriaFlowResult>();
 
-            //var validator = new CriaClienteValidator();
-            //var validateResult = validator.Validate(request);
 
-            //if (!validateResult.IsValid)
-            //{
-            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-            //    return response;
-            //}
+            Flow flow = new Flow(command);
+            var etapasParaSalvar = new List<FlowEtapa>();
+            FlowEtapa etapaAnterior = null;
 
-            Entidades.Flows flow = new Entidades.Flows(command);
+            // Ordena os passos vindos da tela para garantir a lógica sequencial
+            var passosOrdenados = command.Etapas.OrderBy(e => e.Ordem).ToList();
 
-            await _unitOfWork.FlowsRepository.Incluir(flow);
+            for (int i = 0; i < passosOrdenados.Count; i++)
+            {
+                var dto = passosOrdenados[i];
 
-            response.AddValue(new CriaFlowResult());
+                var novaEtapa = new FlowEtapa
+                {
+                    FlowId = flow.Id,
+                    NomeEtapa = dto.TipoStep, // "Mensagem" ou "Capturar Input"
+                    ConteudoLivre = dto.MensagemPergunta, // Texto digitado na caixa
+                    EhEtapaInicial = (i == 0), // O primeiro item da lista da tela vira a etapa inicial
+                    GatilhoResposta = dto.TipoStep == "Capturar Input" ? "Qualquer_Resposta" : "Avancar"
+                };
+
+                // Se houver uma etapa anterior no loop, atualizamos o ponteiro dela para esta nova
+                if (etapaAnterior != null)
+                {
+                    etapaAnterior.ProximaEtapaId = novaEtapa.Id;
+                }
+
+                etapasParaSalvar.Add(novaEtapa);
+                etapaAnterior = novaEtapa; // Atualiza a referência para o próximo loop
+            }
+
+            try
+            {
+                // 3. Salva o Flow Pai
+                await _unitOfWork.Flow.Incluir(flow);
+
+                // 4. Salva os filhos (Etapas) já encadeadas
+                foreach (var etapa in etapasParaSalvar)
+                {
+                    // Nota: Certifique-se que seu UnitOfWork dê acesso ao método de incluir etapas
+                    await _unitOfWork.Flow.IncluirEtapa(etapa);
+                }
+
+                // 7. Retorno de sucesso
+                var result = new CriaFlowResult();
+
+                response.AddValue(result);
+            }
+            catch (Exception ex)
+            {
+                // Caso ocorra qualquer erro no processo do banco ou da Meta, a transação sofre rollback
+                // e o banco não fica com dados fragmentados.
+                throw;
+            }
 
             return response;
         }

@@ -41,6 +41,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
+using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,6 +150,7 @@ builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaLoteCommand
 
 builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();
 builder.Services.AddScoped<IRequestHandler<CriaFlowCommand, Response<CriaFlowResult>>, CriaFlowHandler>();
+builder.Services.AddScoped<IRequestHandler<AlteraFlowCommand, Response<AlteraFlowResult>>, AlteraFlowHandler>();
 
 //Registros de Convcrsations
 
