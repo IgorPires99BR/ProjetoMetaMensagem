@@ -15,6 +15,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
             Id = empresa.Id;
             Nome = empresa.Nome;
             Email = empresa.Email;
+            Cnpj = empresa.Cnpj;
+            AccessToken = empresa.MetaAccessToken;
+            PlanoId = empresa.PlanoId;
+            WabaId = empresa.WabaId;
             Telefone = empresa.Telefone;
             DataCriacao = empresa.DataCriacao;
         }
@@ -23,6 +27,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
         public string Nome { get; set; }
         public string? Email { get; set; }
         public string? Telefone { get; set; }
+        public string? Cnpj { get; set; }
+        public string? AccessToken { get; set; }
+        public string? WabaId { get; set; }
+        public string? PlanoId { get; set; }
         public DateTimeOffset DataCriacao { get; set; }
 
     }

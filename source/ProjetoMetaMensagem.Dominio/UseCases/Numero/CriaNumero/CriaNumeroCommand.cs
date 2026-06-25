@@ -13,6 +13,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
     public class CriaNumeroCommand : IRequest<Response<CriaNumeroResult>>
     {
         public Guid UsuarioId { get; set; }
+        public Guid IdEmpresa { get; set; }
 
         public string NumeroTelefone { get; set; }
 

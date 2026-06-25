@@ -14,5 +14,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
         public string Email{ get; set; }
         public string Telefone{ get; set; }
         public string Cnpj{ get; set; }
+        public string AcessToken{ get; set; }
+        public string PlanoId{ get; set; }
     }
 }

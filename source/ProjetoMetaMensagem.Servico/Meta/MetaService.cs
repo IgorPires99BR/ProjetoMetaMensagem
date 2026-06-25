@@ -71,9 +71,8 @@ namespace ProjetoMetaMensagem.Servico.Meta
         #endregion
 
         #region NUMEROS
-        public async Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync()
+        public async Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId)
         {
-            var wabaId = _configuration.WabaID;
             var endpoint = $"{wabaId}/phone_numbers";
 
             try
@@ -111,10 +110,9 @@ namespace ProjetoMetaMensagem.Servico.Meta
             }
         }
 
-        public async Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao)
+        public async Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId)
         {
-            // O endpoint de criação usa o WABA_ID da empresa
-            var wabaId = _configuration.WabaID;
+
             var endpoint = $"{wabaId}/phone_numbers";
 
             CriaNumeroMetaRequest request = new CriaNumeroMetaRequest(requisicao);
@@ -200,9 +198,8 @@ namespace ProjetoMetaMensagem.Servico.Meta
             };
         }
 
-        public async Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync()
+        public async Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId)
         {
-            var wabaId = _configuration.WabaID;
             var endpoint = $"{wabaId}/message_templates";
 
             try

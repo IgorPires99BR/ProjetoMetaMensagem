@@ -23,8 +23,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
         Task<string?> BuscarWabaIdDaMetaAsync(string accessToken);
 
-        Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync();
-        Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao);
-        Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync();
+        Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId);
+        Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId);
+        Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId);
     }
 }

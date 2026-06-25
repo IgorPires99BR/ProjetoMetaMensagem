@@ -37,7 +37,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
                 return response;
             }
 
-            var numerosMeta = await _metaService.ObterNumerosMetaAsync();
+            var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
+
+            var numerosMeta = await _metaService.ObterNumerosMetaAsync(wabaId);
 
             if (numerosMeta == null || !numerosMeta.Numeros.Any())
             {

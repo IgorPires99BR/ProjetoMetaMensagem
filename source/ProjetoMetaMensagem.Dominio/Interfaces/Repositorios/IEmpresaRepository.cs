@@ -9,10 +9,15 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
 {
     public interface IEmpresaRepository
     {
-        Task Incluir(Empresa empresa);
-        Task Alterar(Empresa empresa);
+        Task<Guid> Incluir(Empresa empresa);
+        Task<Guid> Alterar(Empresa empresa);
         Task Excluir(string id);
         Task<Empresa?> ObterPorId(Guid id);
+        Task<string?> ObterMetaAccessToken(Guid id);
+
+        Task<string?> ObterWabaId(Guid id);
+
+        Task AtualizarWabaId(Guid id, string wabaId);
         Task<List<Empresa>> Obter();
     }
 }

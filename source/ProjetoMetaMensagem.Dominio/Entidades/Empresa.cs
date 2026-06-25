@@ -21,6 +21,8 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
                 Email = command.Email;
                 Cnpj = command.Cnpj;
                 Telefone = command.Telefone;
+                MetaAccessToken = command.AcessToken;
+                PlanoId = command.PlanoId;
                 DataCriacao = DateTime.Now;
             }
 
@@ -37,6 +39,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
             [MaxLength(50)]
             public string? Telefone { get; set; }
+            public string? MetaAccessToken { get; set; }
+            public string? PlanoId { get; set; }
+            public string? WabaId { get; set; }
 
             public DateTimeOffset DataCriacao { get; set; } = DateTimeOffset.Now;
         

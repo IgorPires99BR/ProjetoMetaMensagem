@@ -40,6 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public Guid EmpresaId { get; set; }
         public string Nome { get; set; }
         public string? Email { get; set; }
+        public bool? IsAdmin { get; set; }
 
         public string? SenhaHash { get; set; }
 

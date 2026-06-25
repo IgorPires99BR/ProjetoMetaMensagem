@@ -10,10 +10,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
 {
     public class AtualizaNumeroMetaCommand : IRequest<Response<List<AtualizaNumeroMetaResult>>>
     {
-        public AtualizaNumeroMetaCommand(Guid idUsuario)
+        public AtualizaNumeroMetaCommand(Guid idUsuario, Guid idEmpresa)
         {
             IdUsuario = idUsuario;
+            IdEmpresa = idEmpresa;
         }
         public Guid IdUsuario { get; set; }
+        public Guid IdEmpresa { get; set; }
     }
 }

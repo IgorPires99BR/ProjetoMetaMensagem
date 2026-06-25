@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
@@ -48,6 +49,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
         public async Task<IActionResult> Obter()
         {
             var resultado = await _mediator.Send(new ObtemEmpresaCommand());
+            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+        }
+
+        [HttpPost("api/v2/empresa/atualizar-waba/{empresaId}")]
+        public async Task<IActionResult> AtualizarWabaId([FromRoute] Guid empresaId, [FromBody]string accessToken)
+        {
+            var resultado = await _mediator.Send(new AtualizaWabaIdCommand(empresaId,accessToken));
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
     }

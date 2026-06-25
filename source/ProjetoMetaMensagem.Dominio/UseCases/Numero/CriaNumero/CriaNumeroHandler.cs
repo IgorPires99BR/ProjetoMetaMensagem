@@ -46,7 +46,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
                     CodigoPais = "55"
                 };
 
-                var respostaMeta = await _metaService.CriarNumeroMetaAsync(requisicaoMeta);
+                var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
+
+                var respostaMeta = await _metaService.CriarNumeroMetaAsync(requisicaoMeta,wabaId);
 
                 if (respostaMeta == null || string.IsNullOrEmpty(respostaMeta.Id))
                 {

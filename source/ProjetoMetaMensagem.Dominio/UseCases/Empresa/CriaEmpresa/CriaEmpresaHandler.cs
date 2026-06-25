@@ -2,6 +2,7 @@
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using System;
 using System.Collections.Generic;
@@ -14,9 +15,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
     public class CriaEmpresaHandler : IRequestHandler<CriaEmpresaCommand, Response<CriaEmpresaResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public CriaEmpresaHandler(IUnitOfWork unitOfWork)
+        private readonly IMetaService _metaService;
+        public CriaEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService)
         {
             _unitOfWork = unitOfWork;
+            _metaService = metaService;
         }
 
         public async Task<Response<CriaEmpresaResult>> Handle(CriaEmpresaCommand command)
@@ -32,7 +35,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
                 return response;
             }
 
-            await _unitOfWork.Empresa.Incluir(new Entidades.Empresa(command));
+            var resultado = await _unitOfWork.Empresa.Incluir(new Entidades.Empresa(command));
 
             response.AddValue(new CriaEmpresaResult());
 

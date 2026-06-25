@@ -37,6 +37,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
                 return response;
             }
 
+
             var templateBanco = await _unitOfWork.Template.ObterPorEmpresa(command.IdEmpresa);
 
             if (templateBanco == null)

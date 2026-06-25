@@ -42,6 +42,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,6 +116,7 @@ builder.Services.AddScoped<IRequestHandler<CriaEmpresaCommand, Response<CriaEmpr
 builder.Services.AddScoped<IRequestHandler<AlteraEmpresaCommand, Response<AlteraEmpresaResult>>, AlteraEmpresaHandler>();
 builder.Services.AddScoped<IRequestHandler<DeletaEmpresaCommand, Response<DeletaEmpresaResult>>, DeletaEmpresaHandler>();
 builder.Services.AddScoped<IRequestHandler< ObtemEmpresaCommand, Response<List<ObtemEmpresaResult>>>, ObtemEmpresaHandler>();
+builder.Services.AddScoped<IRequestHandler<AtualizaWabaIdCommand, Response<AtualizaWabaIdResult>>, AtualizaWabaIdHandler>();
 
 
 //Registros de Usuario

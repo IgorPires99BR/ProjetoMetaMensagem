@@ -28,10 +28,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
 
-        [HttpGet("api/numero/AtualizarNumerosMeta/{usuarioId}")]
-        public async Task<IActionResult> AtualizarNumerosMeta(Guid usuarioId)
+        [HttpPost("api/numero/AtualizarNumerosMeta/{usuarioId}")]
+        public async Task<IActionResult> AtualizarNumerosMeta(Guid usuarioId, Guid idEmpresa)
         {
-            var resultado = await _mediator.Send(new AtualizaNumeroMetaCommand(usuarioId));
+            var resultado = await _mediator.Send(new AtualizaNumeroMetaCommand(usuarioId, idEmpresa));
             return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
         }
     }

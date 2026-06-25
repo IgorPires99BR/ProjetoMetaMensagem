@@ -36,7 +36,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             IdEmpresa = usuario.EmpresaId;
             IdUsuario = usuario.Id;
             Email = usuario.Email;
-            this.Role = "admin";
+            this.Role = usuario.IsAdmin.Value ? "admin" : "operador";
             this.Status = "success";
         }
 

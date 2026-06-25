@@ -20,6 +20,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
 
         [MaxLength(255)]
         public string? Email { get; set; }
+        public string? AccessToken { get; set; }
+        public string? PlanoId { get; set; }
 
         [MaxLength(50)]
         public string? Telefone { get; set; }

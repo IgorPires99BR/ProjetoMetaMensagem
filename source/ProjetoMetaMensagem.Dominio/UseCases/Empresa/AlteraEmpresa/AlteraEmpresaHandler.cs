@@ -2,6 +2,7 @@
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +14,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
     public class AlteraEmpresaHandler : IRequestHandler<AlteraEmpresaCommand, Response<AlteraEmpresaResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMetaService _metaService;
 
-        public AlteraEmpresaHandler(IUnitOfWork unitOfWork)
+        public AlteraEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService)
         {
             _unitOfWork = unitOfWork;
+            _metaService = metaService;
         }
 
         public async Task<Response<AlteraEmpresaResult>> Handle(AlteraEmpresaCommand command)
@@ -46,7 +49,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
             existente.Email = command.Email;
             existente.Telefone = command.Telefone;
             existente.Cnpj = command.Cnpj;
+            existente.MetaAccessToken = command.AccessToken;
+            existente.PlanoId = command.PlanoId;
             
+
             await _unitOfWork.Empresa.Alterar(existente);
 
             return response;
