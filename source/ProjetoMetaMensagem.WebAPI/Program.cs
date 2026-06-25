@@ -43,6 +43,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
+using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -141,6 +142,7 @@ builder.Services.AddScoped<IRequestHandler<AtualizaTemplateMetaCommand, Response
 
 //Registros de Contato
 builder.Services.AddScoped<IRequestHandler<CriaContatoCommand, Response<CriaContatoResult>>, CriaContatoHandler>();
+builder.Services.AddScoped<IRequestHandler<CriaContatoEmLoteCommand, Response<CriaContatoEmLoteResult>>, CriaContatoEmLoteHandler>();
 builder.Services.AddScoped<IRequestHandler<AlteraContatoCommand, Response<AlteraContatoResult>>, AlteraContatoHandler>();
 builder.Services.AddScoped<IRequestHandler<DeletaContatoCommand, Response<DeletaContatoResult>>, DeletaContatoHandler>();
 builder.Services.AddScoped<IRequestHandler<ObtemContatoCommand, Response<List<ObtemContatoResult>>>, ObtemContatoHandler>();

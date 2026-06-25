@@ -2,6 +2,7 @@
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato;
+using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato;
 using ProjetoMetaMensagem.WebAPI.Common;
@@ -17,6 +18,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
 
         [HttpPost("api/contato/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaContatoCommand command)
+        {
+            var resultado = await _mediator.Send(command);
+            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+        }
+
+        [HttpPost("api/contato/incluir-em-lote")]
+        public async Task<IActionResult> IncluirEmLote([FromBody] CriaContatoEmLoteCommand command)
         {
             var resultado = await _mediator.Send(command);
             return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
