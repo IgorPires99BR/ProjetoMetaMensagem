@@ -11,6 +11,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
 {
     public class CriarTemplateMetaCommand : IRequest<Response<CriarTemplateMetaResult>>
     {
+        public Guid IdEmpresa { get; set; }
         public string Nome { get; set; }
         public string Idioma { get; set; } = "pt_BR";
         public string Categoria { get; set; } = "MARKETING";

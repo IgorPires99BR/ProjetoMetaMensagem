@@ -38,8 +38,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
             }
 
             var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
+            var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-            var numerosMeta = await _metaService.ObterNumerosMetaAsync(wabaId);
+            var numerosMeta = await _metaService.ObterNumerosMetaAsync(wabaId, token);
 
             if (numerosMeta == null || !numerosMeta.Numeros.Any())
             {

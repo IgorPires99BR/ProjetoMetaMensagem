@@ -30,10 +30,10 @@ namespace ProjetoMetaMensagem.Servico.Meta
             _httpClient = httpClient;
             _configuration = options.Value;
 
-            // Ajustado para v19.0 como no seu Python
+            // Mantém a BaseUrl injetada (Ex: https://graph.facebook.com/v19.0/)
             _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
+
+            // REMOVIDO: O cabeçalho Authorization global foi removido daqui para suportar multi-tenancy dinâmico.
         }
 
         #region CONFIGURACOES / INTEGRACOES MULTI-TENANT
@@ -42,10 +42,8 @@ namespace ProjetoMetaMensagem.Servico.Meta
         {
             try
             {
-                // Endpoint relativo aproveitando a versão injetada na BaseUrl (Ex: https://graph.facebook.com/v19.0/)
                 var endpoint = "me/whatsapp_business_accounts";
 
-                // Sobrescreve localmente a autenticação apenas para usar o token temporário/estendido fornecido pela empresa externa
                 var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
@@ -58,8 +56,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 }
 
                 var resultado = JsonConvert.DeserializeObject<BuscarWabaIDMetaResponse>(responseContent);
-
-                // Captura e retorna o ID da primeira conta comercial vinculada àquele token
                 return resultado?.Data?.FirstOrDefault()?.Id;
             }
             catch (Exception ex)
@@ -71,13 +67,18 @@ namespace ProjetoMetaMensagem.Servico.Meta
         #endregion
 
         #region NUMEROS
-        public async Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId)
+
+        // Ajustado: Adicionado parâmetro accessToken e aplicando Authorization localmente na requisição
+        public async Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId, string accessToken)
         {
             var endpoint = $"{wabaId}/phone_numbers";
 
             try
             {
-                var response = await _httpClient.GetAsync(endpoint);
+                var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
@@ -87,7 +88,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
                 var metaResponse = JsonConvert.DeserializeObject<ObtemNumerosMetaResponse>(responseContent);
 
-                // 2. Realiza o "De/Para" para a classe de Domínio
                 var resultado = new ObtemNumerosMetaResposta
                 {
                     Numeros = metaResponse.Data.Select(n => new NumeroMetaDto
@@ -110,19 +110,21 @@ namespace ProjetoMetaMensagem.Servico.Meta
             }
         }
 
-        public async Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId)
+        // Ajustado: Adicionado parâmetro accessToken e aplicando Authorization localmente na requisição
+        public async Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId, string accessToken)
         {
-
             var endpoint = $"{wabaId}/phone_numbers";
 
-            CriaNumeroMetaRequest request = new CriaNumeroMetaRequest(requisicao);
-
-            var json = JsonConvert.SerializeObject(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            CriaNumeroMetaRequest requestMeta = new CriaNumeroMetaRequest(requisicao);
+            var json = JsonConvert.SerializeObject(requestMeta);
 
             try
             {
-                var response = await _httpClient.PostAsync(endpoint, content);
+                var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
@@ -134,7 +136,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
                 CriaNumeroMetaResposta resposta = new CriaNumeroMetaResposta()
                 {
-
                     Id = resultado.Id
                 };
 
@@ -148,9 +149,9 @@ namespace ProjetoMetaMensagem.Servico.Meta
         #endregion
 
         #region TEMPLATES
+
         public async Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao)
         {
-
             var requestMeta = new EnviarMensagemTemplateRequest
             {
                 To = requisicao.Para,
@@ -158,12 +159,10 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 {
                     Name = requisicao.Template.Nome,
                     Language = new LanguageDataRequest { Code = requisicao.Template.Idioma?.Codigo },
-                    // Converte os componentes tipados do domínio para a lista genérica aceita pela infraestrutura
                     Components = requisicao.Template.Componentes?.Cast<object>().ToList()
                 }
             };
 
-            // 2. Serializa ignorando campos nulos (importante para não enviar 'sub_type' em textos simples)
             var settings = new JsonSerializerSettings
             {
                 ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
@@ -171,15 +170,18 @@ namespace ProjetoMetaMensagem.Servico.Meta
             };
 
             var json = JsonConvert.SerializeObject(requestMeta, settings);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // 3. Dispara para o endpoint da Meta usando o PhoneNumberId da sua configuração
-            var response = await _httpClient.PostAsync($"{_configuration.PhoneNumberId}/messages", content);
+            // ATENÇÃO: Como este método usa o "PhoneNumberId" do painel Master/Configuração padrão para envios, 
+            // ele usa o Token Master vindo do appsettings. Ele usa HttpRequestMessage para garantir o isolamento do token.
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_configuration.PhoneNumberId}/messages");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                // Em vez de estourar uma exception que quebra o lote todo, devolvemos o objeto encapsulando a falha
                 return new EnviarMensagemTemplateResposta
                 {
                     Sucesso = false,
@@ -187,7 +189,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 };
             }
 
-            // Deserializa o JSON de sucesso usando a sua nova classe Response da Meta
             var metaResponse = JsonConvert.DeserializeObject<EnviarMensagemTemplateResponse>(responseContent);
             var wamid = metaResponse?.Messages?.FirstOrDefault()?.Id;
 
@@ -198,13 +199,17 @@ namespace ProjetoMetaMensagem.Servico.Meta
             };
         }
 
-        public async Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId)
+        // Ajustado: Adicionado parâmetro accessToken e aplicando Authorization localmente na requisição
+        public async Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId, string accessToken)
         {
             var endpoint = $"{wabaId}/message_templates";
 
             try
             {
-                var response = await _httpClient.GetAsync(endpoint);
+                var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
@@ -212,10 +217,8 @@ namespace ProjetoMetaMensagem.Servico.Meta
                     throw new Exception($"Erro ao obter templates da Meta: {responseContent}");
                 }
 
-                // 1. Desserializa para o padrão bruto da Meta (Infraestrutura)
                 var metaResponse = JsonConvert.DeserializeObject<ObtemTemplateMetaResponse>(responseContent);
 
-                // 2. Realiza o "De/Para" mapeando e limpando os dados para o Domínio
                 var resultado = new ObtemTemplatesMetaResposta
                 {
                     Templates = metaResponse.Data.Select(t => new TemplateMetaDto
@@ -241,10 +244,9 @@ namespace ProjetoMetaMensagem.Servico.Meta
         #endregion
 
         #region MENSAGENS
-        //Só é possivel enviar mensagem com texto Livre Quando há uma janela de conversa aberta
+
         public async Task<bool> EnviarTextoLivreAsync(string celular, string mensagem)
         {
-            // 1. Monta o objeto seguindo a estrutura exata da Meta para texto livre
             var payload = new MetaTextMessageRequest
             {
                 To = celular,
@@ -255,31 +257,28 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 }
             };
 
-            // 2. Serializa (usando as configurações do Newtonsoft para respeitar os nomes da Meta)
             var json = JsonConvert.SerializeObject(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // 3. Envia para o endpoint de mensagens
-            var response = await _httpClient.PostAsync($"{_configuration.PhoneNumberId}/messages", content);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{_configuration.PhoneNumberId}/messages");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                // Log ou tratamento de erro
                 throw new Exception($"Erro na API da Meta: {errorContent}");
             }
 
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate)
+        // Ajustado: Modificado para receber accessToken como parâmetro em vez de ler fixo do _configuration
+        public async Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate, string wabaId, string accessToken)
         {
-            // IMPORTANTE: Use o WABA_ID aqui, não o PhoneNumberId
-            var wabaId = _configuration.WabaID;
-
             var endpoint = $"https://graph.facebook.com/v20.0/{wabaId}/message_templates";
 
-            // Serializa garantindo que campos nulos não sejam enviados (como 'format' vazio)
             var json = JsonConvert.SerializeObject(novoTemplate, new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore,
@@ -289,12 +288,11 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 }
             });
 
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            // Adicione o Header de Autenticação se não estiver no HttpClient global
-            // _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
-
-            var response = await _httpClient.PostAsync(endpoint, content);
+            var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
@@ -308,16 +306,12 @@ namespace ProjetoMetaMensagem.Servico.Meta
         public async Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote)
         {
             var resultadoLote = new Dictionary<string, EnviarMensagemTemplateResposta>();
-
-            // 1. Explode o lote utilizando a inteligência da sua classe de domínio
             var requisicoesIndividuais = requisicaoLote.GerarRequisicoesIndividuais();
 
-            // 2. Processa os envios em paralelo aproveitando a concorrência do HttpClient
             var tarefas = requisicoesIndividuais.Select(async req =>
             {
                 try
                 {
-                    // Mapeia o objeto do seu domínio diretamente para o DTO de Request do Serviço de Infraestrutura
                     var requestMeta = new EnviarMensagemTemplateRequisicao
                     {
                         Para = req.Para,
@@ -325,14 +319,11 @@ namespace ProjetoMetaMensagem.Servico.Meta
                         {
                             Nome = req.Template.Nome,
                             Idioma = new LanguageData { Codigo = req.Template.Idioma?.Codigo },
-                            // Cast simples ou mapeamento dos componentes gerados pela classe de domínio
                             Componentes = req.Template.Componentes.Cast<ComponenteEnvio>().ToList()
                         }
                     };
 
-                    // Reaproveita a lógica que dispara para a API da Meta e extrai o wamid
                     var respostaIndividual = await EnviarTemplateAsync(requestMeta);
-
                     return new { Telefone = req.Para, Resposta = respostaIndividual };
                 }
                 catch (Exception ex)
@@ -351,7 +342,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
             var respostas = await Task.WhenAll(tarefas);
 
-            // 3. Alimenta o dicionário limpando chaves duplicadas
             foreach (var item in respostas)
             {
                 if (!resultadoLote.ContainsKey(item.Telefone))
@@ -364,7 +354,5 @@ namespace ProjetoMetaMensagem.Servico.Meta
         }
 
         #endregion
-
-
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
@@ -13,10 +14,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
     public class CriarTemplateMetaHandler : IRequestHandler<CriarTemplateMetaCommand, Response<CriarTemplateMetaResult>>
     {
         private readonly IMetaService _whatsappService;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public CriarTemplateMetaHandler(IMetaService whatsappService)
+        public CriarTemplateMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork)
         {
             _whatsappService = whatsappService;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Response<CriarTemplateMetaResult>> Handle(CriarTemplateMetaCommand command)
@@ -34,8 +37,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
 
             try
             {
+                var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
+                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
+
                 // 2. Chamada ao serviço de integração com a Meta
-                var sucesso = await _whatsappService.CriarTemplateMetaAsync(new Entidades.Servico.Meta.Template.CreateTemplateRequisicao(command));
+                var sucesso = await _whatsappService.CriarTemplateMetaAsync(new Entidades.Servico.Meta.Template.CreateTemplateRequisicao(command),wabaId,token);
 
                 if (sucesso == null)
                 {

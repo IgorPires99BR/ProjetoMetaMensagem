@@ -57,9 +57,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     }
                 };
 
+                var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
+                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
+
+
                 // 3. Dispara a criação para a API da Meta
                 // Esse método retorna a string JSON de resposta contendo o ID gerado pela Meta
-                var respostaMetaJson = await _metaService.CriarTemplateMetaAsync(requisicaoMeta);
+                var respostaMetaJson = await _metaService.CriarTemplateMetaAsync(requisicaoMeta, wabaId, token);
 
                 if (string.IsNullOrEmpty(respostaMetaJson))
                 {

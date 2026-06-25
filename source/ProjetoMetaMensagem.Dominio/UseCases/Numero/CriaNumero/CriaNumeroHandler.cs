@@ -47,8 +47,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
                 };
 
                 var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
+                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-                var respostaMeta = await _metaService.CriarNumeroMetaAsync(requisicaoMeta,wabaId);
+                var respostaMeta = await _metaService.CriarNumeroMetaAsync(requisicaoMeta,wabaId,token);
 
                 if (respostaMeta == null || string.IsNullOrEmpty(respostaMeta.Id))
                 {

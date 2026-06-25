@@ -17,14 +17,17 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao);
         Task<bool> EnviarTextoLivreAsync(string celular, string mensagem);
 
-        // Ajustado o retorno para o Dictionary mapeando a resposta detalhada por telefone
+        // Retorno em Dictionary mapeando a resposta detalhada por telefone
         Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote);
-        Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate);
+
+        // Ajustado: Incluído os parâmetros de wabaId e accessToken para criação dinâmica de templates da empresa
+        Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate, string wabaId, string accessToken);
 
         Task<string?> BuscarWabaIdDaMetaAsync(string accessToken);
 
-        Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId);
-        Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId);
-        Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId);
+        // Ajustados: Inclusão do parâmetro accessToken para isolamento do cabeçalho Authorization local
+        Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId, string accessToken);
+        Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId, string accessToken);
+        Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId, string accessToken);
     }
 }
