@@ -10,6 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 {
     public class EnviarMensagemTemplateMetaLoteCommand : IRequest<Response<EnviarMensagemTemplateMetaLoteResult>>
     {
+        public Guid IdEmpresa { get; set; }
         public List<string> Telefones { get; set; } = new List<string>();
         public string NomeTemplate { get; set; }
         public string Idioma { get; set; } = "pt_BR"; // Default para facilitar no mercado brasileiro

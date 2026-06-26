@@ -43,10 +43,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
             try 
             {
+                var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.IdEmpresa);
+                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
+
                 EnviarMensagemTemplateLoteRequisicao requisicao = new EnviarMensagemTemplateLoteRequisicao(command);
 
                 // O serviço retorna o Dictionary<string, bool> contendo [Telefone -> Sucesso]
-                var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(requisicao);
+                var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(requisicao, phoneNumberId,token);
 
                 foreach (var disparo in resultadoDisparos)
                 {

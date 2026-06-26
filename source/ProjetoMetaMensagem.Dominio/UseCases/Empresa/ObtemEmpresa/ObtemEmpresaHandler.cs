@@ -35,13 +35,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
                 response.AddErros(validateResult.Errors.ToCustomValidationFailure());
                 return response;
             }
-
+            try
+            {
             var empresaBanco = await _unitOfWork.Empresa.Obter();
 
             foreach(var empresa in empresaBanco)
             {
                 listaEmpresa.Add(new ObtemEmpresaResult(empresa));
             }
+
+            } catch (Exception ex) 
+           { }
 
             response.AddValue(listaEmpresa);
 

@@ -11,20 +11,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
 {
     public class AlteraEmpresaCommand : IRequest<Response<AlteraEmpresaResult>>
     {
-        [Required]
         public Guid Id { get; set; }
-
-        [Required]
-        [MaxLength(255)]
-        public string Nome { get; set; }
-
-        [MaxLength(255)]
+        public string Nome { get; set; } = string.Empty;
         public string? Email { get; set; }
-        public string? AccessToken { get; set; }
-        public string? PlanoId { get; set; }
-
-        [MaxLength(50)]
-        public string? Telefone { get; set; }
-        public string Cnpj { get; set; }
+        public string Telefone { get; set; } = string.Empty;
+        public string Cnpj { get; set; } = string.Empty;
+        public string AccessToken { get; set; } = string.Empty;
+        public string? WabaId { get; set; }
+        public string? PhoneNumberId { get; set; }
+        public string PlanoId { get; set; } = string.Empty;
     }
 }

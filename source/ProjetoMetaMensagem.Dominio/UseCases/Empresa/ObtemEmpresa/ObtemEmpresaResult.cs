@@ -17,10 +17,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
             Email = empresa.Email;
             Cnpj = empresa.Cnpj;
             AccessToken = empresa.MetaAccessToken;
+            PhoneNumberId = empresa.PhoneNumberId;
             PlanoId = empresa.PlanoId;
             WabaId = empresa.WabaId;
             Telefone = empresa.Telefone;
-            DataCriacao = empresa.DataCriacao;
+            DataCriacao = empresa.DataCriacao.Value;
         }
 
         public Guid Id { get; set; } 
@@ -29,6 +30,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
         public string? Telefone { get; set; }
         public string? Cnpj { get; set; }
         public string? AccessToken { get; set; }
+        public string? PhoneNumberId { get; set; }
         public string? WabaId { get; set; }
         public string? PlanoId { get; set; }
         public DateTimeOffset DataCriacao { get; set; }

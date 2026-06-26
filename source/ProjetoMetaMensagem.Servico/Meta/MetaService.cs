@@ -42,6 +42,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
         {
             try
             {
+                // Endpoint que lista as contas comerciais do WhatsApp pertencentes ao Token fornecido
                 var endpoint = "me/whatsapp_business_accounts";
 
                 var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
@@ -56,7 +57,16 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 }
 
                 var resultado = JsonConvert.DeserializeObject<BuscarWabaIDMetaResponse>(responseContent);
-                return resultado?.Data?.FirstOrDefault()?.Id;
+
+                // Verifica se a estrutura retornada possui dados populados
+                if (resultado?.Data == null || !resultado.Data.Any())
+                {
+                    // Retorna null explicitamente caso o token seja válido mas não possua WABA criado/vinculado
+                    return null;
+                }
+
+                // Retorna o ID da primeira conta comercial encontrada no gerenciador
+                return resultado.Data.First().Id;
             }
             catch (Exception ex)
             {
@@ -150,7 +160,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
         #region TEMPLATES
 
-        public async Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao)
+        public async Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao, string phoneNumberId, string accessToken)
         {
             var requestMeta = new EnviarMensagemTemplateRequest
             {
@@ -173,8 +183,8 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
             // ATENÇÃO: Como este método usa o "PhoneNumberId" do painel Master/Configuração padrão para envios, 
             // ele usa o Token Master vindo do appsettings. Ele usa HttpRequestMessage para garantir o isolamento do token.
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_configuration.PhoneNumberId}/messages");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _configuration.AccessToken);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{phoneNumberId}/messages");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
@@ -303,7 +313,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
             return responseContent;
         }
 
-        public async Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote)
+        public async Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote, string phoneNumberId, string accessToken)
         {
             var resultadoLote = new Dictionary<string, EnviarMensagemTemplateResposta>();
             var requisicoesIndividuais = requisicaoLote.GerarRequisicoesIndividuais();
@@ -323,7 +333,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
                         }
                     };
 
-                    var respostaIndividual = await EnviarTemplateAsync(requestMeta);
+                    var respostaIndividual = await EnviarTemplateAsync(requestMeta, phoneNumberId, accessToken);
                     return new { Telefone = req.Para, Resposta = respostaIndividual };
                 }
                 catch (Exception ex)

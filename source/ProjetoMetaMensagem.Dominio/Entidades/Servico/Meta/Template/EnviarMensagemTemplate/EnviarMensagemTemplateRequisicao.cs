@@ -12,7 +12,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
     {
         public EnviarMensagemTemplateRequisicao()
         {
-            
+
         }
         public EnviarMensagemTemplateRequisicao(EnviarMensagemTemplateMetaCommand command)
         {

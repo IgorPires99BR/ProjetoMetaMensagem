@@ -33,11 +33,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Empresa.Email)}, 
                     {nameof(Empresa.Cnpj)}, 
                     {nameof(Empresa.MetaAccessToken)}, 
+                    {nameof(Empresa.PhoneNumberId)}, 
+                    {nameof(Empresa.WabaId)}, 
                     {nameof(Empresa.PlanoId)}, 
                     {nameof(Empresa.Telefone)}, 
                     {nameof(Empresa.DataCriacao)}
                 ) 
-                VALUES (@Id, @Nome, @Email, @Cnpj, @MetaAccessToken, @PlanoId, @Telefone, @DataCriacao)";
+                VALUES (@Id, @Nome, @Email, @Cnpj, @MetaAccessToken,@PhoneNumberId,@WabaId, @PlanoId, @Telefone, @DataCriacao)";
 
             var parameters = new
             {
@@ -46,6 +48,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 empresa.Email,
                 empresa.Cnpj,
                 empresa.MetaAccessToken,
+                empresa.PhoneNumberId,
+                empresa.WabaId,
                 empresa.PlanoId,
                 empresa.Telefone,
                 DataCriacao = DateTime.Now
@@ -65,6 +69,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Empresa.Email)} = @Email, 
                     {nameof(Empresa.Cnpj)} = @Cnpj, 
                     {nameof(Empresa.Telefone)} = @Telefone,
+                    {nameof(Empresa.WabaId)} = @WabaId,
+                    {nameof(Empresa.PhoneNumberId)} = @PhoneNumberId,
                     {nameof(Empresa.MetaAccessToken)} = @MetaAccessToken,
                     {nameof(Empresa.PlanoId)} = @PlanoId
                 WHERE {nameof(Empresa.Id)} = @Id";
@@ -108,6 +114,15 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<string?> ObterWabaId(Guid id)
         {
             var sql = $@"SELECT {nameof(Empresa.WabaId)} 
+                 FROM {nameof(Empresa)} 
+                 WHERE {nameof(Empresa.Id)} = @Id";
+
+            return await _session._connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
+        }
+
+        public async Task<string?> ObterPhoneNumberId(Guid id)
+        {
+            var sql = $@"SELECT {nameof(Empresa.PhoneNumberId)} 
                  FROM {nameof(Empresa)} 
                  WHERE {nameof(Empresa.Id)} = @Id";
 

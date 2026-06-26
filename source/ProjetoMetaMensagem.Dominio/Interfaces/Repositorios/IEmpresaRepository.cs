@@ -16,6 +16,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<string?> ObterMetaAccessToken(Guid id);
 
         Task<string?> ObterWabaId(Guid id);
+        Task<string?> ObterPhoneNumberId(Guid id);
 
         Task AtualizarWabaId(Guid id, string wabaId);
         Task<List<Empresa>> Obter();

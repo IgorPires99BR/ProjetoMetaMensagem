@@ -5,6 +5,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 {
     public class EnviarMensagemTemplateMetaCommand : IRequest<Response<EnviarMensagemTemplateMetaResult>>
     {
+        public Guid IdEmpresa { get; set; }
         public string Telefone { get; set; } // Formato: 5511999998888
         public string NomeTemplate { get; set; }
         public string Idioma { get; set; } = "pt_BR";
