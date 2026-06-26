@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Diagnostics;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta;
 using ProjetoMetaMensagem.Servico.Configuration;
 using Microsoft.Extensions.Options;
@@ -193,18 +192,12 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
             // ATENÇÃO: Como este método usa o "PhoneNumberId" do painel Master/Configuração padrão para envios,
             // ele usa o Token Master vindo do appsettings. Ele usa HttpRequestMessage para garantir o isolamento do token.
-            Debug.WriteLine($"[META DEBUG] Enviando template para: {requisicao.Para}");
-            Debug.WriteLine($"[META DEBUG] JSON enviado: {json}");
-
             var request = new HttpRequestMessage(HttpMethod.Post, $"{phoneNumberId}/messages");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
-
-            Debug.WriteLine($"[META DEBUG] StatusCode: {(int)response.StatusCode} {response.ReasonPhrase}");
-            Debug.WriteLine($"[META DEBUG] Resposta da Meta: {responseContent}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -217,11 +210,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
             var metaResponse = JsonConvert.DeserializeObject<EnviarMensagemTemplateResponse>(responseContent);
             var wamid = metaResponse?.Messages?.FirstOrDefault()?.Id;
-
-            if (string.IsNullOrEmpty(wamid))
-            {
-                Debug.WriteLine($"[META DEBUG] ATENÇÃO: Status 200 mas sem wamid! Resposta: {responseContent}");
-            }
 
             return new EnviarMensagemTemplateResposta
             {

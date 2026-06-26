@@ -5,7 +5,6 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.Helpers;
-using System.Diagnostics;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta
 {
@@ -50,7 +49,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
                 if (!respostaMeta.Sucesso)
                 {
-                    Debug.WriteLine($"[META ERROR] Falha no disparo individual. Telefone: {command.Telefone}, Erro: {respostaMeta.Erro}");
                     response.AddErro($"Falha no disparo da Meta: {respostaMeta.Erro}");
                     return response;
                 }

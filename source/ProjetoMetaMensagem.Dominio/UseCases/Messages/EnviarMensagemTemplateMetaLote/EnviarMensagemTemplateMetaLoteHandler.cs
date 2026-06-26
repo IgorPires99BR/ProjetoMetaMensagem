@@ -9,7 +9,6 @@ using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -74,10 +73,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 	                        };
 
 	                        await _unitOfWork.HistoricoDisparo.Incluir(historico);
-	                    }
-	                    else
-	                    {
-	                        Debug.WriteLine($"[META ERROR LOTE] Falha no disparo para {telefone}: {respostaMeta.Erro}");
 	                    }
 	                }
 
