@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 
@@ -21,7 +21,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                   AND {nameof(ConversationState.ContatoId)} = @ContatoId
                   AND {nameof(ConversationState.Finalizado)} = 0;";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<ConversationState>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<ConversationState>(
                 sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
         }
 
@@ -36,7 +36,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @Variaveis, @DataInicio, @DataAtualizacao, @Finalizado
                 );";
 
-            await _session._connection.ExecuteAsync(sql, state, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, state, transaction: _session.Transaction);
         }
 
         public async Task Atualizar(ConversationState state)
@@ -49,7 +49,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(ConversationState.Finalizado)} = @Finalizado
                 WHERE {nameof(ConversationState.Id)} = @Id;";
 
-            await _session._connection.ExecuteAsync(sql, state, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, state, transaction: _session.Transaction);
         }
 
         public async Task<List<ConversationState>> ObterPorFlow(Guid flowId)
@@ -59,7 +59,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE {nameof(ConversationState.FlowId)} = @FlowId
                 ORDER BY {nameof(ConversationState.DataAtualizacao)} DESC;";
 
-            var result = await _session._connection.QueryAsync<ConversationState>(
+            var result = await _session.Connection.QueryAsync<ConversationState>(
                 sql, new { FlowId = flowId }, transaction: _session.Transaction);
 
             return result.ToList();
@@ -68,7 +68,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task Excluir(Guid id)
         {
             var sql = $"DELETE FROM {nameof(ConversationState)} WHERE {nameof(ConversationState.Id)} = @Id;";
-            await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
     }
 }
+

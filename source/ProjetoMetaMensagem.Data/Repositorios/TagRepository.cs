@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using System;
@@ -34,7 +34,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(Tag.DataCriacao)}
                 );";
 
-            await _session._connection.ExecuteAsync(sql, tag, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, tag, transaction: _session.Transaction);
             return tag.Id;
         }
 
@@ -44,7 +44,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 DELETE FROM {nameof(ContatoTag)} WHERE {nameof(ContatoTag.TagId)} = @Id;
                 DELETE FROM {nameof(Tag)} WHERE {nameof(Tag.Id)} = @Id;";
 
-            await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Tag>> ListarPorEmpresa(Guid empresaId)
@@ -54,7 +54,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE {nameof(Tag.EmpresaId)} = @EmpresaId
                 ORDER BY {nameof(Tag.Nome)};";
 
-            return await _session._connection.QueryAsync<Tag>(
+            return await _session.Connection.QueryAsync<Tag>(
                 sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
@@ -64,7 +64,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT * FROM {nameof(Tag)}
                 WHERE {nameof(Tag.Id)} = @Id;";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<Tag>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<Tag>(
                 sql, new { Id = id }, transaction: _session.Transaction);
         }
 
@@ -76,23 +76,23 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE ct.{nameof(ContatoTag.ContatoId)} = @ContatoId
                 ORDER BY t.{nameof(Tag.Nome)};";
 
-            return await _session._connection.QueryAsync<Tag>(
+            return await _session.Connection.QueryAsync<Tag>(
                 sql, new { ContatoId = contatoId }, transaction: _session.Transaction);
         }
 
         public async Task AssociarTagsContato(Guid contatoId, List<Guid> tagIds)
         {
-            // Remove associações existentes
+            // Remove associaÃ§Ãµes existentes
             var sqlDelete = $@"
                 DELETE FROM {nameof(ContatoTag)}
                 WHERE {nameof(ContatoTag.ContatoId)} = @ContatoId;";
 
-            await _session._connection.ExecuteAsync(sqlDelete,
+            await _session.Connection.ExecuteAsync(sqlDelete,
                 new { ContatoId = contatoId }, transaction: _session.Transaction);
 
             if (tagIds == null || tagIds.Count == 0) return;
 
-            // Insere novas associações
+            // Insere novas associaÃ§Ãµes
             var sqlInsert = $@"
                 INSERT INTO {nameof(ContatoTag)} (
                     {nameof(ContatoTag.ContatoId)},
@@ -106,10 +106,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
             foreach (var tagId in tagIds)
             {
-                await _session._connection.ExecuteAsync(sqlInsert,
+                await _session.Connection.ExecuteAsync(sqlInsert,
                     new { ContatoId = contatoId, TagId = tagId, DataCriacao = DateTime.Now },
                     transaction: _session.Transaction);
             }
         }
     }
 }
+

@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using System;
@@ -44,7 +44,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(Campanha.DataCriacao)}
                 );";
 
-            await _session._connection.ExecuteAsync(sql, campanha, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, campanha, transaction: _session.Transaction);
             return campanha.Id;
         }
 
@@ -71,7 +71,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
             foreach (var contato in contatos)
             {
-                await _session._connection.ExecuteAsync(sql, contato, transaction: _session.Transaction);
+                await _session.Connection.ExecuteAsync(sql, contato, transaction: _session.Transaction);
             }
         }
 
@@ -82,7 +82,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE {nameof(Campanha.EmpresaId)} = @EmpresaId
                 ORDER BY {nameof(Campanha.DataCriacao)} DESC;";
 
-            return await _session._connection.QueryAsync<Campanha>(
+            return await _session.Connection.QueryAsync<Campanha>(
                 sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
@@ -94,7 +94,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                   AND {nameof(Campanha.DataAgendamento)} <= @Agora
                 ORDER BY {nameof(Campanha.DataAgendamento)};";
 
-            return await _session._connection.QueryAsync<Campanha>(
+            return await _session.Connection.QueryAsync<Campanha>(
                 sql, new { Agora = DateTime.Now }, transaction: _session.Transaction);
         }
 
@@ -105,7 +105,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SET {nameof(Campanha.Status)} = @Status
                 WHERE {nameof(Campanha.Id)} = @Id;";
 
-            await _session._connection.ExecuteAsync(sql,
+            await _session.Connection.ExecuteAsync(sql,
                 new { Id = id, Status = status }, transaction: _session.Transaction);
         }
 
@@ -115,7 +115,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT * FROM {nameof(Campanha)}
                 WHERE {nameof(Campanha.Id)} = @Id;";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<Campanha>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<Campanha>(
                 sql, new { Id = id }, transaction: _session.Transaction);
         }
 
@@ -125,8 +125,9 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT * FROM {nameof(CampanhaContato)}
                 WHERE {nameof(CampanhaContato.CampanhaId)} = @CampanhaId;";
 
-            return await _session._connection.QueryAsync<CampanhaContato>(
+            return await _session.Connection.QueryAsync<CampanhaContato>(
                 sql, new { CampanhaId = campanhaId }, transaction: _session.Transaction);
         }
     }
 }
+

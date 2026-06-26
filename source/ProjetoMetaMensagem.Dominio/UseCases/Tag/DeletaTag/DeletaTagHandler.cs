@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
@@ -24,10 +24,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 await _unitOfWork.Tag.Excluir(command.Id);
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -35,3 +39,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag
         }
     }
 }
+
+

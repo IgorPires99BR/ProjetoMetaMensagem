@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas;
 
@@ -17,36 +17,36 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
             var sqlHoje = @"SELECT COUNT(1) FROM HistoricoDisparo
                             WHERE EmpresaId = @EmpresaId AND CONVERT(DATE, DataEnvio) = CONVERT(DATE, GETDATE())";
-            result.MensagensHoje = await _session._connection.ExecuteScalarAsync<int>(sqlHoje, new { empresaId }, transaction: _session.Transaction);
+            result.MensagensHoje = await _session.Connection.ExecuteScalarAsync<int>(sqlHoje, new { empresaId }, transaction: _session.Transaction);
 
             var sqlSemana = @"SELECT COUNT(1) FROM HistoricoDisparo
                               WHERE EmpresaId = @EmpresaId AND DataEnvio >= DATEADD(DAY, -7, GETDATE())";
-            result.MensagensSemana = await _session._connection.ExecuteScalarAsync<int>(sqlSemana, new { empresaId }, transaction: _session.Transaction);
+            result.MensagensSemana = await _session.Connection.ExecuteScalarAsync<int>(sqlSemana, new { empresaId }, transaction: _session.Transaction);
 
             var sqlMes = @"SELECT COUNT(1) FROM HistoricoDisparo
                            WHERE EmpresaId = @EmpresaId AND DataEnvio >= DATEADD(DAY, -30, GETDATE())";
-            result.MensagensMes = await _session._connection.ExecuteScalarAsync<int>(sqlMes, new { empresaId }, transaction: _session.Transaction);
+            result.MensagensMes = await _session.Connection.ExecuteScalarAsync<int>(sqlMes, new { empresaId }, transaction: _session.Transaction);
 
             var sqlLeads = @"SELECT COUNT(1) FROM Contato
                              WHERE EmpresaId = @EmpresaId AND CONVERT(DATE, DataCadastro) = CONVERT(DATE, GETDATE())";
-            result.LeadsCapturados = await _session._connection.ExecuteScalarAsync<int>(sqlLeads, new { empresaId }, transaction: _session.Transaction);
+            result.LeadsCapturados = await _session.Connection.ExecuteScalarAsync<int>(sqlLeads, new { empresaId }, transaction: _session.Transaction);
 
             var sqlTaxa = @"SELECT
                 CASE WHEN COUNT(1) = 0 THEN 100.0
                 ELSE CAST(SUM(CASE WHEN WamidMeta IS NOT NULL AND WamidMeta != '' THEN 1 ELSE 0 END) AS FLOAT) / COUNT(1) * 100.0
                 END
                 FROM HistoricoDisparo WHERE EmpresaId = @EmpresaId";
-            result.TaxaEntrega = Math.Round(await _session._connection.ExecuteScalarAsync<double>(sqlTaxa, new { empresaId }, transaction: _session.Transaction), 1);
+            result.TaxaEntrega = Math.Round(await _session.Connection.ExecuteScalarAsync<double>(sqlTaxa, new { empresaId }, transaction: _session.Transaction), 1);
 
             var sqlChats = @"SELECT COUNT(1) FROM Conversations WHERE EmpresaId = @EmpresaId";
-            result.ChatsAtivos = await _session._connection.ExecuteScalarAsync<int>(sqlChats, new { empresaId }, transaction: _session.Transaction);
+            result.ChatsAtivos = await _session.Connection.ExecuteScalarAsync<int>(sqlChats, new { empresaId }, transaction: _session.Transaction);
 
             var sqlNumeros = @"SELECT
                 SUM(CASE WHEN Status = 'Ativo' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN Status = 'Pendente' THEN 1 ELSE 0 END),
                 SUM(CASE WHEN Status = 'Bloqueado' THEN 1 ELSE 0 END)
                 FROM Numero WHERE EmpresaId = @EmpresaId";
-            using (var multi = await _session._connection.QueryMultipleAsync(sqlNumeros, new { empresaId }, transaction: _session.Transaction))
+            using (var multi = await _session.Connection.QueryMultipleAsync(sqlNumeros, new { empresaId }, transaction: _session.Transaction))
             {
                 var row = await multi.ReadSingleAsync<dynamic>();
                 result.NumerosAtivos = (int)(row?.Column0 ?? 0);
@@ -55,7 +55,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             }
 
             var sqlFlows = @"SELECT COUNT(1) FROM Flow WHERE EmpresaId = @EmpresaId AND Ativo = 1";
-            result.FlowsAtivos = await _session._connection.ExecuteScalarAsync<int>(sqlFlows, new { empresaId }, transaction: _session.Transaction);
+            result.FlowsAtivos = await _session.Connection.ExecuteScalarAsync<int>(sqlFlows, new { empresaId }, transaction: _session.Transaction);
 
             var sqlDisparosRecentes = @"
                 SELECT TOP 3 c.Nome, h.Total, h.Enviadas, h.Status FROM (
@@ -63,12 +63,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                         CASE WHEN TemplateId IS NOT NULL THEN (SELECT TOP 1 Nome FROM Template WHERE Id = TemplateId) ELSE 'Disparo Livre' END AS Nome,
                         COUNT(1) AS Total,
                         SUM(CASE WHEN WamidMeta IS NOT NULL AND WamidMeta != '' THEN 1 ELSE 0 END) AS Enviadas,
-                        'Concluído' AS Status
+                        'ConcluÃ­do' AS Status
                     FROM HistoricoDisparo
                     WHERE EmpresaId = @EmpresaId
                     GROUP BY TemplateId
                 ) c ORDER BY c.Total DESC";
-            var disparos = await _session._connection.QueryAsync<DisparoRecente>(sqlDisparosRecentes, new { empresaId }, transaction: _session.Transaction);
+            var disparos = await _session.Connection.QueryAsync<DisparoRecente>(sqlDisparosRecentes, new { empresaId }, transaction: _session.Transaction);
             result.DisparosRecentes = disparos.ToList();
 
             var sqlFlowsAtivos = @"
@@ -81,7 +81,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     GROUP BY FlowId
                 ) e ON e.FlowId = f.Id
                 WHERE f.EmpresaId = @EmpresaId";
-            var flows = await _session._connection.QueryAsync<FlowAtivo>(sqlFlowsAtivos, new { empresaId }, transaction: _session.Transaction);
+            var flows = await _session.Connection.QueryAsync<FlowAtivo>(sqlFlowsAtivos, new { empresaId }, transaction: _session.Transaction);
             result.FlowsComExecucoes = flows.ToList();
 
             var sqlEvolucao = @"
@@ -90,10 +90,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE EmpresaId = @EmpresaId AND DataEnvio >= DATEADD(DAY, -7, GETDATE())
                 GROUP BY CONVERT(VARCHAR(10), DataEnvio, 103)
                 ORDER BY CONVERT(VARCHAR(10), DataEnvio, 103)";
-            var evolucao = await _session._connection.QueryAsync<EvolucaoDisparo>(sqlEvolucao, new { empresaId }, transaction: _session.Transaction);
+            var evolucao = await _session.Connection.QueryAsync<EvolucaoDisparo>(sqlEvolucao, new { empresaId }, transaction: _session.Transaction);
             result.EvolucaoDisparos = evolucao.ToList();
 
             return result;
         }
     }
 }
+

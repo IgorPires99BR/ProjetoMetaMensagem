@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 
@@ -19,12 +19,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 await _unitOfWork.Campanha.AtualizarStatus(command.Id, "CANCELADA");
 
                 response.AddValue(new CancelaCampanhaResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro ao cancelar campanha: {ex.Message}");
             }
 
@@ -32,3 +36,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha
         }
     }
 }
+
+

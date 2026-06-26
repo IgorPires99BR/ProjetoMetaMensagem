@@ -38,6 +38,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 // 2. Monta a requisição de domínio e envia para a Meta
                 var requisicaoMeta = new CriaNumeroMetaRequisicao
                 {
@@ -71,10 +72,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
 
                 // 4. Salva no banco de dados utilizando seu Unit of Work
                 await _unitOfWork.Numero.Incluir(novoNumero);
-
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                _unitOfWork.Rollback();
                 // Captura falhas de comunicação com a API ou erros internos do banco
                 response.AddErro($"Falha ao cadastrar número: {ex.Message}");
             }
@@ -83,3 +85,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
         }
     }
 }
+
+

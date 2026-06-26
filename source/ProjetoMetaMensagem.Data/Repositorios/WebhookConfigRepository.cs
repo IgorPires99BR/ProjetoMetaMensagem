@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using System;
@@ -40,7 +40,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(WebhookConfig.DataCriacao)}
                 );";
 
-            await _session._connection.ExecuteAsync(sql, webhookConfig, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, webhookConfig, transaction: _session.Transaction);
             return webhookConfig.Id;
         }
 
@@ -55,20 +55,20 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(WebhookConfig.Ativo)} = @{nameof(WebhookConfig.Ativo)}
                 WHERE {nameof(WebhookConfig.Id)} = @{nameof(WebhookConfig.Id)};";
 
-            await _session._connection.ExecuteAsync(sql, webhookConfig, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, webhookConfig, transaction: _session.Transaction);
             return webhookConfig.Id;
         }
 
         public async Task Excluir(Guid id)
         {
             var sql = $@"DELETE FROM {nameof(WebhookConfig)} WHERE {nameof(WebhookConfig.Id)} = @Id;";
-            await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<WebhookConfig?> ObterPorId(Guid id)
         {
             var sql = $@"SELECT * FROM {nameof(WebhookConfig)} WHERE {nameof(WebhookConfig.Id)} = @Id;";
-            return await _session._connection.QueryFirstOrDefaultAsync<WebhookConfig>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<WebhookConfig>(
                 sql, new { Id = id }, transaction: _session.Transaction);
         }
 
@@ -79,7 +79,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE {nameof(WebhookConfig.EmpresaId)} = @EmpresaId
                 ORDER BY {nameof(WebhookConfig.Nome)};";
 
-            return (await _session._connection.QueryAsync<WebhookConfig>(
+            return (await _session.Connection.QueryAsync<WebhookConfig>(
                 sql, new { EmpresaId = empresaId }, transaction: _session.Transaction)).ToList();
         }
 
@@ -91,14 +91,15 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                   AND {nameof(WebhookConfig.EmpresaId)} = @EmpresaId
                   AND {nameof(WebhookConfig.Ativo)} = 1;";
 
-            return (await _session._connection.QueryAsync<WebhookConfig>(
+            return (await _session.Connection.QueryAsync<WebhookConfig>(
                 sql, new { Evento = evento, EmpresaId = empresaId }, transaction: _session.Transaction)).ToList();
         }
 
         public async Task<List<WebhookConfig>> Obter()
         {
             var sql = $@"SELECT * FROM {nameof(WebhookConfig)} ORDER BY {nameof(WebhookConfig.Nome)};";
-            return (await _session._connection.QueryAsync<WebhookConfig>(sql, transaction: _session.Transaction)).ToList();
+            return (await _session.Connection.QueryAsync<WebhookConfig>(sql, transaction: _session.Transaction)).ToList();
         }
     }
 }
+

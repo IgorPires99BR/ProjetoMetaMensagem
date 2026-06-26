@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Help.Error;
@@ -21,6 +21,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new AlteraProdutoValidator();
                 var validateResult = validator.Validate(command);
 
@@ -33,9 +34,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto
                 await _unitOfWork.Produto.Alterar(new Entidades.Produto(command));
 
                 response.AddValue(new AlteraProdutoResult());
+                _unitOfWork.Commit();
             }
             catch (System.Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -43,3 +47,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto
         }
     }
 }
+
+

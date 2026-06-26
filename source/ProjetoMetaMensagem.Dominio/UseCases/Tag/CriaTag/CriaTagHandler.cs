@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new CriaTagValidator();
                 var validateResult = validator.Validate(command);
 
@@ -38,9 +39,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag
                 await _unitOfWork.Tag.Incluir(entity);
 
                 response.AddValue(new CriaTagResult { Id = entity.Id });
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -48,3 +52,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag
         }
     }
 }
+
+

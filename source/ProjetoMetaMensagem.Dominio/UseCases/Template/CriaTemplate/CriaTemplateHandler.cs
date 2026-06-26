@@ -39,6 +39,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 // 2. Monta o payload estruturado que o 'CriarTemplateMetaAsync' do seu MetaService espera
                 var requisicaoMeta = new CreateTemplateRequisicao
                 {
@@ -90,9 +91,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
 
                 // 6. Retorna o resultado mapeado para o padrão do seu Use Case
                 response.AddValue(new CriaTemplateResult(novoTemplate));
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                _unitOfWork.Rollback();
                 // Captura e formata erros de HttpClient da Meta ou falhas no banco local
                 response.AddErro($"Falha ao criar o template: {ex.Message}");
             }
@@ -101,3 +104,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
         }
     }
 }
+
+

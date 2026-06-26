@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -22,6 +22,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new DeletaWebhookValidator();
                 var validateResult = validator.Validate(command);
 
@@ -34,9 +35,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook
                 await _unitOfWork.WebhookConfig.Excluir(command.Id);
 
                 response.AddValue(new DeletaWebhookResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -44,3 +48,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook
         }
     }
 }
+
+

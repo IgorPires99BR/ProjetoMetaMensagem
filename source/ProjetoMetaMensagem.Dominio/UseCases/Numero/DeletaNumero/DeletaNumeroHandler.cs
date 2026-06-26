@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new DeletaNumeroValidator();
                 var validateResult = validator.Validate(command);
 
@@ -38,9 +39,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero
                 await _unitOfWork.Numero.Excluir(command.Id);
 
                 response.AddValue(new DeletaNumeroResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -48,3 +52,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero
         }
     }
 }
+
+

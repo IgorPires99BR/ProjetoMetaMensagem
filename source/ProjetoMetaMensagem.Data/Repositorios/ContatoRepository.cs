@@ -42,7 +42,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 DataCriacao = DateTimeOffset.Now
             };
 
-            await _session._connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Contato contato)
@@ -55,31 +55,32 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Contato.Email)} = @Email
                 WHERE {nameof(Contato.Id)} = @Id";
 
-            await _session._connection.ExecuteAsync(sql, contato, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, contato, transaction: _session.Transaction);
         }
 
         public async Task Excluir(string id)
         {
             var sql = $"DELETE FROM {nameof(Contato)} WHERE {nameof(Contato.Id)} = @Id";
-            await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<Contato?> ObterPorId(int id)
         {
             var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.Id)} = @Id";
-            return await _session._connection.QueryFirstOrDefaultAsync<Contato>(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.QueryFirstOrDefaultAsync<Contato>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Contato>> Obter()
         {
             var sql = $"SELECT * FROM {nameof(Contato)}";
-            return await _session._connection.QueryAsync<Contato>(sql, transaction: _session.Transaction);
+            return await _session.Connection.QueryAsync<Contato>(sql, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Contato>> ObterPorUsuario(Guid usuarioId)
         {
             var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.UsuarioId)} = @UsuarioId";
-            return await _session._connection.QueryAsync<Contato>(sql, new { UsuarioId = usuarioId }, transaction: _session.Transaction);
+            return await _session.Connection.QueryAsync<Contato>(sql, new { UsuarioId = usuarioId }, transaction: _session.Transaction);
         }
     }
 }
+

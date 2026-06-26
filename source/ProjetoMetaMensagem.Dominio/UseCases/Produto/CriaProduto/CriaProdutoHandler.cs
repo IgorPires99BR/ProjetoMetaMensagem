@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Help.Error;
@@ -21,6 +21,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new CriaProdutoValidator();
                 var validateResult = validator.Validate(command);
 
@@ -34,9 +35,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto
                 var id = await _unitOfWork.Produto.Incluir(entity);
 
                 response.AddValue(new CriaProdutoResult { Id = id });
+                _unitOfWork.Commit();
             }
             catch (System.Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -44,3 +48,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto
         }
     }
 }
+
+

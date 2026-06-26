@@ -29,6 +29,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
 
             try
             {
+                _unitOfWork.BeginTransaction();
+
                 var sucesso = await _whatsappService.EnviarTextoLivreAsync(request.Celular, request.Template);
 
                 if (sucesso == null)
@@ -48,9 +50,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                     DataEnvio = DateTime.Now
                 };
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);
+
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                _unitOfWork.Rollback();
                 response.AddErro($"Erro: {ex.Message}");
             }
 

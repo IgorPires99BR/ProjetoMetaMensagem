@@ -55,7 +55,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 DataCriacao = DateTime.Now
             };
 
-            await _session._connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
 
             return empresa.Id;
         }
@@ -75,7 +75,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Empresa.PlanoId)} = @PlanoId
                 WHERE {nameof(Empresa.Id)} = @Id";
 
-            await _session._connection.ExecuteAsync(sql, empresa, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, empresa, transaction: _session.Transaction);
 
             return empresa.Id;
         }
@@ -83,7 +83,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task Excluir(string id)
         {
             var sql = $"DELETE FROM {nameof(Empresa)} WHERE {nameof(Empresa.Id)} = @Id";
-            await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<string?> ObterMetaAccessToken(Guid id)
@@ -92,7 +92,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                  FROM {nameof(Empresa)} 
                  WHERE {nameof(Empresa.Id)} = @Id";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task AtualizarWabaId(Guid id, string wabaId)
@@ -108,7 +108,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WabaId = wabaId
             };
 
-            await _session._connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
         }
 
         public async Task<string?> ObterWabaId(Guid id)
@@ -117,7 +117,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                  FROM {nameof(Empresa)} 
                  WHERE {nameof(Empresa.Id)} = @Id";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<string?> ObterPhoneNumberId(Guid id)
@@ -126,21 +126,22 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                  FROM {nameof(Empresa)} 
                  WHERE {nameof(Empresa.Id)} = @Id";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<Empresa?> ObterPorId(Guid id)
         {
             var sql = $"SELECT * FROM {nameof(Empresa)} WHERE {nameof(Empresa.Id)} = @Id";
-            return await _session._connection.QueryFirstOrDefaultAsync<Empresa>(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.QueryFirstOrDefaultAsync<Empresa>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<List<Empresa>> Obter()
         {
             var sql = $"SELECT * FROM {nameof(Empresa)} ORDER BY {nameof(Empresa.Nome)}";
-            var retorno =  await _session._connection.QueryAsync<Empresa>(sql, transaction: _session.Transaction);
+            var retorno =  await _session.Connection.QueryAsync<Empresa>(sql, transaction: _session.Transaction);
 
             return retorno.ToList();
         }
     }
 }
+

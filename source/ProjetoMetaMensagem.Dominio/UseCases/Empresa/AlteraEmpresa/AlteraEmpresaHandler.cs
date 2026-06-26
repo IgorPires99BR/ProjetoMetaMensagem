@@ -28,6 +28,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
                 var validator = new AlteraEmpresaValidator();
                 var validateResult = validator.Validate(command);
@@ -55,9 +56,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
                 existente.PlanoId = command.PlanoId;
 
                 await _unitOfWork.Empresa.Alterar(existente);
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -65,3 +69,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
         }
     }
 }
+
+

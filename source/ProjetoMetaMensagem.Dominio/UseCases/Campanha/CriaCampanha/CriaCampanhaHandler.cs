@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 
@@ -19,6 +19,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var campanha = new Entidades.Campanha
                 {
                     Nome = command.Nome,
@@ -44,9 +45,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
                 await _unitOfWork.Campanha.IncluirContatos(campanhaContatos);
 
                 response.AddValue(new CriaCampanhaResult { Id = campanhaId });
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro ao criar campanha: {ex.Message}");
             }
 
@@ -54,3 +58,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
         }
     }
 }
+
+

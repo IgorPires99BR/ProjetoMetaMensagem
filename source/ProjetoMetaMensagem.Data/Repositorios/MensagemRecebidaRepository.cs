@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 
@@ -19,7 +19,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 INSERT INTO MensagemRecebida (Id, EmpresaId, ContatoId, TelefoneRemetente, Conteudo, Tipo, DataRecebimento, Lida, FlowId)
                 VALUES (@Id, @EmpresaId, @ContatoId, @TelefoneRemetente, @Conteudo, @Tipo, @DataRecebimento, @Lida, @FlowId)";
 
-            await _session._connection.ExecuteAsync(sql, mensagem, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, mensagem, transaction: _session.Transaction);
         }
 
         public async Task<List<MensagemRecebida>> ListarPorEmpresa(Guid empresaId)
@@ -29,7 +29,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE EmpresaId = @EmpresaId
                 ORDER BY DataRecebimento DESC";
 
-            var result = await _session._connection.QueryAsync<MensagemRecebida>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
+            var result = await _session.Connection.QueryAsync<MensagemRecebida>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
             return result.ToList();
         }
 
@@ -40,14 +40,14 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE EmpresaId = @EmpresaId AND ContatoId = @ContatoId
                 ORDER BY DataRecebimento ASC";
 
-            var result = await _session._connection.QueryAsync<MensagemRecebida>(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
+            var result = await _session.Connection.QueryAsync<MensagemRecebida>(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
             return result.ToList();
         }
 
         public async Task MarcarComoLida(Guid id)
         {
             var sql = "UPDATE MensagemRecebida SET Lida = 1 WHERE Id = @Id";
-            await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<int> ContarNaoLidas(Guid empresaId, Guid contatoId)
@@ -56,7 +56,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT COUNT(1) FROM MensagemRecebida
                 WHERE EmpresaId = @EmpresaId AND ContatoId = @ContatoId AND Lida = 0 AND Tipo = 'recebida'";
 
-            return await _session._connection.ExecuteScalarAsync<int>(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteScalarAsync<int>(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
         }
     }
 }
+

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -125,8 +125,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.Configure<ApiWhatsappConnectionConfiguration>(builder.Configuration.GetSection("ApiWhatsappConnectionConfiguration"));
 
-builder.Services.Configure<ApiWhatsappConnectionConfiguration>(builder.Configuration.GetSection("ApiWhatsappConnectionConfiguration"));
-
 builder.Services.Configure<GeminiConfiguration>(builder.Configuration.GetSection("GeminiConfiguration"));
 
 builder.Services.AddHttpClient<TwilioService>();
@@ -146,7 +144,7 @@ builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
 builder.Services.AddHttpClient<IMetaService, MetaService>();
 builder.Services.AddHttpClient<IEmailService, EmailService>();
 
-//Configura��es
+//Configuracoes
 
 builder.Services.Configure<GmailConfiguration>(
     builder.Configuration.GetSection("GmailConfig"));
@@ -178,7 +176,7 @@ builder.Services.AddScoped<IRequestHandler<DeletaWebhookCommand, Response<Deleta
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();
 
-//Inje��o de depend�ncia de Mensagens e disparos do Core
+//Injeï¿½ï¿½o de dependï¿½ncia de Mensagens e disparos do Core
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();
 builder.Services.AddScoped<IRequestHandler<CriarTemplateMetaCommand, Response<CriarTemplateMetaResult>>, CriarTemplateMetaHandler>();
 

@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new DeletaContatoValidator();
                 var validateResult = validator.Validate(command);
 
@@ -38,9 +39,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
                 await _unitOfWork.Contato.Excluir(command.Id);
 
                 response.AddValue(new DeletaContatoResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -48,3 +52,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
         }
     }
 }
+
+

@@ -83,7 +83,7 @@ namespace ProjetoMetaMensagem.Data
 
         public void BeginTransaction()
         {
-            _session.Transaction = _session._connection.BeginTransaction();
+            _session.Transaction = _session.Connection.BeginTransaction();
         }
 
         public void Dispose()
