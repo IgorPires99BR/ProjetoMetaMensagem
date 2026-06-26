@@ -44,6 +44,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLo
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote;
+using ProjetoMetaMensagem.Servico.Flow;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,7 +86,7 @@ builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
 builder.Services.AddHttpClient<IMetaService, MetaService>();
 builder.Services.AddHttpClient<IEmailService, EmailService>();
 
-//Configurações
+//Configuraï¿½ï¿½es
 
 builder.Services.Configure<GmailConfiguration>(
     builder.Configuration.GetSection("GmailConfig"));
@@ -102,8 +104,12 @@ builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
 builder.Services.AddScoped<INumeroRepository, NumeroRepository>();
 builder.Services.AddScoped<IHistoricoDisparoRepository, HistoricoDisparoRepository>();
 builder.Services.AddScoped<IFlowRepository, FlowRepository>();
+builder.Services.AddScoped<IConversationStateRepository, ConversationStateRepository>();
 
-//Injeção de dependência de Mensagens e disparos do Core
+// Flow Orchestrator
+builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();
+
+//Injeï¿½ï¿½o de dependï¿½ncia de Mensagens e disparos do Core
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemMetaCommand, Response<EnviarMensagemMetaResult>>, EnviarMensagemMetaHandler>();
 builder.Services.AddScoped<IRequestHandler<CriarTemplateMetaCommand, Response<CriarTemplateMetaResult>>, CriarTemplateMetaHandler>();
 

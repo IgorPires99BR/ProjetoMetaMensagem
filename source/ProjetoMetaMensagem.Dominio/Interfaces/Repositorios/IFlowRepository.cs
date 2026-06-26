@@ -9,6 +9,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
 {
     public interface IFlowRepository
     {
+        Task<FlowEtapa?> ObterEtapaPorId(Guid etapaId);
         Task<FlowEtapa?> ObterEtapaInicial(Guid flowId);
         Task<FlowEtapa?> ObterProximaEtapa(Guid etapaAtualId, string respostaCliente);
         Task<Flow?> ObterPorId(Guid id);

@@ -20,6 +20,16 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         #region Consultas de Automação (Chatbot)
 
+        public async Task<FlowEtapa?> ObterEtapaPorId(Guid etapaId)
+        {
+            var sql = $@"
+                SELECT * FROM {nameof(FlowEtapa)}
+                WHERE {nameof(FlowEtapa.Id)} = @Id;";
+
+            return await _session._connection.QueryFirstOrDefaultAsync<FlowEtapa>(
+                sql, new { Id = etapaId }, transaction: _session.Transaction);
+        }
+
         public async Task<FlowEtapa?> ObterEtapaInicial(Guid flowId)
         {
             var sql = $@"
