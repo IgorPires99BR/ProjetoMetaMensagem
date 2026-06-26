@@ -66,6 +66,17 @@ using ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto;
 using ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto;
 using ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto;
 using ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Deleta;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta;
+using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -243,6 +254,24 @@ builder.Services.AddHostedService<CampanhaWorker>();
 
 	// Webhook
 	builder.Services.AddScoped<IWebhookConfigRepository, WebhookConfigRepository>();
+	// Dashboard
+	builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+	builder.Services.AddScoped<IRequestHandler<ObterMetricasCommand, Response<ObterMetricasDashboardResult>>, ObterMetricasHandler>();
+
+	// Pipeline
+	builder.Services.AddScoped<IPipelineRepository, PipelineRepository>();
+	builder.Services.AddScoped<IRequestHandler<CriaPipelineCommand, Response<CriaPipelineResult>>, CriaPipelineHandler>();
+	builder.Services.AddScoped<IRequestHandler<ListaPipelineCommand, Response<List<ListaPipelineResult>>>, ListaPipelineHandler>();
+	builder.Services.AddScoped<IRequestHandler<AlteraPipelineCommand, Response<AlteraPipelineResult>>, AlteraPipelineHandler>();
+	builder.Services.AddScoped<IRequestHandler<DeletaPipelineCommand, Response<bool>>, DeletaPipelineHandler>();
+	builder.Services.AddScoped<IRequestHandler<ObtemPipelineComEtapasCommand, Response<ObtemPipelineComEtapasResult>>, ObtemPipelineComEtapasHandler>();
+	builder.Services.AddScoped<IRequestHandler<CriaEtapaCommand, Response<CriaEtapaResult>>, CriaEtapaHandler>();
+	builder.Services.AddScoped<IRequestHandler<ListaEtapaCommand, Response<List<ListaEtapaResult>>>, ListaEtapaHandler>();
+	builder.Services.AddScoped<IRequestHandler<AlteraEtapaCommand, Response<AlteraEtapaResult>>, AlteraEtapaHandler>();
+	builder.Services.AddScoped<IRequestHandler<DeletaEtapaCommand, Response<bool>>, DeletaEtapaHandler>();
+	builder.Services.AddScoped<IRequestHandler<MoverLeadCommand, Response<MoverLeadResult>>, MoverLeadHandler>();
+	builder.Services.AddScoped<IRequestHandler<AdicionarLeadCommand, Response<MoverLeadResult>>, AdicionarLeadHandler>();
+	builder.Services.AddScoped<IRequestHandler<RemoverLeadCommand, Response<bool>>, RemoverLeadHandler>();
 
 var app = builder.Build();
  

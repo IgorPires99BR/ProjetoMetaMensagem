@@ -1,0 +1,61 @@
+using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
+
+namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas
+{
+    public class ObtemPipelineComEtapasHandler : IRequestHandler<ObtemPipelineComEtapasCommand, Response<ObtemPipelineComEtapasResult>>
+    {
+        private readonly IPipelineRepository _repository;
+        public ObtemPipelineComEtapasHandler(IPipelineRepository repository) => _repository = repository;
+
+        public async Task<Response<ObtemPipelineComEtapasResult>> Handle(ObtemPipelineComEtapasCommand command)
+        {
+            var response = new Response<ObtemPipelineComEtapasResult>();
+            try
+            {
+                var pipeline = await _repository.ObterPorId(command.PipelineId);
+                if (pipeline == null)
+                {
+                    response.AddErro("Pipeline não encontrado.");
+                    return response;
+                }
+
+                var etapas = await _repository.ListarEtapas(command.PipelineId);
+                var leads = await _repository.ListarLeads(command.EmpresaId);
+
+                var result = new ObtemPipelineComEtapasResult
+                {
+                    Id = pipeline.Id,
+                    Nome = pipeline.Nome,
+                    Etapas = etapas.OrderBy(e => e.Ordem).Select(etapa => new EtapaComLeads
+                    {
+                        Id = etapa.Id,
+                        Nome = etapa.Nome,
+                        Ordem = etapa.Ordem,
+                        Cor = etapa.Cor,
+                        DispararAoEntrar = etapa.DispararAoEntrar,
+                        TemplateIdAoEntrar = etapa.TemplateIdAoEntrar,
+                        Leads = leads.Where(l => l.PipelineEtapaId == etapa.Id).Select(l => new LeadNaEtapa
+                        {
+                            Id = l.Id,
+                            ContatoId = l.ContatoId,
+                            NomeContato = string.Empty,
+                            Telefone = string.Empty,
+                            Valor = l.Valor,
+                            Observacao = l.Observacao,
+                            DataEntrada = l.DataEntrada
+                        }).ToList()
+                    }).ToList()
+                };
+
+                response.AddValue(result);
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro ao obter pipeline: {ex.Message}");
+            }
+            return response;
+        }
+    }
+}
