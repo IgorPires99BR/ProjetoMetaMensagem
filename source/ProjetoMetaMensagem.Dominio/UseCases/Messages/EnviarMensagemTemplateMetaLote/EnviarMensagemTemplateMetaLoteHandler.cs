@@ -9,6 +9,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,35 +52,42 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 // O serviço retorna o Dictionary<string, bool> contendo [Telefone -> Sucesso]
                 var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(requisicao, phoneNumberId,token);
 
-                foreach (var disparo in resultadoDisparos)
-                {
-                    var telefone = disparo.Key;
-                    var respostaMeta = disparo.Value;
+	                foreach (var disparo in resultadoDisparos)
+	                {
+	                    var telefone = disparo.Key;
+	                    var respostaMeta = disparo.Value;
 
-                    if (respostaMeta.Sucesso)
-                    {
-                        var historico = new HistoricoDisparo
-                        {
-                            EmpresaId = command.IdEmpresa,
-                            ContatoId = command.ContatoId,
-                            TemplateId = command.TemplateId,
-                            TipoDisparo = "Template",
-                            WamidMeta = respostaMeta.WamidMeta,
-                            Conteudo = JsonConvert.SerializeObject(new
-                            {
-                                command.ParametrosBody,
-                                command.ParametrosButton
-                            })
-                        };
+	                    if (respostaMeta.Sucesso)
+	                    {
+	                        var historico = new HistoricoDisparo
+	                        {
+	                            EmpresaId = command.IdEmpresa,
+	                            ContatoId = command.ContatoId,
+	                            TemplateId = command.TemplateId,
+	                            TipoDisparo = "Template",
+	                            WamidMeta = respostaMeta.WamidMeta,
+	                            Conteudo = JsonConvert.SerializeObject(new
+	                            {
+	                                command.ParametrosBody,
+	                                command.ParametrosButton
+	                            })
+	                        };
 
-                        await _unitOfWork.HistoricoDisparo.Incluir(historico);
-                    }
-                }
+	                        await _unitOfWork.HistoricoDisparo.Incluir(historico);
+	                    }
+	                    else
+	                    {
+	                        Debug.WriteLine($"[META ERROR LOTE] Falha no disparo para {telefone}: {respostaMeta.Erro}");
+	                    }
+	                }
 
                 // 3. Montagem do objeto de resultado mantendo o dicionário original [Telefone -> bool] para a View do CRM
                 var resultadoLote = new EnviarMensagemTemplateMetaLoteResult
                 {
-                    RelatorioDisparos = resultadoDisparos.ToDictionary(x => x.Key, x => x.Value.Sucesso)
+                    RelatorioDisparos = resultadoDisparos.ToDictionary(x => x.Key, x => x.Value.Sucesso),
+                    RelatorioErros = resultadoDisparos
+                        .Where(x => !x.Value.Sucesso && !string.IsNullOrEmpty(x.Value.Erro))
+                        .ToDictionary(x => x.Key, x => x.Value.Erro)
                 };
 
                 // Atribui o resultado de sucesso ao envelope da Response

@@ -1,5 +1,6 @@
 ﻿using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
+using ProjetoMetaMensagem.Dominio.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,10 +38,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
 
             foreach (var telefone in Telefones)
             {
-                // Instancia o objeto individual
+                // Instancia o objeto individual com telefone formatado
                 var reqIndividual = new EnviarMensagemTemplateRequisicao
                 {
-                    Para = telefone,
+                    Para = TelefoneHelper.FormatarParaMeta(telefone),
                     Template = new TemplateData
                     {
                         Nome = this.NomeTemplate,

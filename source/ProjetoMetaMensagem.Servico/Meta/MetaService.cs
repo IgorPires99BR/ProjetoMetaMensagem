@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Diagnostics;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta;
 using ProjetoMetaMensagem.Servico.Configuration;
 using Microsoft.Extensions.Options;
@@ -190,8 +191,11 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
             var json = JsonConvert.SerializeObject(requestMeta, settings);
 
-            // ATENÇÃO: Como este método usa o "PhoneNumberId" do painel Master/Configuração padrão para envios, 
+            // ATENÇÃO: Como este método usa o "PhoneNumberId" do painel Master/Configuração padrão para envios,
             // ele usa o Token Master vindo do appsettings. Ele usa HttpRequestMessage para garantir o isolamento do token.
+            Debug.WriteLine($"[META DEBUG] Enviando template para: {requisicao.Para}");
+            Debug.WriteLine($"[META DEBUG] JSON enviado: {json}");
+
             var request = new HttpRequestMessage(HttpMethod.Post, $"{phoneNumberId}/messages");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -199,17 +203,25 @@ namespace ProjetoMetaMensagem.Servico.Meta
             var response = await _httpClient.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
 
+            Debug.WriteLine($"[META DEBUG] StatusCode: {(int)response.StatusCode} {response.ReasonPhrase}");
+            Debug.WriteLine($"[META DEBUG] Resposta da Meta: {responseContent}");
+
             if (!response.IsSuccessStatusCode)
             {
                 return new EnviarMensagemTemplateResposta
                 {
                     Sucesso = false,
-                    Erro = $"Erro na API da Meta: {responseContent}"
+                    Erro = responseContent
                 };
             }
 
             var metaResponse = JsonConvert.DeserializeObject<EnviarMensagemTemplateResponse>(responseContent);
             var wamid = metaResponse?.Messages?.FirstOrDefault()?.Id;
+
+            if (string.IsNullOrEmpty(wamid))
+            {
+                Debug.WriteLine($"[META DEBUG] ATENÇÃO: Status 200 mas sem wamid! Resposta: {responseContent}");
+            }
 
             return new EnviarMensagemTemplateResposta
             {
@@ -331,18 +343,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
             {
                 try
                 {
-                    var requestMeta = new EnviarMensagemTemplateRequisicao
-                    {
-                        Para = req.Para,
-                        Template = new TemplateData
-                        {
-                            Nome = req.Template.Nome,
-                            Idioma = new LanguageData { Codigo = req.Template.Idioma?.Codigo },
-                            Componentes = req.Template.Componentes.Cast<ComponenteEnvio>().ToList()
-                        }
-                    };
-
-                    var respostaIndividual = await EnviarTemplateAsync(requestMeta, phoneNumberId, accessToken);
+                    var respostaIndividual = await EnviarTemplateAsync(req, phoneNumberId, accessToken);
                     return new { Telefone = req.Para, Resposta = respostaIndividual };
                 }
                 catch (Exception ex)

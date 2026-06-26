@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
+using ProjetoMetaMensagem.Dominio.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
         {
             if (command == null) return;
 
-            Para = command.Telefone;
+            Para = TelefoneHelper.FormatarParaMeta(command.Telefone);
             Template = new TemplateData
             {
                 Nome = command.NomeTemplate,
