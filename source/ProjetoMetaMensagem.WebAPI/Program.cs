@@ -50,6 +50,22 @@ using ProjetoMetaMensagem.Servico.Flow;
 using ProjetoMetaMensagem.Servico.Auth;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System.Text;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato;
+using ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha;
+using ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha;
+using ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha;
+using ProjetoMetaMensagem.Servico.Campanha;
+using ProjetoMetaMensagem.Servico.Webhook;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -137,6 +153,13 @@ builder.Services.AddScoped<IHistoricoDisparoRepository, HistoricoDisparoReposito
 builder.Services.AddScoped<IFlowRepository, FlowRepository>();
 builder.Services.AddScoped<IConversationStateRepository, ConversationStateRepository>();
 
+// Webhook
+builder.Services.AddScoped<IWebhookConfigRepository, WebhookConfigRepository>();
+builder.Services.AddScoped<WebhookDispatcherService>();
+builder.Services.AddScoped<IRequestHandler<CriaWebhookCommand, Response<CriaWebhookResult>>, CriaWebhookHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaWebhookCommand, Response<List<ListaWebhookResult>>>, ListaWebhookHandler>();
+builder.Services.AddScoped<IRequestHandler<DeletaWebhookCommand, Response<DeletaWebhookResult>>, DeletaWebhookHandler>();
+
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();
 
@@ -196,6 +219,30 @@ builder.Services.AddScoped<IRequestHandler<AlteraFlowCommand, Response<AlteraFlo
 //Registros de Convcrsations
 
 builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<List<ListaConversaPorIdResult>>>, ListaConversaPorIdHandler>();
+
+// Tags
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IRequestHandler<CriaTagCommand, Response<CriaTagResult>>, CriaTagHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaTagCommand, Response<List<ListaTagResult>>>, ListaTagHandler>();
+builder.Services.AddScoped<IRequestHandler<DeletaTagCommand, Response<DeletaTagResult>>, DeletaTagHandler>();
+builder.Services.AddScoped<IRequestHandler<AssociarTagsContatoCommand, Response<AssociarTagsContatoResult>>, AssociarTagsContatoHandler>();
+
+// Campanha
+builder.Services.AddScoped<ICampanhaRepository, CampanhaRepository>();
+builder.Services.AddScoped<IRequestHandler<CriaCampanhaCommand, Response<CriaCampanhaResult>>, CriaCampanhaHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaCampanhaCommand, Response<List<ListaCampanhaResult>>>, ListaCampanhaHandler>();
+builder.Services.AddScoped<IRequestHandler<CancelaCampanhaCommand, Response<CancelaCampanhaResult>>, CancelaCampanhaHandler>();
+builder.Services.AddHostedService<CampanhaWorker>();
+
+	// Produto
+	builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
+	builder.Services.AddScoped<IRequestHandler<CriaProdutoCommand, Response<CriaProdutoResult>>, CriaProdutoHandler>();
+	builder.Services.AddScoped<IRequestHandler<AlteraProdutoCommand, Response<AlteraProdutoResult>>, AlteraProdutoHandler>();
+	builder.Services.AddScoped<IRequestHandler<DeletaProdutoCommand, Response<DeletaProdutoResult>>, DeletaProdutoHandler>();
+	builder.Services.AddScoped<IRequestHandler<ListaProdutoCommand, Response<List<ListaProdutoResult>>>, ListaProdutoHandler>();
+
+	// Webhook
+	builder.Services.AddScoped<IWebhookConfigRepository, WebhookConfigRepository>();
 
 var app = builder.Build();
  

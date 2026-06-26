@@ -11,6 +11,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         public string Idioma { get; set; } = "pt_BR";
         public Guid ContatoId { get; set; }
         public Guid? TemplateId { get; set; }
+        public Guid EmpresaId { get; set; }
         public List<string> ParametrosBody { get; set; } = new List<string>();
         public List<string> ParametrosButton { get; set; } = new List<string>();
     }

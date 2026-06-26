@@ -60,7 +60,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     {
                         var historico = new HistoricoDisparo
                         {
-                            EmpresaId = command.EmpresaId,
+                            EmpresaId = command.IdEmpresa,
                             ContatoId = command.ContatoId,
                             TemplateId = command.TemplateId,
                             TipoDisparo = "Template",

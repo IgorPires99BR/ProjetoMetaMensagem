@@ -169,13 +169,22 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 {
                     Name = requisicao.Template.Nome,
                     Language = new LanguageDataRequest { Code = requisicao.Template.Idioma?.Codigo },
-                    Components = requisicao.Template.Componentes?.Cast<object>().ToList()
+                    Components = requisicao.Template.Componentes?.Select(c => new ComponentDataRequest
+                    {
+                        Type = c.Tipo,
+                        SubType = c.SubTipo,
+                        Index = c.Indice,
+                        Parameters = c.Parametros?.Select(p => new ParameterDataRequest
+                        {
+                            Type = p.Tipo,
+                            Text = p.Texto
+                        }).ToList()
+                    }).ToList()
                 }
             };
 
             var settings = new JsonSerializerSettings
             {
-                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
                 NullValueHandling = NullValueHandling.Ignore
             };
 

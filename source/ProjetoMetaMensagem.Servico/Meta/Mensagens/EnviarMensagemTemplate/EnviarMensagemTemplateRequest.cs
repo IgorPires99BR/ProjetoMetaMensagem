@@ -27,7 +27,31 @@ namespace ProjetoMetaMensagem.Servico.Meta.Mensagens.EnviarMensagemTemplate
         public LanguageDataRequest Language { get; set; }
 
         [JsonProperty("components")]
-        public List<object> Components { get; set; }
+        public List<ComponentDataRequest> Components { get; set; }
+    }
+
+    public class ComponentDataRequest
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; }
+
+        [JsonProperty("sub_type", NullValueHandling = NullValueHandling.Ignore)]
+        public string SubType { get; set; }
+
+        [JsonProperty("index", NullValueHandling = NullValueHandling.Ignore)]
+        public string Index { get; set; }
+
+        [JsonProperty("parameters")]
+        public List<ParameterDataRequest> Parameters { get; set; }
+    }
+
+    public class ParameterDataRequest
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; } = "text";
+
+        [JsonProperty("text")]
+        public string Text { get; set; }
     }
 
     public class LanguageDataRequest
