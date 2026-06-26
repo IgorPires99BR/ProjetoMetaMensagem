@@ -37,6 +37,7 @@ using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Email;
 using ProjetoMetaMensagem.Servico.Meta;
 using ProjetoMetaMensagem.Servico.Twilio;
+using ProjetoMetaMensagem.Servico.IA;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
@@ -126,7 +127,10 @@ builder.Services.Configure<ApiWhatsappConnectionConfiguration>(builder.Configura
 
 builder.Services.Configure<ApiWhatsappConnectionConfiguration>(builder.Configuration.GetSection("ApiWhatsappConnectionConfiguration"));
 
+builder.Services.Configure<GeminiConfiguration>(builder.Configuration.GetSection("GeminiConfiguration"));
+
 builder.Services.AddHttpClient<TwilioService>();
+builder.Services.AddHttpClient<IGeminiService, GeminiService>();
 
 //mediator
 builder.Services.AddScoped<IMediator, Mediator>();
@@ -260,6 +264,7 @@ builder.Services.AddHostedService<CampanhaWorker>();
 
 	// Pipeline
 	builder.Services.AddScoped<IPipelineRepository, PipelineRepository>();
+  builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaRepository>();
 	builder.Services.AddScoped<IRequestHandler<CriaPipelineCommand, Response<CriaPipelineResult>>, CriaPipelineHandler>();
 	builder.Services.AddScoped<IRequestHandler<ListaPipelineCommand, Response<List<ListaPipelineResult>>>, ListaPipelineHandler>();
 	builder.Services.AddScoped<IRequestHandler<AlteraPipelineCommand, Response<AlteraPipelineResult>>, AlteraPipelineHandler>();

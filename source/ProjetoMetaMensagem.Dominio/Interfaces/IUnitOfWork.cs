@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
         IWebhookConfigRepository WebhookConfig { get; }
         IProdutoRepository Produto { get; }
         IPipelineRepository Pipeline { get; }
+        IMensagemRecebidaRepository MensagemRecebida { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();
