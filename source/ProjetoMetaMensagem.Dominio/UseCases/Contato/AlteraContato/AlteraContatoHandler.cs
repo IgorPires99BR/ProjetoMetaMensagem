@@ -23,20 +23,27 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
         {
             var response = new Response<AlteraContatoResult>();
 
-            var validator = new AlteraContatoValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new AlteraContatoValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                // Lógica para atualizar o contato via UnitOfWork aqui
+                await _unitOfWork.Contato.Alterar(new Entidades.Contato(command));
+
+                response.AddValue(new AlteraContatoResult());
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
             }
 
-            // Lógica para atualizar o contato via UnitOfWork aqui
-            await _unitOfWork.Contato.Alterar(new Entidades.Contato(command));
-
-
-            response.AddValue(new AlteraContatoResult());
             return response;
         }
     }

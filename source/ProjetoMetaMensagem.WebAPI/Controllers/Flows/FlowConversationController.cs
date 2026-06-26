@@ -19,8 +19,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
         [HttpGet("{flowId}/conversations")]
         public async Task<IActionResult> ListarConversations(Guid flowId)
         {
-            var conversations = await _unitOfWork.ConversationState.ObterPorFlow(flowId);
-            return Ok(conversations);
+            try
+            {
+                var conversations = await _unitOfWork.ConversationState.ObterPorFlow(flowId);
+                return Ok(conversations);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

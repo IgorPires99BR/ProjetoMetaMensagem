@@ -25,20 +25,27 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
             [FromQuery(Name = "hub.challenge")] string challenge,
             [FromQuery(Name = "hub.verify_token")] string verifyToken)
         {
-            if (string.IsNullOrEmpty(mode) || string.IsNullOrEmpty(challenge) || string.IsNullOrEmpty(verifyToken))
-                return BadRequest("Parametros invalidos.");
-
-            if (mode == "subscribe")
+            try
             {
-                // Nota: Em producao, valide o verifyToken contra o TokenWebhookLocal da empresa
-                // Cada empresa tem um TokenWebhookLocal (GUID unico)
-                // Aqui podemos buscar a empresa pelo token e retornar o challenge se valido
+                if (string.IsNullOrEmpty(mode) || string.IsNullOrEmpty(challenge) || string.IsNullOrEmpty(verifyToken))
+                    return BadRequest("Parametros invalidos.");
 
-                // Por enquanto, aceita qualquer token nao vazio
-                return Content(challenge, "text/plain");
+                if (mode == "subscribe")
+                {
+                    // Nota: Em producao, valide o verifyToken contra o TokenWebhookLocal da empresa
+                    // Cada empresa tem um TokenWebhookLocal (GUID unico)
+                    // Aqui podemos buscar a empresa pelo token e retornar o challenge se valido
+
+                    // Por enquanto, aceita qualquer token nao vazio
+                    return Content(challenge, "text/plain");
+                }
+
+                return BadRequest("Modo invalido.");
             }
-
-            return BadRequest("Modo invalido.");
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         // POST api/webhook
@@ -46,33 +53,40 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
         [HttpPost]
         public async Task<IActionResult> ReceberNotificacao([FromBody] object payload)
         {
-            // A implementacao completa do webhook depende do payload exato da Meta Cloud API
-            // Estrutura esperada:
-            // {
-            //   "entry": [{
-            //     "changes": [{
-            //       "value": {
-            //         "messages": [{
-            //           "from": "5511999998888",
-            //           "text": { "body": "Ola" },
-            //           "type": "text"
-            //         }],
-            //         "metadata": {
-            //           "phone_number_id": "123456789"
-            //         }
-            //       }
-            //     }]
-            //   }]
-            // }
+            try
+            {
+                // A implementacao completa do webhook depende do payload exato da Meta Cloud API
+                // Estrutura esperada:
+                // {
+                //   "entry": [{
+                //     "changes": [{
+                //       "value": {
+                //         "messages": [{
+                //           "from": "5511999998888",
+                //           "text": { "body": "Ola" },
+                //           "type": "text"
+                //         }],
+                //         "metadata": {
+                //           "phone_number_id": "123456789"
+                //         }
+                //       }
+                //     }]
+                //   }]
+                // }
 
-            // Log para visualizacao do payload recebido (uteis para debug)
-            Console.WriteLine($"Webhook recebido: {payload}");
+                // Log para visualizacao do payload recebido (uteis para debug)
+                Console.WriteLine($"Webhook recebido: {payload}");
 
-            // Por se tratar de um payload complexo e que varia entre versoes da API,
-            // a desserializacao detalhada sera feita apos confirmacao do formato exato.
-            // Retornamos 200 OK para que a Meta nao reenvie a notificacao.
+                // Por se tratar de um payload complexo e que varia entre versoes da API,
+                // a desserializacao detalhada sera feita apos confirmacao do formato exato.
+                // Retornamos 200 OK para que a Meta nao reenvie a notificacao.
 
-            return Ok();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

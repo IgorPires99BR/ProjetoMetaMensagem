@@ -22,25 +22,33 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
         public async Task<Response<List<ObtemContatoResult>>> Handle(ObtemContatoCommand command)
         {
             var response = new Response<List<ObtemContatoResult>>();
-            var listaContato = new List<ObtemContatoResult>();
 
-            var validator = new ObtemContatoValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var listaContato = new List<ObtemContatoResult>();
+
+                var validator = new ObtemContatoValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                var contatos = await _unitOfWork.Contato.ObterPorUsuario(command.IdEmpresa);
+
+                foreach (var contato in contatos)
+                {
+                    listaContato.Add(new ObtemContatoResult(contato));
+                }
+
+                response.AddValue(listaContato);
             }
-
-            var contatos = await _unitOfWork.Contato.ObterPorUsuario(command.IdEmpresa);
-
-            foreach (var contato in contatos)
+            catch (Exception ex)
             {
-                listaContato.Add(new ObtemContatoResult(contato));
+                response.AddErro($"Erro: {ex.Message}");
             }
-
-            response.AddValue(listaContato);
 
             return response;
         }

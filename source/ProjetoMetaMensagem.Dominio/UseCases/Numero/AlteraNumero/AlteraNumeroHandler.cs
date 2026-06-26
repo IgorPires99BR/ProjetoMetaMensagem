@@ -23,19 +23,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
         {
             var response = new Response<AlteraNumeroResult>();
 
-            var validator = new AlteraNumeroValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new AlteraNumeroValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                // Lógica de alteração (Exemplo)
+                await _unitOfWork.Numero.Alterar(new Entidades.Numero(command));
+
+                response.AddValue(new AlteraNumeroResult());
             }
-
-            // Lógica de alteração (Exemplo)
-            await _unitOfWork.Numero.Alterar(new Entidades.Numero(command));
-
-            response.AddValue(new AlteraNumeroResult());
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

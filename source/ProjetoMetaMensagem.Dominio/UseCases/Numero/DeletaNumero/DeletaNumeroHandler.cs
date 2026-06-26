@@ -23,19 +23,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero
         {
             var response = new Response<DeletaNumeroResult>();
 
-            var validator = new DeletaNumeroValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new DeletaNumeroValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                // Lógica de exclusão (Exemplo)
+                await _unitOfWork.Numero.Excluir(command.Id);
+
+                response.AddValue(new DeletaNumeroResult());
             }
-
-            // Lógica de exclusão (Exemplo)
-             await _unitOfWork.Numero.Excluir(command.Id);
-
-            response.AddValue(new DeletaNumeroResult());
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

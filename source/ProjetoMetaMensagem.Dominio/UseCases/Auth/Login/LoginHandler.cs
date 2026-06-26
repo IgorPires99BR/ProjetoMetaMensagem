@@ -1,43 +1,43 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
-using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
 {
     public class LoginHandler : IRequestHandler<LoginCommand, Response<LoginResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public LoginHandler(IUnitOfWork unitOfWork)
+        private readonly ITokenService _tokenService;
+
+        public LoginHandler(IUnitOfWork unitOfWork, ITokenService tokenService)
         {
             _unitOfWork = unitOfWork;
+            _tokenService = tokenService;
         }
 
         public async Task<Response<LoginResult>> Handle(LoginCommand request)
         {
             var response = new Response<LoginResult>();
 
-            //var validator = new CriaClienteValidator();
-            //var validateResult = validator.Validate(request);
+            try
+            {
+                var usuario = await _unitOfWork.Usuario.ObterPorEmail(request.email);
 
-            //if (!validateResult.IsValid)
-            //{
-            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-            //    return response;
-            //}
+                if (usuario == null || string.IsNullOrEmpty(usuario.SenhaHash) || !BCrypt.Net.BCrypt.Verify(request.password, usuario.SenhaHash))
+                {
+                    response.AddErro("Usuário e senha não encontrados no banco de dados.");
+                    return response;
+                }
 
-            var login = await _unitOfWork.Usuario.Logar(request.email, request.password);
+                var token = _tokenService.GerarToken(usuario.Id.ToString(), usuario.Email, usuario.Nome, usuario.EmpresaId.ToString(), usuario.IsAdmin?.ToString() ?? "false");
 
-            if (login == null)
-                throw new Exception("Usuario e senha não encontrados no banco de dados.");
-
-
-            response.AddValue(new LoginResult(login));
+                response.AddValue(new LoginResult(usuario, token));
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro ao realizar login: {ex.Message}");
+            }
 
             return response;
         }

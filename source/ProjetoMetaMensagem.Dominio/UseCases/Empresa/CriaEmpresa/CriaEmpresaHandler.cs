@@ -26,18 +26,25 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
         {
             var response = new Response<CriaEmpresaResult>();
 
-            var validator = new CriaEmpresaValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new CriaEmpresaValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                var resultado = await _unitOfWork.Empresa.Incluir(new Entidades.Empresa(command));
+
+                response.AddValue(new CriaEmpresaResult());
             }
-
-            var resultado = await _unitOfWork.Empresa.Incluir(new Entidades.Empresa(command));
-
-            response.AddValue(new CriaEmpresaResult());
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

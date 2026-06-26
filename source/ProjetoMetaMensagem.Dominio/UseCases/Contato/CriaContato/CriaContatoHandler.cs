@@ -23,19 +23,27 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
         {
             var response = new Response<CriaContatoResult>();
 
-            var validator = new CriaContatoValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new CriaContatoValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                // Lógica para adicionar o contato via UnitOfWork aqui
+                await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
+
+                response.AddValue(new CriaContatoResult());
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
             }
 
-            // Lógica para adicionar o contato via UnitOfWork aqui
-            await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
-
-            response.AddValue(new CriaContatoResult());
             return response;
         }
     }

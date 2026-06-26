@@ -52,28 +52,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     return response;
                 }
 
-                // 3. Persistência no histórico em caso de sucesso
-                //var historico = new HistoricoDisparo
-                //{
-                //    EmpresaId = command.EmpresaId,
-                //    ContatoId = command.ContatoId,
-                //    TemplateId = command.TemplateId,
-                //    TipoDisparo = "Template",
-                //    WamidMeta = respostaMeta.WamidMeta,
-                //    // Serializa os parâmetros de body/button em JSON para auditoria na timeline
-                //    Conteudo = JsonConvert.SerializeObject(new
-                //    {
-                //        command.ParametrosBody,
-                //        command.ParametrosButton
-                //    })
-                //};
+                // 3. Persistencia no historico em caso de sucesso
+                var historico = new HistoricoDisparo
+                {
+                    EmpresaId = command.EmpresaId,
+                    ContatoId = command.ContatoId,
+                    TemplateId = command.TemplateId,
+                    TipoDisparo = "Template",
+                    WamidMeta = respostaMeta.WamidMeta,
+                    Conteudo = JsonConvert.SerializeObject(new
+                    {
+                        command.ParametrosBody,
+                        command.ParametrosButton
+                    })
+                };
 
-                //// Grava utilizando a propriedade do Unit of Work
-                //await _unitOfWork.HistoricoDisparo.Incluir(historico);
-
-                // Se o seu pipeline do Mediator não fizer o Commit de forma automática via Behavior/Middleware, 
-                // descomente a linha abaixo para efetivar a transação:
-                // await _unitOfWork.CommitAsync();
+                await _unitOfWork.HistoricoDisparo.Incluir(historico);
 
                 // 4. Montagem do resultado positivo
                 var resultado = new EnviarMensagemTemplateMetaResult

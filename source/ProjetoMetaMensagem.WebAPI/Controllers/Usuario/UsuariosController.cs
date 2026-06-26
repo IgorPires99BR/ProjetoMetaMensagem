@@ -18,31 +18,59 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
         [HttpPost("api/usuario/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaUsuarioCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpDelete("api/usuario/excluir/{id}")]
         public async Task<IActionResult> Deletar(Guid id)
         {
-            DeletaUsuarioCommand command = new DeletaUsuarioCommand(id);
+            try
+            {
+                DeletaUsuarioCommand command = new DeletaUsuarioCommand(id);
 
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPut("api/usuario/alterar")]
         public async Task<IActionResult> Alterar([FromBody] AlteraUsuarioCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpGet("api/usuario/obter-por-empresa/{idEmpresa}")]
         public async Task<IActionResult> ObterPorId(Guid idEmpresa)
         {
-            var resultado = await _mediator.Send(new ObtemUsuarioCommand(idEmpresa));
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.OK : (int)HttpStatusCode.NotFound, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new ObtemUsuarioCommand(idEmpresa));
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.OK : (int)HttpStatusCode.NotFound, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

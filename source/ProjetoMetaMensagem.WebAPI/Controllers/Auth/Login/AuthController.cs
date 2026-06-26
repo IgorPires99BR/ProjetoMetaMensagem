@@ -20,12 +20,19 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
         [HttpPost("api/auth/login")]
         public async Task<IActionResult> Enviar([FromBody] LoginCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+                if (resultado != null)
+                    return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
 
-            return this.ValidateResponse((int)HttpStatusCode.BadRequest, null);
+                return this.ValidateResponse((int)HttpStatusCode.BadRequest, null);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

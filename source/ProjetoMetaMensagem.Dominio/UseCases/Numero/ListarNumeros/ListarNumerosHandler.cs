@@ -21,32 +21,39 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros
         public async Task<Response<List<ListarNumerosResult>>> Handle(ListarNumerosCommand command)
         {
             var response = new Response<List<ListarNumerosResult>>();
-            var listaNumeros = new List<ListarNumerosResult>();
 
-            var validator = new ListarNumerosValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var listaNumeros = new List<ListarNumerosResult>();
+
+                var validator = new ListarNumerosValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                var numerosBanco = await _unitOfWork.Numero.ObterPorUsuario(command.IdUsuario);
+
+                if (numerosBanco == null)
+                {
+                    response.AddErro("Não foram encontrados números no banco de dados");
+                    return response;
+                }
+
+                foreach (var numero in numerosBanco)
+                {
+                    listaNumeros.Add(new ListarNumerosResult(numero));
+                }
+
+                response.AddValue(listaNumeros);
             }
-
-            var numerosBanco = await _unitOfWork.Numero.ObterPorUsuario(command.IdUsuario);
-
-            if (numerosBanco == null)
+            catch (Exception ex)
             {
-                response.AddErro("Não foram encontrados números no banco de dados");
-                return response;
+                response.AddErro($"Erro: {ex.Message}");
             }
-
-            foreach(var numero in numerosBanco)
-            {
-                listaNumeros.Add(new ListarNumerosResult(numero));
-            }
-
-
-            response.AddValue(listaNumeros);
 
             return response;
         }

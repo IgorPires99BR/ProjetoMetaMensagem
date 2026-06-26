@@ -22,27 +22,32 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas
         {
             var response = new Response<List<ListaConversaPorIdResult>>();
 
-            var listaResultados = new List<ListaConversaPorIdResult>();
-
-            //var validator = new CriaClienteValidator();
-            //var validateResult = validator.Validate(request);
-
-            //if (!validateResult.IsValid)
-            //{
-            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-            //    return response;
-            //}
-
-            var conversations = await _unitOfWork.ConversationsRepository.Obter(command.CompanyId);
-
-
-            foreach(var conversation in conversations)
+            try
             {
+                var listaResultados = new List<ListaConversaPorIdResult>();
 
-                listaResultados.Add(new ListaConversaPorIdResult(conversation));
+                //var validator = new CriaClienteValidator();
+                //var validateResult = validator.Validate(request);
+
+                //if (!validateResult.IsValid)
+                //{
+                //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                //    return response;
+                //}
+
+                var conversations = await _unitOfWork.ConversationsRepository.Obter(command.CompanyId);
+
+                foreach (var conversation in conversations)
+                {
+                    listaResultados.Add(new ListaConversaPorIdResult(conversation));
+                }
+
+                response.AddValue(listaResultados);
             }
-
-            response.AddValue(listaResultados);
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

@@ -23,20 +23,27 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
         {
             var response = new Response<DeletaContatoResult>();
 
-            var validator = new DeletaContatoValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new DeletaContatoValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                // Lógica para remover o contato via UnitOfWork aqui
+                await _unitOfWork.Contato.Excluir(command.Id);
+
+                response.AddValue(new DeletaContatoResult());
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
             }
 
-            // Lógica para remover o contato via UnitOfWork aqui
-            await _unitOfWork.Contato.Excluir(command.Id);
-
-
-            response.AddValue(new DeletaContatoResult());
             return response;
         }
     }

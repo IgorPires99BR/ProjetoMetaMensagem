@@ -23,25 +23,33 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
         public async Task<Response<List<ObtemUsuarioResult>>> Handle(ObtemUsuarioCommand command)
         {
             var response = new Response<List<ObtemUsuarioResult>>();
-            var listaUsuarios = new List<ObtemUsuarioResult>();
 
-            var validator = new ObtemUsuarioValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var listaUsuarios = new List<ObtemUsuarioResult>();
+
+                var validator = new ObtemUsuarioValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                var usuariosBanco = await _unitOfWork.Usuario.ObterPorEmpresa(command.IdUsuario);
+
+                foreach (var usuario in usuariosBanco)
+                {
+                    listaUsuarios.Add(new ObtemUsuarioResult(usuario));
+                }
+
+                response.AddValue(listaUsuarios);
             }
-
-            var usuariosBanco = await _unitOfWork.Usuario.ObterPorEmpresa(command.IdUsuario);
-
-            foreach (var usuario in usuariosBanco)
+            catch (Exception ex)
             {
-                listaUsuarios.Add(new ObtemUsuarioResult(usuario));
+                response.AddErro($"Erro: {ex.Message}");
             }
-
-            response.AddValue(listaUsuarios);
 
             return response;
         }

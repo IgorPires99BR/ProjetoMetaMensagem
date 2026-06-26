@@ -55,11 +55,24 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session._connection.ExecuteAsync(sql, usuario, transaction: _session.Transaction);
         }
 
+        public async Task<Usuario?> ObterPorEmail(string email)
+        {
+            var sql = $@"
+                SELECT * FROM {nameof(Usuario)}
+                WHERE {nameof(Usuario.Email)} = @Email";
+
+            return await _session._connection.QueryFirstOrDefaultAsync<Usuario>(
+                sql,
+                new { Email = email },
+                transaction: _session.Transaction
+            );
+        }
+
         public async Task<Usuario?> Logar(string email, string senhaHash)
         {
             var sql = $@"
-             SELECT * FROM {nameof(Usuario)} 
-             WHERE {nameof(Usuario.Email)} = @Email 
+             SELECT * FROM {nameof(Usuario)}
+             WHERE {nameof(Usuario.Email)} = @Email
                AND {nameof(Usuario.SenhaHash)} = @SenhaHash";
 
             return await _session._connection.QueryFirstOrDefaultAsync<Usuario>(
@@ -71,25 +84,25 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Excluir(string id)
         {
-            var sql = $"DELETE FROM Usuario WHERE {nameof(Usuario.Id)} = @Id";
+            var sql = $"DELETE FROM {nameof(Usuario)} WHERE {nameof(Usuario.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Usuario>> ObterPorEmpresa(Guid id)
         {
-            var sql = $"SELECT * FROM Usuario WHERE {nameof(Usuario.EmpresaId)} = @Id";
+            var sql = $"SELECT * FROM {nameof(Usuario)} WHERE {nameof(Usuario.EmpresaId)} = @Id";
             return await _session._connection.QueryAsync<Usuario>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Usuario>> Obter()
         {
-            var sql = $"SELECT * FROM Usuario ORDER BY {nameof(Usuario.Nome)}";
+            var sql = $"SELECT * FROM {nameof(Usuario)} ORDER BY {nameof(Usuario.Nome)}";
             return await _session._connection.QueryAsync<Usuario>(sql, transaction: _session.Transaction);
         }
 
         public async Task<Usuario?> ObterPorId(Guid id)
         {
-            var sql = $"SELECT * FROM Usuario WHERE {nameof(Usuario.Id)} = @Id";
+            var sql = $"SELECT * FROM {nameof(Usuario)} WHERE {nameof(Usuario.Id)} = @Id";
             return await _session._connection.QueryFirstAsync<Usuario>(sql, transaction: _session.Transaction);
         }
     }

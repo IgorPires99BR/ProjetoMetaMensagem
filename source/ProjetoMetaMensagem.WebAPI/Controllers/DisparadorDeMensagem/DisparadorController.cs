@@ -21,45 +21,73 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
         [HttpPost("enviar-meta")]
         public async Task<IActionResult> Enviar([FromBody] EnviarMensagemMetaCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+                if (resultado != null)
+                    return Ok(resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost("CriaTemplate")]
         public async Task<IActionResult> CriaTemplate([FromBody] CriarTemplateMetaCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+                if (resultado != null)
+                    return Ok(resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost("EnviarMensagemTemplate")]
         public async Task<IActionResult> EnviarMensagemTemplate([FromBody] EnviarMensagemTemplateMetaCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+                if (resultado != null)
+                    return Ok(resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost("EnviarMensagemTemplateLote")]
         public async Task<IActionResult> EnviarMensagemTemplateLote([FromBody] EnviarMensagemTemplateMetaLoteCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+                if (resultado != null)
+                    return Ok(resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
     }

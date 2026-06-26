@@ -31,13 +31,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             }
         }
 
-        public LoginResult(Entidades.Usuario usuario)
+        public LoginResult(Entidades.Usuario usuario, string? token = null)
         {
             IdEmpresa = usuario.EmpresaId;
             IdUsuario = usuario.Id;
             Email = usuario.Email;
-            this.Role = usuario.IsAdmin.Value ? "admin" : "operador";
-            this.Status = "success";
+            Role = usuario.IsAdmin.HasValue && usuario.IsAdmin.Value ? "admin" : "operador";
+            Status = "success";
+            Token = token;
         }
 
         [JsonProperty("status")]
@@ -55,5 +56,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
 
         [JsonProperty("email")]
         public string Email { get; set; } = null!;
+
+        [JsonProperty("token")]
+        public string? Token { get; set; }
     }
 }

@@ -91,7 +91,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
             catch (Exception ex)
             {
                 // Qualquer quebra (no banco ou integração) faz o UnitOfWork reverter tudo, mantendo o estado anterior
-                throw;
+                response.AddErro($"Erro: {ex.Message}");
             }
 
             return response;

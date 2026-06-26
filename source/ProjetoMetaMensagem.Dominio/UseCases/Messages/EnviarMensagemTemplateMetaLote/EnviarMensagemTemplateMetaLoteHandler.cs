@@ -56,25 +56,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     var telefone = disparo.Key;
                     var respostaMeta = disparo.Value;
 
-                    //if (respostaMeta.Sucesso)
-                    //{
-                    //    var historico = new HistoricoDisparo
-                    //    {
-                    //        EmpresaId = command.EmpresaId,
-                    //        ContatoId = command.ContatoId, // Id do contato destino vinculado ao lote
-                    //        TemplateId = command.TemplateId,
-                    //        TipoDisparo = "Template",
-                    //        WamidMeta = respostaMeta.WamidMeta,
-                    //        // Serializa os parâmetros de body/button em JSON para auditoria visual na timeline do CRM
-                    //        Conteudo = JsonConvert.SerializeObject(new
-                    //        {
-                    //            command.ParametrosBody,
-                    //            command.ParametrosButton
-                    //        })
-                    //    };
+                    if (respostaMeta.Sucesso)
+                    {
+                        var historico = new HistoricoDisparo
+                        {
+                            EmpresaId = command.EmpresaId,
+                            ContatoId = command.ContatoId,
+                            TemplateId = command.TemplateId,
+                            TipoDisparo = "Template",
+                            WamidMeta = respostaMeta.WamidMeta,
+                            Conteudo = JsonConvert.SerializeObject(new
+                            {
+                                command.ParametrosBody,
+                                command.ParametrosButton
+                            })
+                        };
 
-                    //    await _unitOfWork.HistoricoDisparo.Incluir(historico);
-                    //}
+                        await _unitOfWork.HistoricoDisparo.Incluir(historico);
+                    }
                 }
 
                 // 3. Montagem do objeto de resultado mantendo o dicionário original [Telefone -> bool] para a View do CRM

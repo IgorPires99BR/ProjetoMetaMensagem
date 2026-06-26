@@ -10,12 +10,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
 {
     public class EnviarMensagemMetaCommand : IRequest<Response<EnviarMensagemMetaResult>>
     {
-        public EnviarMensagemMetaCommand(string celular, string template)
-        {
-            Celular = celular;
-            Template = template;
-        }
         public string Celular { get; set; }
         public string Template { get; set; }
+        public Guid EmpresaId { get; set; }
+        public Guid ContatoId { get; set; }
     }
 }

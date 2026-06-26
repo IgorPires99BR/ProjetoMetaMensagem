@@ -60,25 +60,25 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Excluir(string id)
         {
-            var sql = $"DELETE FROM Contato WHERE {nameof(Contato.Id)} = @Id";
+            var sql = $"DELETE FROM {nameof(Contato)} WHERE {nameof(Contato.Id)} = @Id";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<Contato?> ObterPorId(int id)
         {
-            var sql = $"SELECT * FROM Contato WHERE {nameof(Contato.Id)} = @Id";
+            var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.Id)} = @Id";
             return await _session._connection.QueryFirstOrDefaultAsync<Contato>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Contato>> Obter()
         {
-            var sql = $"SELECT * FROM Contato";
+            var sql = $"SELECT * FROM {nameof(Contato)}";
             return await _session._connection.QueryAsync<Contato>(sql, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Contato>> ObterPorUsuario(Guid usuarioId)
         {
-            var sql = $"SELECT * FROM Contato WHERE {nameof(Contato.UsuarioId)} = @UsuarioId";
+            var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.UsuarioId)} = @UsuarioId";
             return await _session._connection.QueryAsync<Contato>(sql, new { UsuarioId = usuarioId }, transaction: _session.Transaction);
         }
     }

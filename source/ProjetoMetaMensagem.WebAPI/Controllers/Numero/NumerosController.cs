@@ -17,22 +17,43 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
         [HttpPost("api/numero/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaNumeroCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpGet("api/numero/ListarNumeros/{usuarioId}")]
         public async Task<IActionResult> ListarNumeros(Guid usuarioId)
         {
-            var resultado = await _mediator.Send(new ListarNumerosCommand(usuarioId));
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new ListarNumerosCommand(usuarioId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost("api/numero/AtualizarNumerosMeta/{usuarioId}")]
         public async Task<IActionResult> AtualizarNumerosMeta(Guid usuarioId, Guid idEmpresa)
         {
-            var resultado = await _mediator.Send(new AtualizaNumeroMetaCommand(usuarioId, idEmpresa));
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new AtualizaNumeroMetaCommand(usuarioId, idEmpresa));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

@@ -26,36 +26,41 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
         public async Task<Response<List<ListaTemplateResult>>> Handle(ListaTemplateCommand command)
         {
             var response = new Response<List<ListaTemplateResult>>();
-            var listaTemplates = new List<ListaTemplateResult>();
 
-            var validator = new ListaTemplateValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var listaTemplates = new List<ListaTemplateResult>();
+
+                var validator = new ListaTemplateValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                var templateBanco = await _unitOfWork.Template.ObterPorEmpresa(command.IdEmpresa);
+
+                if (templateBanco == null)
+                {
+                    response.AddErro("Não foram encontrados números no banco de dados");
+                    return response;
+                }
+
+                foreach (var template in templateBanco)
+                {
+                    listaTemplates.Add(new ListaTemplateResult(template));
+                }
+
+                response.AddValue(listaTemplates);
             }
-
-
-            var templateBanco = await _unitOfWork.Template.ObterPorEmpresa(command.IdEmpresa);
-
-            if (templateBanco == null)
+            catch (Exception ex)
             {
-                response.AddErro("Não foram encontrados números no banco de dados");
-                return response;
+                response.AddErro($"Erro: {ex.Message}");
             }
-
-            foreach (var template in templateBanco)
-            {
-                listaTemplates.Add(new ListaTemplateResult(template));
-            }
-
-
-            response.AddValue(listaTemplates);
 
             return response;
-
         }
     }
 }

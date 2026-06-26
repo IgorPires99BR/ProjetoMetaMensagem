@@ -19,36 +19,71 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
         [HttpPost("api/contato/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaContatoCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost("api/contato/incluir-em-lote")]
         public async Task<IActionResult> IncluirEmLote([FromBody] CriaContatoEmLoteCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPut("api/contato/alterar")]
         public async Task<IActionResult> Alterar([FromBody] AlteraContatoCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpGet("api/contato/obter-por-usuario/{usuarioId}")]
         public async Task<IActionResult> ObterPorUsuario(Guid usuarioId)
         {
-            var resultado = await _mediator.Send(new ObtemContatoCommand(usuarioId));
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new ObtemContatoCommand(usuarioId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpDelete("api/contato/excluir/{id}")]
         public async Task<IActionResult> Excluir(string id)
         {
-            var resultado = await _mediator.Send(new DeletaContatoCommand { Id = id });
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new DeletaContatoCommand { Id = id });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

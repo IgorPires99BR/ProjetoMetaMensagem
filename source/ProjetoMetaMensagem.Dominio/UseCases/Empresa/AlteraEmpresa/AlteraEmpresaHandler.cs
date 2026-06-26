@@ -26,36 +26,40 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
         {
             var response = new Response<AlteraEmpresaResult>();
 
-            // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
-            var validator = new AlteraEmpresaValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
-            }
+                // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
+                var validator = new AlteraEmpresaValidator();
+                var validateResult = validator.Validate(command);
 
-            // Recupera entidade existente
-            var existente = await _unitOfWork.Empresa.ObterPorId(command.Id);
-            if (existente == null)
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                // Recupera entidade existente
+                var existente = await _unitOfWork.Empresa.ObterPorId(command.Id);
+                if (existente == null)
+                {
+                    response.AddErro("Empresa não encontrada.");
+                    return response;
+                }
+
+                // Atualiza propriedades
+                existente.Nome = command.Nome;
+                existente.Email = command.Email;
+                existente.Telefone = command.Telefone;
+                existente.Cnpj = command.Cnpj;
+                existente.MetaAccessToken = command.AccessToken;
+                existente.PlanoId = command.PlanoId;
+
+                await _unitOfWork.Empresa.Alterar(existente);
+            }
+            catch (Exception ex)
             {
-                response.AddErro("Empresa não encontrada.");
-                return response;
+                response.AddErro($"Erro: {ex.Message}");
             }
-
-            // Atualiza propriedades
-            existente.Nome = command.Nome;
-            existente.Email = command.Email;
-            existente.Telefone = command.Telefone;
-            existente.Cnpj = command.Cnpj;
-            existente.MetaAccessToken = command.AccessToken;
-            existente.PhoneNumberId = command.PhoneNumberId;
-            existente.PlanoId = command.PlanoId;
-            existente.WabaId = command.WabaId;
-            
-
-            await _unitOfWork.Empresa.Alterar(existente);
 
             return response;
         }

@@ -21,25 +21,32 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
         {
             var response = new Response<List<ListaFlowsResult>>();
 
-            var listaResultados = new List<ListaFlowsResult>();
-
-            //var validator = new CriaClienteValidator();
-            //var validateResult = validator.Validate(request);
-
-            //if (!validateResult.IsValid)
-            //{
-            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-            //    return response;
-            //}
-
-            var flows = await _unitOfWork.Flow.ObterTodosPorEmpresa(command.IdEmpresa);
-
-            foreach (var flow in flows)
+            try
             {
-                listaResultados.Add(new ListaFlowsResult(flow));
-            }
+                var listaResultados = new List<ListaFlowsResult>();
 
-            response.AddValue(listaResultados);
+                //var validator = new CriaClienteValidator();
+                //var validateResult = validator.Validate(request);
+
+                //if (!validateResult.IsValid)
+                //{
+                //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                //    return response;
+                //}
+
+                var flows = await _unitOfWork.Flow.ObterTodosPorEmpresa(command.IdEmpresa);
+
+                foreach (var flow in flows)
+                {
+                    listaResultados.Add(new ListaFlowsResult(flow));
+                }
+
+                response.AddValue(listaResultados);
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

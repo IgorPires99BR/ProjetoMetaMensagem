@@ -23,16 +23,23 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Leads
         [HttpGet("{companyId}")]
         public async Task<IActionResult> Listar(string companyId)
         {
-            ListaConversaPorIdCommand command = new ListaConversaPorIdCommand();
+            try
+            {
+                ListaConversaPorIdCommand command = new ListaConversaPorIdCommand();
 
-            command.CompanyId = companyId;
+                command.CompanyId = companyId;
 
-            var resultado = await _mediator.Send(command);
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+                if (resultado != null)
+                    return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

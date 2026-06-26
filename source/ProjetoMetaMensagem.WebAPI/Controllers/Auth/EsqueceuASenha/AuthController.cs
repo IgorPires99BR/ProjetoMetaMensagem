@@ -20,12 +20,19 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.EsqueceuASenha
         [HttpPost("/api/auth/forgot-password")]
         public async Task<IActionResult> Enviar([FromBody] EsqueceuASenhaCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+                if (resultado != null)
+                    return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
 
-            return this.ValidateResponse((int)HttpStatusCode.BadRequest, resultado);
+                return this.ValidateResponse((int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

@@ -15,11 +15,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<ConversationState?> ObterPorEmpresaEContato(Guid empresaId, Guid contatoId)
         {
-            var sql = @"
-                SELECT * FROM ConversationState
-                WHERE EmpresaId = @EmpresaId
-                  AND ContatoId = @ContatoId
-                  AND Finalizado = 0;";
+            var sql = $@"
+                SELECT * FROM {nameof(ConversationState)}
+                WHERE {nameof(ConversationState.EmpresaId)} = @EmpresaId
+                  AND {nameof(ConversationState.ContatoId)} = @ContatoId
+                  AND {nameof(ConversationState.Finalizado)} = 0;";
 
             return await _session._connection.QueryFirstOrDefaultAsync<ConversationState>(
                 sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
@@ -27,10 +27,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Incluir(ConversationState state)
         {
-            var sql = @"
-                INSERT INTO ConversationState (
-                    Id, EmpresaId, ContatoId, FlowId, EtapaAtualId,
-                    Variaveis, DataInicio, DataAtualizacao, Finalizado
+            var sql = $@"
+                INSERT INTO {nameof(ConversationState)} (
+                    {nameof(ConversationState.Id)}, {nameof(ConversationState.EmpresaId)}, {nameof(ConversationState.ContatoId)}, {nameof(ConversationState.FlowId)}, {nameof(ConversationState.EtapaAtualId)},
+                    {nameof(ConversationState.Variaveis)}, {nameof(ConversationState.DataInicio)}, {nameof(ConversationState.DataAtualizacao)}, {nameof(ConversationState.Finalizado)}
                 ) VALUES (
                     @Id, @EmpresaId, @ContatoId, @FlowId, @EtapaAtualId,
                     @Variaveis, @DataInicio, @DataAtualizacao, @Finalizado
@@ -41,23 +41,23 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Atualizar(ConversationState state)
         {
-            var sql = @"
-                UPDATE ConversationState SET
-                    EtapaAtualId = @EtapaAtualId,
-                    Variaveis = @Variaveis,
-                    DataAtualizacao = @DataAtualizacao,
-                    Finalizado = @Finalizado
-                WHERE Id = @Id;";
+            var sql = $@"
+                UPDATE {nameof(ConversationState)} SET
+                    {nameof(ConversationState.EtapaAtualId)} = @EtapaAtualId,
+                    {nameof(ConversationState.Variaveis)} = @Variaveis,
+                    {nameof(ConversationState.DataAtualizacao)} = @DataAtualizacao,
+                    {nameof(ConversationState.Finalizado)} = @Finalizado
+                WHERE {nameof(ConversationState.Id)} = @Id;";
 
             await _session._connection.ExecuteAsync(sql, state, transaction: _session.Transaction);
         }
 
         public async Task<List<ConversationState>> ObterPorFlow(Guid flowId)
         {
-            var sql = @"
-                SELECT * FROM ConversationState
-                WHERE FlowId = @FlowId
-                ORDER BY DataAtualizacao DESC;";
+            var sql = $@"
+                SELECT * FROM {nameof(ConversationState)}
+                WHERE {nameof(ConversationState.FlowId)} = @FlowId
+                ORDER BY {nameof(ConversationState.DataAtualizacao)} DESC;";
 
             var result = await _session._connection.QueryAsync<ConversationState>(
                 sql, new { FlowId = flowId }, transaction: _session.Transaction);
@@ -67,7 +67,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Excluir(Guid id)
         {
-            var sql = "DELETE FROM ConversationState WHERE Id = @Id;";
+            var sql = $"DELETE FROM {nameof(ConversationState)} WHERE {nameof(ConversationState.Id)} = @Id;";
             await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
     }

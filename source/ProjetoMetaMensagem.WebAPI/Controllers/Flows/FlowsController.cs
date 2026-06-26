@@ -21,34 +21,55 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
         [Route("{IdEmpresa}")]
         public async Task<IActionResult> Listar(Guid IdEmpresa)
         {
-            var resultado = await _mediator.Send(new ListaFlowsCommand(IdEmpresa));
+            try
+            {
+                var resultado = await _mediator.Send(new ListaFlowsCommand(IdEmpresa));
 
-            if (resultado != null)
-                return Ok(resultado);
+                if (resultado != null)
+                    return Ok(resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Incluir(CriaFlowCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+                if (resultado != null)
+                    return Ok(resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPut]
         public async Task<IActionResult> Alterar(AlteraFlowCommand command)
         {
-            var resultado = await _mediator.Send(command);
+            try
+            {
+                var resultado = await _mediator.Send(command);
 
-            if (resultado != null)
-                return Ok(resultado);
+                if (resultado != null)
+                    return Ok(resultado);
 
-            return BadRequest(resultado);
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

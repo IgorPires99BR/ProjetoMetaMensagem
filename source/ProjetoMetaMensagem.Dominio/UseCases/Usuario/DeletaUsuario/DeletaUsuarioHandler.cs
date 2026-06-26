@@ -24,18 +24,25 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
         {
             var response = new Response<DeletaUsuarioResult>();
 
-            var validator = new DeletaUsuarioValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new DeletaUsuarioValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                await _unitOfWork.Usuario.Excluir(command.Id.ToString());
+
+                response.AddValue(new DeletaUsuarioResult());
             }
-
-            await _unitOfWork.Usuario.Excluir(command.Id.ToString());
-
-            response.AddValue(new DeletaUsuarioResult());
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

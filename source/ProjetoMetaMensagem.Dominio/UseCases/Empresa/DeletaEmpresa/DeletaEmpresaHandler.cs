@@ -25,17 +25,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa
         {
             var response = new Response<DeletaEmpresaResult>();
 
-            // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
-            var validator = new DeletaEmpresaValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
-            }
+                // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
+                var validator = new DeletaEmpresaValidator();
+                var validateResult = validator.Validate(command);
 
-            await _unitOfWork.Empresa.Excluir(command.IdEmpresa);
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                await _unitOfWork.Empresa.Excluir(command.IdEmpresa);
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

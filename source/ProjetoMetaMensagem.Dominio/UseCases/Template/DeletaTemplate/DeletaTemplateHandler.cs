@@ -10,9 +10,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate
 {
     public class DeletaTemplateHandler : IRequestHandler<DeletaTemplateCommand, Response<DeletaTemplateResult>>
     {
-        public Task<Response<DeletaTemplateResult>> Handle(DeletaTemplateCommand request)
+        public async Task<Response<DeletaTemplateResult>> Handle(DeletaTemplateCommand request)
         {
-            throw new NotImplementedException();
+            var response = new Response<DeletaTemplateResult>();
+
+            try
+            {
+                throw new NotImplementedException();
+            }
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
+
+            return response;
         }
     }
 }

@@ -20,22 +20,43 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
         [HttpPost("api/v2/empresa/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaEmpresaCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPut("api/v2/empresa/alterar")]
         public async Task<IActionResult> Alterar([FromBody] AlteraEmpresaCommand command)
         {
-            var resultado = await _mediator.Send(command);
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpDelete("api/v2/empresa/excluir/{id}")]
         public async Task<IActionResult> Excluir(string id)
         {
-            var resultado = await _mediator.Send(new DeletaEmpresaCommand { IdEmpresa = id });
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new DeletaEmpresaCommand { IdEmpresa = id });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         //[HttpGet("api/empresa/obter-por-id/{id}")]
@@ -48,15 +69,29 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
         [HttpGet("api/v2/empresa/obter")]
         public async Task<IActionResult> Obter()
         {
-            var resultado = await _mediator.Send(new ObtemEmpresaCommand());
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new ObtemEmpresaCommand());
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost("api/v2/empresa/atualizar-waba/{empresaId}")]
         public async Task<IActionResult> AtualizarWabaId([FromRoute] Guid empresaId, [FromBody]string accessToken)
         {
-            var resultado = await _mediator.Send(new AtualizaWabaIdCommand(empresaId,accessToken));
-            return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new AtualizaWabaIdCommand(empresaId,accessToken));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -24,30 +24,33 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
         public async Task<Response<List<ObtemEmpresaResult>>> Handle(ObtemEmpresaCommand command)
         {
             var response = new Response<List<ObtemEmpresaResult>>();
-            var listaEmpresa = new List<ObtemEmpresaResult>();
 
-            // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
-            var validator = new ObtemEmpresaValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
-            {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
-            }
             try
             {
-            var empresaBanco = await _unitOfWork.Empresa.Obter();
+                var listaEmpresa = new List<ObtemEmpresaResult>();
 
-            foreach(var empresa in empresaBanco)
-            {
-                listaEmpresa.Add(new ObtemEmpresaResult(empresa));
+                var validator = new ObtemEmpresaValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                var empresaBanco = await _unitOfWork.Empresa.Obter();
+
+                foreach (var empresa in empresaBanco)
+                {
+                    listaEmpresa.Add(new ObtemEmpresaResult(empresa));
+                }
+
+                response.AddValue(listaEmpresa);
             }
-
-            } catch (Exception ex) 
-           { }
-
-            response.AddValue(listaEmpresa);
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

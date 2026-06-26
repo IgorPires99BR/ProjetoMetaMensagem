@@ -13,7 +13,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         public Guid IdEmpresa { get; set; }
         public List<string> Telefones { get; set; } = new List<string>();
         public string NomeTemplate { get; set; }
-        public string Idioma { get; set; } = "pt_BR"; // Default para facilitar no mercado brasileiro
+        public string Idioma { get; set; } = "pt_BR";
+        public Guid EmpresaId { get; set; }
+        public Guid ContatoId { get; set; }
+        public Guid? TemplateId { get; set; }
         public List<string> ParametrosBody { get; set; } = new List<string>();
         public List<string> ParametrosButton { get; set; } = new List<string>();
     }

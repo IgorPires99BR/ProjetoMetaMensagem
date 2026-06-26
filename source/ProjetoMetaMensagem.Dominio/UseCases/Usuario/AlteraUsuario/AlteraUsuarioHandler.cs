@@ -23,18 +23,25 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
         {
             var response = new Response<AlteraUsuarioResult>();
 
-            var validator = new AlteraUsuarioValidator();
-            var validateResult = validator.Validate(command);
-
-            if (!validateResult.IsValid)
+            try
             {
-                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                return response;
+                var validator = new AlteraUsuarioValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                await _unitOfWork.Usuario.Alterar(new Entidades.Usuario(command));
+
+                response.AddValue(new AlteraUsuarioResult());
             }
-
-            await _unitOfWork.Usuario.Alterar(new Entidades.Usuario(command));
-
-            response.AddValue(new AlteraUsuarioResult());
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }

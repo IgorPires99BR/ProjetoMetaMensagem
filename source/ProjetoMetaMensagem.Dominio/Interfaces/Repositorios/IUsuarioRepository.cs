@@ -12,6 +12,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task Incluir(Usuario usuario);
         Task Alterar(Usuario usuario);
 
+        Task<Usuario?> ObterPorEmail(string email);
         Task<Usuario?> Logar(string email, string senhaHash);
 
         Task Excluir(string id);

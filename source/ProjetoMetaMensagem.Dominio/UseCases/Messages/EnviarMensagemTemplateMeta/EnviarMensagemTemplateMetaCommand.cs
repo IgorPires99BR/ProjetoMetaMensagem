@@ -6,14 +6,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
     public class EnviarMensagemTemplateMetaCommand : IRequest<Response<EnviarMensagemTemplateMetaResult>>
     {
         public Guid IdEmpresa { get; set; }
-        public string Telefone { get; set; } // Formato: 5511999998888
+        public string Telefone { get; set; }
         public string NomeTemplate { get; set; }
         public string Idioma { get; set; } = "pt_BR";
-
-        // Lista de strings para preencher {{1}}, {{2}}... na ordem
+        public Guid ContatoId { get; set; }
+        public Guid? TemplateId { get; set; }
         public List<string> ParametrosBody { get; set; } = new List<string>();
-
-        // Se o botão for dinâmico (URL com final variável)
         public List<string> ParametrosButton { get; set; } = new List<string>();
     }
 }

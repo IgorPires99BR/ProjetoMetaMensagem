@@ -26,23 +26,30 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId
         {
             var response = new Response<AtualizaWabaIdResult>();
 
-            //var validator = new CriaEmpresaValidator();
-            //var validateResult = validator.Validate(command);
-
-            //if (!validateResult.IsValid)
-            //{
-            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-            //    return response;
-            //}
-
-            if (command.AccessToken != null & !String.IsNullOrEmpty(command.AccessToken))
+            try
             {
-                var wabaID = await _metaService.BuscarWabaIdDaMetaAsync(command.AccessToken);
+                //var validator = new CriaEmpresaValidator();
+                //var validateResult = validator.Validate(command);
 
-                await _unitOfWork.Empresa.AtualizarWabaId(command.IdEmpresa, wabaID);
+                //if (!validateResult.IsValid)
+                //{
+                //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                //    return response;
+                //}
+
+                if (command.AccessToken != null & !String.IsNullOrEmpty(command.AccessToken))
+                {
+                    var wabaID = await _metaService.BuscarWabaIdDaMetaAsync(command.AccessToken);
+
+                    await _unitOfWork.Empresa.AtualizarWabaId(command.IdEmpresa, wabaID);
+                }
+
+                response.AddValue(new AtualizaWabaIdResult());
             }
-
-            response.AddValue(new AtualizaWabaIdResult());
+            catch (Exception ex)
+            {
+                response.AddErro($"Erro: {ex.Message}");
+            }
 
             return response;
         }
