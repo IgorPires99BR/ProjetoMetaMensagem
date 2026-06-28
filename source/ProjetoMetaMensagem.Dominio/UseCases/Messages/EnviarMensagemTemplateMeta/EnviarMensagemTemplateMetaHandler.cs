@@ -53,21 +53,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 }
 
                 // 3. Persistencia no historico em caso de sucesso
-                var historico = new HistoricoDisparo
-                {
-                    EmpresaId = command.EmpresaId,
-                    ContatoId = command.ContatoId,
-                    TemplateId = command.TemplateId,
-                    TipoDisparo = "Template",
-                    WamidMeta = respostaMeta.WamidMeta,
-                    Conteudo = JsonConvert.SerializeObject(new
-                    {
-                        command.ParametrosBody,
-                        command.ParametrosButton
-                    })
-                };
+                //var historico = new HistoricoDisparo
+                //{
+                //    EmpresaId = command.EmpresaId,
+                //    ContatoId = command.ContatoId,
+                //    TemplateId = command.TemplateId,
+                //    TipoDisparo = "Template",
+                //    WamidMeta = respostaMeta.WamidMeta,
+                //    Conteudo = JsonConvert.SerializeObject(new
+                //    {
+                //        command.ParametrosBody,
+                //        command.ParametrosButton
+                //    })
+                //};
 
-                await _unitOfWork.HistoricoDisparo.Incluir(historico);
+                //await _unitOfWork.HistoricoDisparo.Incluir(historico);
 
                 // 4. Montagem do resultado positivo
                 var resultado = new EnviarMensagemTemplateMetaResult

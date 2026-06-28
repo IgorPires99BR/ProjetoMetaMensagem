@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -50,6 +49,7 @@ using ProjetoMetaMensagem.Servico.Flow;
 using ProjetoMetaMensagem.Servico.Auth;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 

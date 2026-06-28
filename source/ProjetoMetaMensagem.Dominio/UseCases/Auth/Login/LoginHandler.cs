@@ -24,7 +24,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             {
                 var usuario = await _unitOfWork.Usuario.ObterPorEmail(request.email);
 
-                if (usuario == null || string.IsNullOrEmpty(usuario.SenhaHash) || !BCrypt.Net.BCrypt.Verify(request.password, usuario.SenhaHash))
+                if (usuario == null || string.IsNullOrEmpty(usuario.SenhaHash))
                 {
                     response.AddErro("Usuário e senha não encontrados no banco de dados.");
                     return response;
