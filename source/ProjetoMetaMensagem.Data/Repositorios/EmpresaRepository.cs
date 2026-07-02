@@ -129,6 +129,15 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
+        public async Task<Guid?> ObterPorPhoneNumberId(string phoneNumberId)
+        {
+            var sql = $@"SELECT {nameof(Empresa.Id)} 
+                 FROM {nameof(Empresa)} 
+                 WHERE {nameof(Empresa.PhoneNumberId)} = @PhoneNumberId";
+
+            return await _session.Connection.QueryFirstOrDefaultAsync<Guid>(sql, new { PhoneNumberId = phoneNumberId }, transaction: _session.Transaction);
+        }
+
         public async Task<Empresa?> ObterPorId(Guid id)
         {
             var sql = $"SELECT * FROM {nameof(Empresa)} WHERE {nameof(Empresa.Id)} = @Id";

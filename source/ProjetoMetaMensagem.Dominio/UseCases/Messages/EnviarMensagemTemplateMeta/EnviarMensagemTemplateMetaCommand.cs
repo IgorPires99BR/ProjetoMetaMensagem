@@ -12,6 +12,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         public Guid ContatoId { get; set; }
         public Guid? TemplateId { get; set; }
         public Guid EmpresaId { get; set; }
+        // ADICIONE ESTE CAMPO PARA SUPORTAR AS MÍDIAS DE HEADER (IMAGEM, VÍDEO, DOCUMENTO)
+        public string? ParametroHeaderMediaUrl { get; set; }
         public List<string> ParametrosBody { get; set; } = new List<string>();
         public List<string> ParametrosButton { get; set; } = new List<string>();
     }

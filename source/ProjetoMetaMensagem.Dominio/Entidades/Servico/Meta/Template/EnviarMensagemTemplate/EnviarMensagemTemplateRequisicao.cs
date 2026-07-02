@@ -13,13 +13,14 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
     {
         public EnviarMensagemTemplateRequisicao()
         {
-
         }
-        public EnviarMensagemTemplateRequisicao(EnviarMensagemTemplateMetaCommand command)
+
+        public EnviarMensagemTemplateRequisicao(EnviarMensagemTemplateMetaCommand command, string contatoId)
         {
             if (command == null) return;
 
             Para = TelefoneHelper.FormatarParaMeta(command.Telefone);
+            ContatoId = contatoId;
             Template = new TemplateData
             {
                 Nome = command.NomeTemplate,
@@ -27,28 +28,73 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
                 Componentes = new List<ComponenteEnvio>()
             };
 
-            // Mapeia parâmetros do BODY se existirem
+            // 1. Mapeia parâmetros do HEADER de mídia se existirem no Command (Dinâmico por extensão de arquivo)
+            if (!string.IsNullOrEmpty(command.ParametroHeaderMediaUrl))
+            {
+                string tipoMidia = "image";
+                string urlLower = command.ParametroHeaderMediaUrl.ToLower();
+
+                if (urlLower.EndsWith(".pdf") || urlLower.EndsWith(".doc") || urlLower.EndsWith(".docx"))
+                    tipoMidia = "document";
+                else if (urlLower.EndsWith(".mp4") || urlLower.EndsWith(".avi") || urlLower.EndsWith(".mov"))
+                    tipoMidia = "video";
+
+                var parametroHeader = new ParametroEnvio
+                {
+                    Tipo = tipoMidia
+                };
+
+                // Atribui ao nó correto esperado pela API da Meta
+                if (tipoMidia == "image")
+                    parametroHeader.Image = new MediaLinkData { Link = command.ParametroHeaderMediaUrl };
+                else if (tipoMidia == "document")
+                    parametroHeader.Document = new MediaLinkData { Link = command.ParametroHeaderMediaUrl };
+                else if (tipoMidia == "video")
+                    parametroHeader.Video = new MediaLinkData { Link = command.ParametroHeaderMediaUrl };
+
+                Template.Componentes.Add(new ComponenteEnvio
+                {
+                    Tipo = "header",
+                    Parametros = new List<ParametroEnvio> { parametroHeader }
+                });
+            }
+
+            // 2. Mapeia parâmetros do BODY se existirem
             if (command.ParametrosBody != null && command.ParametrosBody.Any())
             {
                 Template.Componentes.Add(new ComponenteEnvio
                 {
                     Tipo = "body",
-                    Parametros = command.ParametrosBody.Select(p => new ParametroEnvio { Texto = p }).ToList()
+                    Parametros = command.ParametrosBody.Select(p => new ParametroEnvio
+                    {
+                        Tipo = "text",
+                        Texto = p
+                    }).ToList()
                 });
             }
 
-            // Mapeia parâmetros de BUTTON se existirem
-            if (command.ParametrosButton != null && command.ParametrosButton.Any())
+            // 3. Mapeia parâmetros de BUTTON se existirem
+            if (command.ParametrosButton != null && command.ParametrosButton.Any(p => !string.IsNullOrWhiteSpace(p)))
             {
                 Template.Componentes.Add(new ComponenteEnvio
                 {
                     Tipo = "button",
-                    SubTipo = "url", // Normalmente usado para URLs dinâmicas
-                    Indice = "0",    // Índice do botão no template (começa em 0)
-                    Parametros = command.ParametrosButton.Select(p => new ParametroEnvio { Texto = p }).ToList()
+                    SubTipo = "url",
+                    Indice = "0",
+                    Parametros = command.ParametrosButton
+                        .Where(p => !string.IsNullOrWhiteSpace(p))
+                        .Select(p => new ParametroEnvio
+                        {
+                            Tipo = "text",
+                            Texto = p
+                        }).ToList()
                 });
             }
         }
+
+        // CORREÇÃO: Ignora esta propriedade no JSON enviado para a Meta, mantendo-a viva no seu ecossistema C#
+        [JsonIgnore]
+        public string ContatoId { get; set; }
 
         [JsonProperty("messaging_product")]
         public string MessagingProduct => "whatsapp";
@@ -61,9 +107,6 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
 
         [JsonProperty("template")]
         public TemplateData Template { get; set; }
-
-        // Construtor que mapeia o Command para a Requisição
-
     }
 
     public class TemplateData
@@ -87,10 +130,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
     public class ComponenteEnvio
     {
         [JsonProperty("type")]
-        public string Tipo { get; set; } // body, header, button
+        public string Tipo { get; set; }
 
         [JsonProperty("sub_type", NullValueHandling = NullValueHandling.Ignore)]
-        public string SubTipo { get; set; } // url, quick_reply
+        public string SubTipo { get; set; }
 
         [JsonProperty("index", NullValueHandling = NullValueHandling.Ignore)]
         public string Indice { get; set; }
@@ -101,10 +144,35 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMens
 
     public class ParametroEnvio
     {
-        [JsonProperty("type")]
-        public string Tipo => "text";
+        [JsonProperty("type")] // Newtonsoft
+        [System.Text.Json.Serialization.JsonPropertyName("type")] // Nativo .NET
+        public string Tipo { get; set; }
 
-        [JsonProperty("text")]
+        [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         public string Texto { get; set; }
+
+        [JsonProperty("image", NullValueHandling = NullValueHandling.Ignore)]
+        [System.Text.Json.Serialization.JsonPropertyName("image")]
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public MediaLinkData Image { get; set; }
+
+        [JsonProperty("document", NullValueHandling = NullValueHandling.Ignore)]
+        [System.Text.Json.Serialization.JsonPropertyName("document")]
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public MediaLinkData Document { get; set; }
+
+        [JsonProperty("video", NullValueHandling = NullValueHandling.Ignore)]
+        [System.Text.Json.Serialization.JsonPropertyName("video")]
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public MediaLinkData Video { get; set; }
+    }
+
+    public class MediaLinkData
+    {
+        [JsonProperty("link")]
+        [System.Text.Json.Serialization.JsonPropertyName("link")] // Garante o "link" minúsculo no .NET nativo
+        public string Link { get; set; }
     }
 }

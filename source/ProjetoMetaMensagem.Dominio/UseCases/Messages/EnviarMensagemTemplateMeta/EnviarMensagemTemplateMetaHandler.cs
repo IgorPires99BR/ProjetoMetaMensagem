@@ -39,7 +39,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
                 // 2. Chamada ao serviço de integração com a Meta
-                var respostaMeta = await _whatsappService.EnviarTemplateAsync(new Entidades.Servico.Meta.Template.EnviarMensagemTemplate.EnviarMensagemTemplateRequisicao(command), phoneNumberId, token);
+                var respostaMeta = await _whatsappService.EnviarTemplateAsync(new Entidades.Servico.Meta.Template.EnviarMensagemTemplate.EnviarMensagemTemplateRequisicao(command, command.ContatoId.ToString()), phoneNumberId, token);
 
                 if (respostaMeta == null)
                 {

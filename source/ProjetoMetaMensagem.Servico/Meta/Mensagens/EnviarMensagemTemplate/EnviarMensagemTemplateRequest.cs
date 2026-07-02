@@ -52,11 +52,26 @@ namespace ProjetoMetaMensagem.Servico.Meta.Mensagens.EnviarMensagemTemplate
 
         [JsonProperty("text")]
         public string Text { get; set; }
+
+        [JsonProperty("image", NullValueHandling = NullValueHandling.Ignore)]
+        public MediaLinkDataRequest Image { get; set; }
+
+        [JsonProperty("video", NullValueHandling = NullValueHandling.Ignore)]
+        public MediaLinkDataRequest Video { get; set; }
+
+        [JsonProperty("document", NullValueHandling = NullValueHandling.Ignore)]
+        public MediaLinkDataRequest Document { get; set; }
     }
 
     public class LanguageDataRequest
     {
         [JsonProperty("code")]
         public string Code { get; set; }
+    }
+
+    public class MediaLinkDataRequest
+    {
+        [JsonProperty("link")]
+        public string Link { get; set; }
     }
 }

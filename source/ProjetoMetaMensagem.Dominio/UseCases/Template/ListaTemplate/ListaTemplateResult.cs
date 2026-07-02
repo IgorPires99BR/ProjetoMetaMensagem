@@ -18,6 +18,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
             NomeTemplate = template.NomeTemplate;
             Conteudo = template.Conteudo;
             Categoria = template.Categoria;
+            ComponentesJson = template.ComponentesJson;
             Idioma = template.Idioma;
             Status = template.Status;
             DataCriacao = template.DataCriacao;
@@ -44,6 +45,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
 
         [MaxLength(50)]
         public string? Status { get; set; }
+        public string? ComponentesJson { get; set; }
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
     }

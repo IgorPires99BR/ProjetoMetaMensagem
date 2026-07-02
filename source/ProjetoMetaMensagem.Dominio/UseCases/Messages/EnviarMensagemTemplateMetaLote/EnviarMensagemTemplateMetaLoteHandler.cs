@@ -51,30 +51,32 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 // O serviço retorna o Dictionary<string, bool> contendo [Telefone -> Sucesso]
                 var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(requisicao, phoneNumberId,token);
 
-	                foreach (var disparo in resultadoDisparos)
-	                {
-	                    var telefone = disparo.Key;
-	                    var respostaMeta = disparo.Value;
+                foreach (var disparo in resultadoDisparos)
+                {
+                    var telefone = disparo.Key;
+                    var respostaMeta = disparo.Value;
 
-	                    if (respostaMeta.Sucesso)
-	                    {
-	                        var historico = new HistoricoDisparo
-	                        {
-	                            EmpresaId = command.IdEmpresa,
-	                            ContatoId = command.ContatoId,
-	                            TemplateId = command.TemplateId,
-	                            TipoDisparo = "Template",
-	                            WamidMeta = respostaMeta.WamidMeta,
-	                            Conteudo = JsonConvert.SerializeObject(new
-	                            {
-	                                command.ParametrosBody,
-	                                command.ParametrosButton
-	                            })
-	                        };
+                    if (respostaMeta.Sucesso)
+                    {
+                        var historico = new HistoricoDisparo
+                        {
+                            EmpresaId = command.IdEmpresa,
+                            // ✅ Recupera o ID específico e correto que mapeamos para este número de telefone
+                            ContatoId = Guid.Parse(respostaMeta.ContatoId),
+                            TemplateId = command.TemplateId,
+                            TipoDisparo = "Template",
+                            WamidMeta = respostaMeta.WamidMeta,
+                            Conteudo = JsonConvert.SerializeObject(new
+                            {
+                                command.ParametrosBody,
+                                command.ParametrosButton,
+                                PayloadEnvio = respostaMeta.JsonEnviado // Guarda o JSON para fins de auditoria/log
+                            })
+                        };
 
-	                        await _unitOfWork.HistoricoDisparo.Incluir(historico);
-	                    }
-	                }
+                        await _unitOfWork.HistoricoDisparo.Incluir(historico);
+                    }
+                }
 
                 // 3. Montagem do objeto de resultado mantendo o dicionário original [Telefone -> bool] para a View do CRM
                 var resultadoLote = new EnviarMensagemTemplateMetaLoteResult

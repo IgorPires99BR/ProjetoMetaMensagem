@@ -9,75 +9,77 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
+using ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha;
+using ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha;
+using ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato;
+using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato;
+using ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
+using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover;
 using ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero;
-using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Deleta;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista;
+using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta;
+using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag;
+using ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
+using ProjetoMetaMensagem.Servico.Auth;
+using ProjetoMetaMensagem.Servico.Campanha;
 using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Email;
+using ProjetoMetaMensagem.Servico.Flow;
+using ProjetoMetaMensagem.Servico.IA;
 using ProjetoMetaMensagem.Servico.Meta;
 using ProjetoMetaMensagem.Servico.Twilio;
-using ProjetoMetaMensagem.Servico.IA;
-using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
-using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
-using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
-using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
-using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
-using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
-using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
-using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
-using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote;
-using ProjetoMetaMensagem.Servico.Flow;
-using ProjetoMetaMensagem.Servico.Auth;
-using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
-using System.Text;
-using ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag;
-using ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag;
-using ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag;
-using ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato;
-using ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha;
-using ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha;
-using ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha;
-using ProjetoMetaMensagem.Servico.Campanha;
 using ProjetoMetaMensagem.Servico.Webhook;
-using ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook;
-using ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook;
-using ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook;
-using ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto;
-using ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto;
-using ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto;
-using ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto;
-using ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas;
-using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria;
-using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista;
-using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera;
-using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Deleta;
-using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas;
-using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria;
-using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista;
-using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera;
-using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta;
-using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover;
+using ProjetoMetaMensagem.WebAPI.Hubs;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +96,8 @@ builder.Services.AddCors(options =>
 });
 
 // Add services to the container.
+
+builder.Services.AddSignalR();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -225,6 +229,9 @@ builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaCommand, Re
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaLoteCommand, Response<EnviarMensagemTemplateMetaLoteResult>>, EnviarMensagemTemplateMetaLoteHandler>();
 
 
+//Registros de Webhook
+builder.Services.AddScoped<IRequestHandler<RecebeMensagemWebhookCommand, Response<RecebeMensagemWebhookResult>>, RecebeMensagemWebhookHandler>();
+
 builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();
 builder.Services.AddScoped<IRequestHandler<CriaFlowCommand, Response<CriaFlowResult>>, CriaFlowHandler>();
 builder.Services.AddScoped<IRequestHandler<AlteraFlowCommand, Response<AlteraFlowResult>>, AlteraFlowHandler>();
@@ -290,6 +297,8 @@ var app = builder.Build();
 
 
 app.UseCors("AllowReactApp");
+
+app.MapHub<ChatHub>("/hub/chat");
 
 //app.UseHttpsRedirection();
 

@@ -26,10 +26,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Template.NomeTemplate)}, 
                     {nameof(Template.Conteudo)}, 
                     {nameof(Template.Categoria)}, 
+                    {nameof(Template.ComponentesJson)}, 
                     {nameof(Template.Idioma)}, 
                     {nameof(Template.Status)}
                 ) 
-                VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria, @Idioma, @Status);
+                VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria,@ComponentesJson, @Idioma, @Status);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             await _session.Connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
@@ -43,6 +44,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Template.NomeTemplate)} = @NomeTemplate, 
                     {nameof(Template.Conteudo)} = @Conteudo, 
                     {nameof(Template.Categoria)} = @Categoria, 
+                    {nameof(Template.ComponentesJson)} = @ComponentesJson, 
                     {nameof(Template.Status)} = @Status
                 WHERE {nameof(Template.Id)} = @Id";
 
