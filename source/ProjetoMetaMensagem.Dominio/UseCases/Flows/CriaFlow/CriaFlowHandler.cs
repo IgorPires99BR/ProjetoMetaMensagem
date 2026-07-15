@@ -50,6 +50,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 // 3. Salva o Flow Pai
                 await _unitOfWork.Flow.Incluir(flow);
 
@@ -64,9 +65,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
                 var result = new CriaFlowResult();
 
                 response.AddValue(result);
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                _unitOfWork.Rollback();
                 // Caso ocorra qualquer erro no processo do banco ou da Meta, a transação sofre rollback
                 // e o banco não fica com dados fragmentados.
                 response.AddErro($"Erro: {ex.Message}");
@@ -76,3 +79,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         }
     }
 }
+
+

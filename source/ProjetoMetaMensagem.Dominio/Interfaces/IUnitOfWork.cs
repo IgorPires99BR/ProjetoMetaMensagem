@@ -20,6 +20,12 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
         ITemplateRepository Template { get; }
         IHistoricoDisparoRepository HistoricoDisparo { get; }
         IConversationStateRepository ConversationState { get; }
+        ITagRepository Tag { get; }
+        ICampanhaRepository Campanha { get; }
+        IWebhookConfigRepository WebhookConfig { get; }
+        IProdutoRepository Produto { get; }
+        IPipelineRepository Pipeline { get; }
+        IMensagemRecebidaRepository MensagemRecebida { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();

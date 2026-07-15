@@ -48,7 +48,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 historico.DataEnvio = DateTime.Now;
             }
 
-            await _session._connection.ExecuteAsync(sql, historico, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, historico, transaction: _session.Transaction);
         }
 
         public async Task<HistoricoDisparo?> ObterPorId(Guid id)
@@ -57,7 +57,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT * FROM {nameof(HistoricoDisparo)} 
                 WHERE {nameof(HistoricoDisparo.Id)} = @{nameof(HistoricoDisparo.Id)}";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<HistoricoDisparo>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<HistoricoDisparo>(
                 sql, new { Id = id }, transaction: _session.Transaction);
         }
 
@@ -67,9 +67,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT * FROM {nameof(HistoricoDisparo)} 
                 WHERE {nameof(HistoricoDisparo.WamidMeta)} = @{nameof(HistoricoDisparo.WamidMeta)}";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<HistoricoDisparo>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<HistoricoDisparo>(
                 sql, new { WamidMeta = wamidMeta }, transaction: _session.Transaction);
         }
 
     }
 }
+

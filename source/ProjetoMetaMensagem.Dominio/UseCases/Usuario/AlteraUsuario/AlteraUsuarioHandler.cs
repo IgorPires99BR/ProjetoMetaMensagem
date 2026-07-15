@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new AlteraUsuarioValidator();
                 var validateResult = validator.Validate(command);
 
@@ -37,9 +38,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
                 await _unitOfWork.Usuario.Alterar(new Entidades.Usuario(command));
 
                 response.AddValue(new AlteraUsuarioResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -47,3 +51,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
         }
     }
 }
+
+

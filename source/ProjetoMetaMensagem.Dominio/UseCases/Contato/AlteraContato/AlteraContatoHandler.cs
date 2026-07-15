@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new AlteraContatoValidator();
                 var validateResult = validator.Validate(command);
 
@@ -38,9 +39,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
                 await _unitOfWork.Contato.Alterar(new Entidades.Contato(command));
 
                 response.AddValue(new AlteraContatoResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -48,3 +52,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
         }
     }
 }
+
+

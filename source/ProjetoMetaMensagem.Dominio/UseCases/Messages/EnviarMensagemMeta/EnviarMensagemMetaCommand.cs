@@ -12,6 +12,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
     {
         public string Celular { get; set; }
         public string Template { get; set; }
+        public string textoMensagem { get; set; }
         public Guid EmpresaId { get; set; }
         public Guid ContatoId { get; set; }
     }

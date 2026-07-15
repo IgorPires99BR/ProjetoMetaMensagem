@@ -54,7 +54,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             parameters.Add("Email", conversations.email);
             parameters.Add("UpdatedAt", DateTimeOffset.UtcNow); // Usando UtcNow para consistência
 
-            return await _session._connection.QuerySingleAsync<int>(
+            return await _session.Connection.QuerySingleAsync<int>(
                 sql,
                 parameters,
                 transaction: _session.Transaction
@@ -81,7 +81,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var parameters = new DynamicParameters();
             parameters.Add("CompanyId", companyId);
 
-            var result = await _session._connection.QueryAsync<Conversations>(
+            var result = await _session.Connection.QueryAsync<Conversations>(
                 sql,
                 parameters,
                 transaction: _session.Transaction
@@ -91,3 +91,4 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         }
     }
 }
+

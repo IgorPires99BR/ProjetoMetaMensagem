@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new CriaUsuarioValidator();
                 var validateResult = validator.Validate(command);
 
@@ -43,9 +44,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario
                 await _unitOfWork.Usuario.Incluir(new Entidades.Usuario(command));
 
                 response.AddValue(new CriaUsuarioResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro ao criar usuário: {ex.Message}");
             }
 
@@ -53,3 +57,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario
         }
     }
 }
+
+

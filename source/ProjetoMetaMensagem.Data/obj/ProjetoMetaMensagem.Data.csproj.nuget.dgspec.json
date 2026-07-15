@@ -22,16 +22,16 @@
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net6.0"
+          "net8.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net6.0": {
-            "framework": "net6.0",
-            "targetAlias": "net6.0",
+          "net8.0": {
+            "framework": "net8.0",
+            "targetAlias": "net8.0",
             "projectReferences": {
               "C:\\Users\\Administrator\\source\\repos\\ProjetoMetaMensagem\\source\\ProjetoMetaMensagem.Dominio\\ProjetoMetaMensagem.Dominio.csproj": {
                 "projectPath": "C:\\Users\\Administrator\\source\\repos\\ProjetoMetaMensagem\\source\\ProjetoMetaMensagem.Dominio\\ProjetoMetaMensagem.Dominio.csproj"
@@ -52,9 +52,9 @@
         "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
-        "net6.0": {
-          "framework": "net6.0",
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "framework": "net8.0",
+          "targetAlias": "net8.0",
           "dependencies": {
             "Dapper": {
               "target": "Package",
@@ -62,7 +62,7 @@
             },
             "Microsoft.Extensions.Configuration.Abstractions": {
               "target": "Package",
-              "version": "[6.0.1, )"
+              "version": "[8.0.0, )"
             },
             "System.Data.SqlClient": {
               "target": "Package",
@@ -85,7 +85,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
@@ -124,13 +124,7 @@
           "warnAsError": [
             "NU1605"
           ]
-        },
-        "restoreAuditProperties": {
-          "enableAudit": "true",
-          "auditLevel": "low",
-          "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "10.0.300"
+        }
       },
       "frameworks": {
         "net6.0": {
@@ -174,7 +168,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.306\\RuntimeIdentifierGraph.json"
         }
       }
     }

@@ -25,6 +25,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new AlteraNumeroValidator();
                 var validateResult = validator.Validate(command);
 
@@ -38,9 +39,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
                 await _unitOfWork.Numero.Alterar(new Entidades.Numero(command));
 
                 response.AddValue(new AlteraNumeroResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -48,3 +52,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
         }
     }
 }
+
+

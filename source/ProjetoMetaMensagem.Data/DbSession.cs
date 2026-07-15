@@ -11,9 +11,11 @@ namespace ProjetoMetaMensagem.Data
 {
     public class DbSession : IDisposable
     {
-        public IDbConnection _connection;
+        private readonly IDbConnection _connection;
         public IDbTransaction Transaction;
-        public IConfiguration _configuration;
+        private readonly IConfiguration _configuration;
+
+        public IDbConnection Connection => _connection;
 
         public DbSession(IConfiguration configuration)
         {
