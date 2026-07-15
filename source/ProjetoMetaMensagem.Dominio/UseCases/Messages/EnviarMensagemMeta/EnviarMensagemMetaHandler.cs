@@ -23,7 +23,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Response<EnviarMensagemMetaResult>> Handle(EnviarMensagemMetaCommand request)
+        public async Task<Response<EnviarMensagemMetaResult>> Handle(EnviarMensagemMetaCommand command)
         {
             var response = new Response<EnviarMensagemMetaResult>();
 
@@ -31,7 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
             {
                 _unitOfWork.BeginTransaction();
 
-                var sucesso = await _whatsappService.EnviarTextoLivreAsync(request.Celular, request.Template);
+                var sucesso = await _whatsappService.EnviarTextoLivreAsync(command.Celular, command.textoMensagem);
 
                 if (sucesso == null)
                 {
@@ -42,13 +42,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                 // Registra historico do disparo
                 var historico = new HistoricoDisparo
                 {
-                    EmpresaId = request.EmpresaId,
-                    ContatoId = request.ContatoId,
+                    EmpresaId = command.EmpresaId,
+                    ContatoId = command.ContatoId,
                     TipoDisparo = "Livre",
-                    Conteudo = request.Template,
+                    Conteudo = command.Template,
                     WamidMeta = "",
                     DataEnvio = DateTime.Now
                 };
+
+
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);
 
                 _unitOfWork.Commit();

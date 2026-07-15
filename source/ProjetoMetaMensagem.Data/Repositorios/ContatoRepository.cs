@@ -76,6 +76,23 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryAsync<Contato>(sql, transaction: _session.Transaction);
         }
 
+        public async Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone)
+        {
+            // Cenário A: Se a sua tabela Contato possui a coluna EmpresaId direta:
+            var sql = $@"
+        SELECT * FROM {nameof(Contato)} 
+        WHERE Telefone = @Telefone";
+
+
+            return await _session.Connection.QueryFirstOrDefaultAsync<Contato>(
+                sql,
+                new { Telefone = telefone},
+                transaction: _session.Transaction
+            );
+
+        }
+
+
         public async Task<IEnumerable<Contato>> ObterPorUsuario(Guid usuarioId)
         {
             var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.UsuarioId)} = @UsuarioId";

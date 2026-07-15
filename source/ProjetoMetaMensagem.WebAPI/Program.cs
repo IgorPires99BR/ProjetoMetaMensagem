@@ -31,6 +31,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover;
 using ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
@@ -239,6 +241,8 @@ builder.Services.AddScoped<IRequestHandler<AlteraFlowCommand, Response<AlteraFlo
 //Registros de Convcrsations
 
 builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<List<ListaConversaPorIdResult>>>, ListaConversaPorIdHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaMensagemRecebidaCommand, Response<ListaMensagemRecebidaResult>>, ListaMensagemRecebidaHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaChatsAtivosCommand, Response<ListaChatsAtivosResult>>, ListaChatsAtivosHandler>();
 
 // Tags
 builder.Services.AddScoped<ITagRepository, TagRepository>();

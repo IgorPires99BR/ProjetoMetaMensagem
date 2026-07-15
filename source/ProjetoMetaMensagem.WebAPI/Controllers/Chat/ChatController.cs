@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
+using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 {
@@ -9,53 +12,30 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
     [Route("api/chat")]
     public class ChatController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMetaService _metaService;
-        private readonly IGeminiService _geminiService;
-
-        public ChatController(IUnitOfWork unitOfWork, IMetaService metaService, IGeminiService geminiService)
+        private readonly IMediator _mediator;
+        
+        public ChatController(IMediator mediator)
         {
-            _unitOfWork = unitOfWork;
-            _metaService = metaService;
-            _geminiService = geminiService;
+            _mediator = mediator;
         }
 
         // GET /api/chat/conversas/{empresaId}
         // Lista conversas agrupadas por contato com ultima mensagem e nao-lidas
-        [HttpGet("conversas/{empresaId}")]
-        public async Task<IActionResult> ListarConversas(Guid empresaId)
+        [HttpGet("conversas/{idEmpresa}")]
+        public async Task<IActionResult> ListarConversas(Guid idEmpresa, Guid contatoId)
         {
             try
             {
-                var mensagens = await _unitOfWork.MensagemRecebida.ListarPorEmpresa(empresaId);
-                var contatos = await _unitOfWork.Contato.Obter();
-                var contatoMap = contatos.ToDictionary(c => c.Id);
+                // Criando o Command/Query para buscar as conversas delegando a regra de negócio e agrupamento para o Handler
+                var command = new ListaChatsAtivosCommand(idEmpresa,contatoId);
+                var resultado = await _mediator.Send(command);
 
-                // Agrupa por contato
-                var conversas = mensagens
-                    .GroupBy(m => m.ContatoId)
-                    .Select(g =>
-                    {
-                        var ultima = g.OrderByDescending(m => m.DataRecebimento).First();
-                        var contato = g.Key.HasValue && contatoMap.ContainsKey(g.Key.Value)
-                            ? contatoMap[g.Key.Value]
-                            : null;
+                if (resultado == null)
+                {
+                    return BadRequest(new { erros = resultado.Erros });
+                }
 
-                        return new
-                        {
-                            ContatoId = g.Key,
-                            Nome = contato?.Nome ?? ultima.TelefoneRemetente,
-                            Telefone = ultima.TelefoneRemetente,
-                            UltimaMensagem = ultima.Conteudo,
-                            DataUltimaMensagem = ultima.DataRecebimento,
-                            NaoLidas = g.Count(m => !m.Lida && m.Tipo == "recebida"),
-                            Online = false
-                        };
-                    })
-                    .OrderByDescending(c => c.DataUltimaMensagem)
-                    .ToList();
-
-                return Ok(new { value = conversas });
+                return Ok(new { value = resultado.Value });
             }
             catch (Exception ex)
             {
@@ -64,92 +44,28 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
         }
 
         // GET /api/chat/mensagens/{empresaId}/{contatoId}
-        // Historico de mensagens de um contato
-        [HttpGet("mensagens/{empresaId}/{contatoId}")]
-        public async Task<IActionResult> ListarMensagens(Guid empresaId, Guid contatoId)
+        // Histórico de mensagens de um contato via Mediator
+        [HttpGet("mensagens/{idEmpresa}/{contatoId}")]
+        public async Task<IActionResult> ListarMensagens(Guid idEmpresa, Guid contatoId)
         {
             try
             {
-                var mensagens = await _unitOfWork.MensagemRecebida.ListarPorContato(empresaId, contatoId);
-
-                var result = mensagens.Select(m => new
+                // Disparando o Command que criamos e mapeamos anteriormente
+                var command = new ListaMensagemRecebidaCommand
                 {
-                    m.Id,
-                    m.Conteudo,
-                    m.Tipo, // "recebida" ou "enviada"
-                    m.DataRecebimento,
-                    m.Lida
-                });
-
-                return Ok(new { value = result });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { erro = ex.Message });
-            }
-        }
-
-        // POST /api/chat/enviar
-        // Envia mensagem de texto para um contato via WhatsApp
-        [HttpPost("enviar")]
-        public async Task<IActionResult> EnviarMensagem([FromBody] EnviarMensagemRequest request)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(request.Telefone) || string.IsNullOrEmpty(request.Mensagem))
-                    return BadRequest(new { erro = "Telefone e mensagem sao obrigatorios" });
-
-                // Busca token e phoneNumberId da empresa
-                var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(request.EmpresaId);
-                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(request.EmpresaId);
-
-                // Envia via API da Meta
-                var sucesso = await _metaService.EnviarTextoLivreAsync(request.Telefone, request.Mensagem);
-
-                // Salva no historico
-                var mensagem = new MensagemRecebida
-                {
-                    EmpresaId = request.EmpresaId,
-                    ContatoId = request.ContatoId,
-                    TelefoneRemetente = request.Telefone,
-                    Conteudo = request.Mensagem,
-                    Tipo = "enviada",
-                    Lida = true
+                    EmpresaId = idEmpresa,
+                    ContatoId = contatoId
                 };
 
-                await _unitOfWork.MensagemRecebida.Incluir(mensagem);
+                var resultado = await _mediator.Send(command);
 
-                return Ok(new { value = new { sucesso, mensagemId = mensagem.Id } });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { erro = ex.Message });
-            }
-        }
-
-        // POST /api/chat/sugerir/{empresaId}
-        // Sugere uma resposta usando IA baseada na ultima mensagem do cliente
-        [HttpPost("sugerir/{empresaId}")]
-        public async Task<IActionResult> SugerirResposta(Guid empresaId, [FromBody] SugerirRequest request)
-        {
-            try
-            {
-                // Busca historico recente para contexto
-                var contexto = "";
-                if (request.ContatoId.HasValue)
+                if (resultado == null)
                 {
-                    var historico = await _unitOfWork.MensagemRecebida.ListarPorContato(empresaId, request.ContatoId.Value);
-                    var ultimas = historico
-                        .OrderByDescending(m => m.DataRecebimento)
-                        .Take(5)
-                        .Select(m => $"{(m.Tipo == "recebida" ? "Cliente" : "Voce")}: {m.Conteudo}")
-                        .Reverse();
-
-                    contexto = string.Join("\n", ultimas);
+                    return BadRequest(new { erros = resultado.Erros });
                 }
 
-                var sugestao = await _geminiService.SugerirResposta(request.MensagemCliente, contexto);
-                return Ok(new { value = sugestao });
+                // O resultado mapeado (com as propriedades From, Text, Time) vai direto para o Angular
+                return Ok(new { value = resultado.Value.Mensagens });
             }
             catch (Exception ex)
             {
@@ -157,33 +73,30 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
         }
 
-        // PUT /api/chat/marcar-lida/{mensagemId}
-        [HttpPut("marcar-lida/{mensagemId}")]
-        public async Task<IActionResult> MarcarComoLida(Guid mensagemId)
-        {
-            try
-            {
-                await _unitOfWork.MensagemRecebida.MarcarComoLida(mensagemId);
-                return Ok(new { value = true });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { erro = ex.Message });
-            }
-        }
-    }
+        //[HttpPost("marcar-como-lida")]
+        //public async Task<IActionResult> MarcarComoLida([FromBody] MarcarComoLidaRequest request)
+        //{
+        //    if (request == null || request.EmpresaId == Guid.Empty || request.ContatoId == Guid.Empty)
+        //    {
+        //        return BadRequest(new { erro = "EmpresaId e ContatoId inválidos." });
+        //    }
 
-    public class EnviarMensagemRequest
-    {
-        public Guid EmpresaId { get; set; }
-        public Guid? ContatoId { get; set; }
-        public string Telefone { get; set; }
-        public string Mensagem { get; set; }
-    }
+        //    try
+        //    {
+        //        var command = new MarcarMensagensComoLidasCommand(request.EmpresaId, request.ContatoId);
+        //        var resultado = await _mediator.Send(command);
 
-    public class SugerirRequest
-    {
-        public Guid? ContatoId { get; set; }
-        public string MensagemCliente { get; set; }
+        //        if (resultado == null)
+        //        {
+        //            return BadRequest(new { erro = "Não foi possível marcar as mensagens como lidas." });
+        //        }
+
+        //        return Ok(new { sucesso = true });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { erro = ex.Message });
+        //    }
+        //}
     }
 }

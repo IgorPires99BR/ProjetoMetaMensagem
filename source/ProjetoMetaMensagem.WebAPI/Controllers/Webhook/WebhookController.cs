@@ -13,40 +13,57 @@ namespace ProjetoMetaMensagem.Controllers
     {
         private readonly IMediator _mediator;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IConfiguration _configuration;
 
-        public WhatsappWebhookController(IMediator mediator, IHubContext<ChatHub> hubContext)
+        public WhatsappWebhookController(IMediator mediator, IHubContext<ChatHub> hubContext, IConfiguration configuration)
         {
             _mediator = mediator;
             _hubContext = hubContext;
+            _configuration = configuration;
+        }
+
+        [HttpGet]
+        public IActionResult VerificarWebhook(
+        [FromQuery(Name = "hub.mode")] string mode,
+        [FromQuery(Name = "hub.verify_token")] string verifyToken,
+        [FromQuery(Name = "hub.challenge")] string challenge)
+        {
+            // O "Token" que você define na tela da Meta. O ideal é deixar no appsettings.json
+            string tokenConfigurado = _configuration["ApiWhatsappConnectionConfiguration:VerifyToken"];
+
+            if (mode == "subscribe" && verifyToken == tokenConfigurado)
+            {
+                // A Meta exige que você retorne APENAS o código do challenge como texto puro com status 200 (OK)
+                return Content(challenge, "text/plain");
+            }
+
+            // Se o token não bater, retorna 403 Forbidden
+            return Forbid();
         }
 
         [HttpPost]
         public async Task<IActionResult> ReceberMensagem([FromBody] RecebeMensagemWebhookCommand payload)
         {
-            // Validação rápida de segurança para evitar processar requisições vazias
-            if (payload == null)
-            {
-                return Ok();
-            }
+            if (payload == null) return Ok();
 
             try
             {
-                // Despacha para o Handler processar as regras de negócio e persistência
                 var resultado = await _mediator.Send(payload);
 
-                await _hubContext.Clients.Group(resultado.Value.Mensagem.ToString())
-                            .SendAsync("ReceberNovaMensagem", resultado.Value.Mensagem);
+                // Verifica se a operação foi bem sucedida e se retornou dados válidos
+                if (resultado != null && resultado.Erros.Count() == 0)
+                {
+                    // Sugestão: O grupo do SignalR geralmente deve ser o "empresaId" ou o ID do chat, 
+                    // usar o conteúdo da mensagem como nome do grupo pode não notificar a tela certa.
+                    await _hubContext.Clients.Group("GrupoNotificacao Chat ou Empresa")
+                                .SendAsync("ReceberNovaMensagem", resultado.Value.Mensagem);
+                }
 
-                // Retorno crítico exigido pela Meta: Avisa que a requisição foi processada/recebida
                 return Ok();
             }
             catch (Exception ex)
             {
-                // TODO: Logue o erro aqui com seu serviço de log (ex: _logger.LogError) 
-                // para você monitorar se o banco falhou ou algo do tipo.
-
-                // IMPORTANTE: Sempre retorne Ok() para a Meta, prevenindo retries infinitos 
-                // e a suspensão temporária do seu Webhook no painel deles.
+                // Seu log aqui
                 return Ok();
             }
         }

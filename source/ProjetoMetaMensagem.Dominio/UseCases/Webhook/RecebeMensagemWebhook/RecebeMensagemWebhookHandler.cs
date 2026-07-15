@@ -37,7 +37,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
 
                 if (command.Entry == null) return response;
 
-                var mensagensParaSalvar = new List<MensagemRecebida>();
+                var mensagensParaSalvar = new List<Entidades.MensagemRecebida>();
 
                 // 1. Varre a árvore do payload da Meta
                 foreach (var entry in command.Entry)
@@ -55,16 +55,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                         // Guid empresaId = await _empresaRepository.BuscarIdPorNumeroMetaAsync(metadata?.DisplayPhoneNumber);
                         Guid? empresaId = await _unitOfWork.Empresa.ObterPorPhoneNumberId(metadata.PhoneNumberId.ToString());// Substitua pela sua busca real
 
+
+
                         foreach (var msgMeta in change.Value.Messages)
                         {
+                            var contato = await _unitOfWork.Contato.ObterPorTelefone(empresaId.Value, msgMeta.From);
+
                             // Cria o objeto utilizando a sua entidade existente
-                            var novaMensagem = new MensagemRecebida
+                            var novaMensagem = new Entidades.MensagemRecebida
                             {
                                 EmpresaId = empresaId ?? Guid.NewGuid(),
                                 TelefoneRemetente = msgMeta.From,
                                 Tipo = "recebida",
                                 Lida = false,
-                                ContatoId = null, // Caso queira buscar o ID do contato pelo telefoneRemetente no banco posteriormente
+                                ContatoId = contato?.Id, // Caso queira buscar o ID do contato pelo telefoneRemetente no banco posteriormente
                                 FlowId = null     // Se a mensagem fizer parte de um fluxo automatizado em execução
                             };
 
@@ -92,7 +96,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                     }
                 }
 
-                response.AddValue(new RecebeMensagemWebhookResult { Sucesso = true ,Mensagem = mensagensParaSalvar.FirstOrDefault().Conteudo.ToString()});
+                response.AddValue(new RecebeMensagemWebhookResult
+                {
+                    Sucesso = true,
+                    Mensagem = mensagensParaSalvar.FirstOrDefault()?.Conteudo ?? "Evento processado sem novas mensagens."
+                });
             }
             catch (Exception ex) 
             {
