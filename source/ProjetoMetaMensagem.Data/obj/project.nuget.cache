@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "zsDJ5kOhqMC3EMRONeE4NABmqeN3POVPBwfhidvNlCJ8j/P6ad2Cm47Bv6bld1KBFBHnhXxK6y9FDw4vWqmktw==",
+  "dgSpecHash": "aTCqXHV3sLo=",
   "success": true,
   "projectFilePath": "C:\\Users\\Administrator\\source\\repos\\ProjetoMetaMensagem\\source\\ProjetoMetaMensagem.Data\\ProjetoMetaMensagem.Data.csproj",
   "expectedPackageFiles": [
@@ -47,8 +47,10 @@
     {
       "code": "NU1603",
       "level": "Warning",
+      "message": "FluentValidation 6.4.1 depends on System.Text.RegularExpressions (>= 4.0.12) but System.Text.RegularExpressions 4.0.12 was not found. System.Text.RegularExpressions 4.1.0 was resolved instead.",
+      "projectPath": "C:\\Users\\Administrator\\source\\repos\\ProjetoMetaMensagem\\source\\ProjetoMetaMensagem.Data\\ProjetoMetaMensagem.Data.csproj",
       "warningLevel": 1,
-      "message": "FluentValidation 6.4.1 depends on System.Text.RegularExpressions (>= 4.0.12) but System.Text.RegularExpressions 4.0.12 was not found. An approximate best match of System.Text.RegularExpressions 4.1.0 was resolved.",
+      "filePath": "C:\\Users\\Administrator\\source\\repos\\ProjetoMetaMensagem\\source\\ProjetoMetaMensagem.Data\\ProjetoMetaMensagem.Data.csproj",
       "libraryId": "System.Text.RegularExpressions",
       "targetGraphs": [
         "net6.0"

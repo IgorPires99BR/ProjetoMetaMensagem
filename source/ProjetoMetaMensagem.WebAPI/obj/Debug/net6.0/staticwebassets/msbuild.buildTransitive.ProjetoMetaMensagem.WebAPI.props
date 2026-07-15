@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\ProjetoMetaMensagem.WebAPI.props" />
-</Project>
