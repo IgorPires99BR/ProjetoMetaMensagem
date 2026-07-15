@@ -50,6 +50,8 @@ using ProjetoMetaMensagem.Servico.Auth;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -193,6 +195,11 @@ builder.Services.AddScoped<IRequestHandler<ObtemContatoCommand, Response<List<Ob
 //Registros de Mensagem
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaCommand, Response<EnviarMensagemTemplateMetaResult>>, EnviarMensagemTemplateMetaHandler>();
 builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaLoteCommand, Response<EnviarMensagemTemplateMetaLoteResult>>, EnviarMensagemTemplateMetaLoteHandler>();
+
+//Registros de Mensagem
+builder.Services.AddScoped<IRequestHandler<ListaChatsAtivosCommand, Response<ListaChatsAtivosResult>>, ListaChatsAtivosHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaMensagemRecebidaCommand, Response<ListaMensagemRecebidaResult>>, ListaMensagemRecebidaHandler>();
+
 
 
 builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();
