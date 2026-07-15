@@ -54,21 +54,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 }
 
                 // 3. Persistencia no historico em caso de sucesso
-<<<<<<< HEAD
-                //var historico = new HistoricoDisparo
-                //{
-                //    EmpresaId = command.EmpresaId,
-                //    ContatoId = command.ContatoId,
-                //    TemplateId = command.TemplateId,
-                //    TipoDisparo = "Template",
-                //    WamidMeta = respostaMeta.WamidMeta,
-                //    Conteudo = JsonConvert.SerializeObject(new
-                //    {
-                //        command.ParametrosBody,
-                //        command.ParametrosButton
-                //    })
-                //};
-=======
                 var historico = new HistoricoDisparo
                 {
                     EmpresaId = command.IdEmpresa,
@@ -82,7 +67,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                         command.ParametrosButton
                     })
                 };
->>>>>>> b387abb3251ce22f73d6c24fd5ada05c9d71aff5
 
                 //await _unitOfWork.HistoricoDisparo.Incluir(historico);
 

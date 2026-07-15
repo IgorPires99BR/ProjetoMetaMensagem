@@ -54,11 +54,15 @@
           "dependencies": {
             "BCrypt.Net-Next": {
               "target": "Package",
-              "version": "[4.2.0, )"
+              "version": "[4.0.3, )"
             },
             "FluentValidation": {
               "target": "Package",
-              "version": "[6.4.1, )"
+              "version": "[11.11.0, )"
+            },
+            "Microsoft.AspNetCore.SignalR.Core": {
+              "target": "Package",
+              "version": "[1.2.11, )"
             },
             "Microsoft.Extensions.DependencyInjection.Abstractions": {
               "target": "Package",
@@ -148,6 +152,14 @@
             "Microsoft.Extensions.Configuration": {
               "target": "Package",
               "version": "[6.0.2, )"
+            },
+            "Microsoft.Extensions.Hosting.Abstractions": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
+            "Microsoft.Extensions.Http": {
+              "target": "Package",
+              "version": "[6.0.1, )"
             },
             "Microsoft.Extensions.Options": {
               "target": "Package",

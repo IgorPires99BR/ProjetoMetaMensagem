@@ -135,7 +135,13 @@ builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
 builder.Services.AddScoped<INumeroRepository, NumeroRepository>();
 builder.Services.AddScoped<IHistoricoDisparoRepository, HistoricoDisparoRepository>();
 builder.Services.AddScoped<IFlowRepository, FlowRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<ICampanhaRepository, CampanhaRepository>();
 builder.Services.AddScoped<IConversationStateRepository, ConversationStateRepository>();
+builder.Services.AddScoped<IWebhookConfigRepository, WebhookConfigRepository>();
+builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
+builder.Services.AddScoped<IPipelineRepository, PipelineRepository>();
+builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaRepository>();
 
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();
