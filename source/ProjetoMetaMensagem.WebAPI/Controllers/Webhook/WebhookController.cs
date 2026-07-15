@@ -24,20 +24,23 @@ namespace ProjetoMetaMensagem.Controllers
 
         [HttpGet]
         public IActionResult VerificarWebhook(
-        [FromQuery(Name = "hub.mode")] string mode,
-        [FromQuery(Name = "hub.verify_token")] string verifyToken,
-        [FromQuery(Name = "hub.challenge")] string challenge)
+        [FromQuery(Name = "hub.mode")] string? mode = null,
+        [FromQuery(Name = "hub.verify_token")] string? verifyToken = null,
+        [FromQuery(Name = "hub.challenge")] string? challenge = null)
         {
-            // O "Token" que você define na tela da Meta. O ideal é deixar no appsettings.json
-            string tokenConfigurado = _configuration["ApiWhatsappConnectionConfiguration:VerifyToken"];
+            // Log para monitorar o que está chegando no Render
+            Console.WriteLine($"[Webhook] Mode: {mode} | Token Recebido: {verifyToken} | Challenge: {challenge}");
+
+            // O "Token" configurado no seu appsettings.json
+            string? tokenConfigurado = _configuration["ApiWhatsappConnectionConfiguration:VerifyToken"];
 
             if (mode == "subscribe" && verifyToken == tokenConfigurado)
             {
-                // A Meta exige que você retorne APENAS o código do challenge como texto puro com status 200 (OK)
-                return Content(challenge, "text/plain");
+                // Retorna APENAS o código do challenge como texto puro com status 200 (OK)
+                return Content(challenge ?? string.Empty, "text/plain");
             }
 
-            // Se o token não bater, retorna 403 Forbidden
+            // Se as condições não forem atendidas, retorna 403 Forbidden
             return Forbid();
         }
 
