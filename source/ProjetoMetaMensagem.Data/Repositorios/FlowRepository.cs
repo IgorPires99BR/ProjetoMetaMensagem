@@ -26,7 +26,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT * FROM {nameof(FlowEtapa)}
                 WHERE {nameof(FlowEtapa.Id)} = @Id;";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<FlowEtapa>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<FlowEtapa>(
                 sql, new { Id = etapaId }, transaction: _session.Transaction);
         }
 
@@ -37,7 +37,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE {nameof(FlowEtapa.FlowId)} = @{nameof(FlowEtapa.FlowId)} 
                   AND {nameof(FlowEtapa.EhEtapaInicial)} = 1;";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<FlowEtapa>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<FlowEtapa>(
                 sql, new { FlowId = flowId }, transaction: _session.Transaction);
         }
 
@@ -49,7 +49,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 WHERE atual.{nameof(FlowEtapa.Id)} = @EtapaAtualId 
                   AND (atual.{nameof(FlowEtapa.GatilhoResposta)} = @RespostaCliente OR atual.{nameof(FlowEtapa.GatilhoResposta)} = 'Qualquer_Resposta');";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<FlowEtapa>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<FlowEtapa>(
                 sql, new { EtapaAtualId = etapaAtualId, RespostaCliente = respostaCliente?.Trim() }, transaction: _session.Transaction);
         }
 
@@ -63,7 +63,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SELECT * FROM {nameof(Flow)} 
                 WHERE {nameof(Flow.Id)} = @{nameof(Flow.Id)};";
 
-            return await _session._connection.QueryFirstOrDefaultAsync<Flow>(
+            return await _session.Connection.QueryFirstOrDefaultAsync<Flow>(
                 sql, new { Id = id }, transaction: _session.Transaction);
         }
 
@@ -77,7 +77,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
             var lookup = new Dictionary<Guid, Flow>();
 
-            await _session._connection.QueryAsync<Flow, FlowEtapa, Flow>(
+            await _session.Connection.QueryAsync<Flow, FlowEtapa, Flow>(
                 sql,
                 (flow, etapa) =>
                 {
@@ -123,7 +123,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(flow.DataCriacao)}
                 );";
 
-            await _session._connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
         }
 
         public async Task IncluirEtapa(FlowEtapa etapa)
@@ -150,13 +150,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             @{nameof(etapa.EhEtapaInicial)}
         );";
 
-            await _session._connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
         }
 
         public async Task ExcluirEtapasPorFlowId(Guid flowId)
         {
             var sql = $@"DELETE FROM {nameof(FlowEtapa)} WHERE {nameof(FlowEtapa.FlowId)} = @FlowId;";
-            await _session._connection.ExecuteAsync(sql, new { FlowId = flowId }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { FlowId = flowId }, transaction: _session.Transaction);
         }
 
         public async Task Alterar(Flow flow)
@@ -168,7 +168,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(flow.Ativo)} = @{nameof(flow.Ativo)}
                 WHERE {nameof(flow.Id)} = @{nameof(flow.Id)};";
 
-            await _session._connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
         }
 
         public async Task Excluir(Guid id)
@@ -177,9 +177,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 DELETE FROM {nameof(Flow)} 
                 WHERE {nameof(Flow.Id)} = @Id;";
 
-            await _session._connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         #endregion
     }
 }
+

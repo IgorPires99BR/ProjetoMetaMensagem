@@ -58,15 +58,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 // 3. Salva em lote no banco usando a UnitOfWork
                 foreach (var contato in contatosSalvar)
                 {
                     await _unitOfWork.Contato.Incluir(contato);
                 }
 
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                _unitOfWork.Rollback();
+
                 response.AddErro($"Falha ao salvar lote de contatos no banco: {ex.Message}");
             }
 
@@ -74,3 +78,4 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
         }
     }
 }
+

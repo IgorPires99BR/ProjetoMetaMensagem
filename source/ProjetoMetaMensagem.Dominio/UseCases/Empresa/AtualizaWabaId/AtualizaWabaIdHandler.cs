@@ -28,14 +28,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId
 
             try
             {
-                //var validator = new CriaEmpresaValidator();
-                //var validateResult = validator.Validate(command);
-
-                //if (!validateResult.IsValid)
-                //{
-                //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                //    return response;
-                //}
+                _unitOfWork.BeginTransaction();
 
                 if (command.AccessToken != null & !String.IsNullOrEmpty(command.AccessToken))
                 {
@@ -45,9 +38,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId
                 }
 
                 response.AddValue(new AtualizaWabaIdResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                _unitOfWork.Rollback();
                 response.AddErro($"Erro: {ex.Message}");
             }
 

@@ -1,22 +1,29 @@
-﻿using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System.Net.Http.Headers;
-using System.Text;
+using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta;
-using ProjetoMetaMensagem.Servico.Configuration;
-using Microsoft.Extensions.Options;
-using ProjetoMetaMensagem.Servico.Meta.Numeros.ObtemNumerosMeta;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.ObtemNumerosMeta;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplate;
-using ProjetoMetaMensagem.Servico.Meta.Numeros.CriaNumeroMeta;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.ObtemNumerosMeta;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
-using ProjetoMetaMensagem.Servico.Meta.Templates.ObtemTemplateMeta;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
-using ProjetoMetaMensagem.Servico.Meta.WhatsappAccount.BuscarWabaIDMeta;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplateLote;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
+using ProjetoMetaMensagem.Dominio.Enums;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Meta.Mensagens.EnviarMensagemTemplate;
-using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Servico.Meta.Numeros.CriaNumeroMeta;
+using ProjetoMetaMensagem.Servico.Meta.Numeros.ObtemNumerosMeta;
+using ProjetoMetaMensagem.Servico.Meta.Templates.ObtemTemplateMeta;
+using ProjetoMetaMensagem.Servico.Meta.WhatsappAccount.BuscarWabaIDMeta;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Servico.Meta
 {
@@ -32,8 +39,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
             // Mantém a BaseUrl injetada (Ex: https://graph.facebook.com/v19.0/)
             _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
-
-            // REMOVIDO: O cabeçalho Authorization global foi removido daqui para suportar multi-tenancy dinâmico.
         }
 
         #region CONFIGURACOES / INTEGRACOES MULTI-TENANT
@@ -42,7 +47,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
         {
             try
             {
-                // Endpoint que lista as contas comerciais do WhatsApp pertencentes ao Token fornecido
                 var endpoint = "me/whatsapp_business_accounts";
 
                 var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
@@ -58,14 +62,11 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
                 var resultado = JsonConvert.DeserializeObject<BuscarWabaIDMetaResponse>(responseContent);
 
-                // Verifica se a estrutura retornada possui dados populados
                 if (resultado?.Data == null || !resultado.Data.Any())
                 {
-                    // Retorna null explicitamente caso o token seja válido mas não possua WABA criado/vinculado
                     return null;
                 }
 
-                // Retorna o ID da primeira conta comercial encontrada no gerenciador
                 return resultado.Data.First().Id;
             }
             catch (Exception ex)
@@ -78,7 +79,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
         #region NUMEROS
 
-        // Ajustado: Adicionado parâmetro accessToken e aplicando Authorization localmente na requisição
         public async Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId, string accessToken)
         {
             var endpoint = $"{wabaId}/phone_numbers";
@@ -120,7 +120,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
             }
         }
 
-        // Ajustado: Adicionado parâmetro accessToken e aplicando Authorization localmente na requisição
         public async Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId, string accessToken)
         {
             var endpoint = $"{wabaId}/phone_numbers";
@@ -169,20 +168,30 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 {
                     Name = requisicao.Template.Nome,
                     Language = new LanguageDataRequest { Code = requisicao.Template.Idioma?.Codigo },
-                    Components = requisicao.Template.Componentes?.Cast<object>().ToList()
+                    Components = requisicao.Template.Componentes?.Select(c => new ComponentDataRequest
+                    {
+                        Type = c.Tipo,
+                        SubType = c.SubTipo,
+                        Index = c.Indice,
+                        Parameters = c.Parametros?.Select(p => new ParameterDataRequest
+                        {
+                            Type = p.Tipo,
+                            Text = p.Tipo == "text" ? p.Texto : null,
+                            Image = p.Tipo == "image" ? new MediaLinkDataRequest { Link = p.Texto } : null,
+                            Video = p.Tipo == "video" ? new MediaLinkDataRequest { Link = p.Texto } : null,
+                            Document = p.Tipo == "document" ? new MediaLinkDataRequest { Link = p.Texto } : null
+                        }).ToList()
+                    }).ToList()
                 }
             };
 
             var settings = new JsonSerializerSettings
             {
-                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
                 NullValueHandling = NullValueHandling.Ignore
             };
 
             var json = JsonConvert.SerializeObject(requestMeta, settings);
 
-            // ATENÇÃO: Como este método usa o "PhoneNumberId" do painel Master/Configuração padrão para envios, 
-            // ele usa o Token Master vindo do appsettings. Ele usa HttpRequestMessage para garantir o isolamento do token.
             var request = new HttpRequestMessage(HttpMethod.Post, $"{phoneNumberId}/messages");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -195,7 +204,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 return new EnviarMensagemTemplateResposta
                 {
                     Sucesso = false,
-                    Erro = $"Erro na API da Meta: {responseContent}"
+                    Erro = responseContent
                 };
             }
 
@@ -209,7 +218,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
             };
         }
 
-        // Ajustado: Adicionado parâmetro accessToken e aplicando Authorization localmente na requisição
         public async Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId, string accessToken)
         {
             var endpoint = $"{wabaId}/message_templates";
@@ -240,7 +248,10 @@ namespace ProjetoMetaMensagem.Servico.Meta
                         Idioma = t.Language,
                         ConteudoCorpo = t.Components?
                             .FirstOrDefault(c => c.Type.Equals("BODY", StringComparison.OrdinalIgnoreCase))?
-                            .Text ?? string.Empty
+                            .Text ?? string.Empty,
+
+                        // CHADA CORRETA: Executa a varredura e transformação estruturada
+                        Componentes = MapearComponentesMeta(t.Components)
                     }).ToList()
                 };
 
@@ -284,7 +295,6 @@ namespace ProjetoMetaMensagem.Servico.Meta
             return response.IsSuccessStatusCode;
         }
 
-        // Ajustado: Modificado para receber accessToken como parâmetro em vez de ler fixo do _configuration
         public async Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate, string wabaId, string accessToken)
         {
             var endpoint = $"https://graph.facebook.com/v20.0/{wabaId}/message_templates";
@@ -318,22 +328,21 @@ namespace ProjetoMetaMensagem.Servico.Meta
             var resultadoLote = new Dictionary<string, EnviarMensagemTemplateResposta>();
             var requisicoesIndividuais = requisicaoLote.GerarRequisicoesIndividuais();
 
+            var jsonSettings = new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            };
+
+            string jsonPayload = JsonConvert.SerializeObject(requisicoesIndividuais.FirstOrDefault(), jsonSettings);
+
             var tarefas = requisicoesIndividuais.Select(async req =>
             {
                 try
                 {
-                    var requestMeta = new EnviarMensagemTemplateRequisicao
-                    {
-                        Para = req.Para,
-                        Template = new TemplateData
-                        {
-                            Nome = req.Template.Nome,
-                            Idioma = new LanguageData { Codigo = req.Template.Idioma?.Codigo },
-                            Componentes = req.Template.Componentes.Cast<ComponenteEnvio>().ToList()
-                        }
-                    };
+                    var respostaIndividual = await EnviarTemplateAsync(req, phoneNumberId, accessToken);
+                    respostaIndividual.ContatoId = req.ContatoId;
+                    respostaIndividual.JsonEnviado = jsonPayload;
 
-                    var respostaIndividual = await EnviarTemplateAsync(requestMeta, phoneNumberId, accessToken);
                     return new { Telefone = req.Para, Resposta = respostaIndividual };
                 }
                 catch (Exception ex)
@@ -363,6 +372,72 @@ namespace ProjetoMetaMensagem.Servico.Meta
             return resultadoLote;
         }
 
+        #endregion
+
+        #region MAPEAMENTO INTERNO
+
+        /// <summary>
+        /// Traduz a árvore complexa da API da Meta para a estrutura simplificada do nosso Domínio
+        /// </summary>
+        private List<TemplateComponenteDto> MapearComponentesMeta(List<TemplateComponentResponse> componentesMeta)
+        {
+            var componentesDominio = new List<TemplateComponenteDto>();
+            if (componentesMeta == null) return componentesDominio;
+
+            foreach (var comp in componentesMeta)
+            {
+                var dto = new TemplateComponenteDto();
+                string typeUpper = comp.Type?.ToUpper() ?? string.Empty;
+
+                if (typeUpper == "HEADER")
+                {
+                    dto.Tipo = TipoComponenteTemplate.Header;
+                    dto.Texto = comp.Text;
+                    dto.FormatMidia = comp.Format?.ToUpper() switch
+                    {
+                        "TEXT" => TipoMidiaTemplate.Text,
+                        "IMAGE" => TipoMidiaTemplate.Image,
+                        "VIDEO" => TipoMidiaTemplate.Video,
+                        "DOCUMENT" => TipoMidiaTemplate.Document,
+                        _ => TipoMidiaTemplate.None
+                    };
+                }
+                else if (typeUpper == "BODY")
+                {
+                    dto.Tipo = TipoComponenteTemplate.Body;
+                    dto.Texto = comp.Text;
+                }
+                else if (typeUpper == "FOOTER")
+                {
+                    dto.Tipo = TipoComponenteTemplate.Footer;
+                    dto.Texto = comp.Text;
+                }
+                else if (typeUpper == "BUTTONS" && comp.Buttons != null)
+                {
+                    dto.Tipo = TipoComponenteTemplate.Buttons;
+                    dto.Botoes = comp.Buttons.Select(b => new TemplateBotaoDto
+                    {
+                        Texto = b.Text,
+                        Url = b.Url,
+                        Tipo = b.Type?.ToUpper() switch
+                        {
+                            "QUICK_REPLY" => TipoBotaoTemplate.QuickReply,
+                            "URL" => TipoBotaoTemplate.Url,
+                            "PHONE_NUMBER" => TipoBotaoTemplate.PhoneNumber,
+                            _ => TipoBotaoTemplate.QuickReply
+                        }
+                    }).ToList();
+                }
+                else
+                {
+                    continue; // Ignora tipos de blocos desconhecidos pela nossa regra de negócio
+                }
+
+                componentesDominio.Add(dto);
+            }
+
+            return componentesDominio;
+        }
         #endregion
     }
 }

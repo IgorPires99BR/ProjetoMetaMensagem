@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,6 +33,18 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         [MaxLength(50)]
         public string? Status { get; set; }
+
+        public string? ComponentesJson { get; set; }
+
+        [NotMapped]
+        public List<TemplateComponenteDto> Componentes
+        {
+            get => string.IsNullOrEmpty(ComponentesJson)
+                ? new List<TemplateComponenteDto>()
+                : JsonConvert.DeserializeObject<List<TemplateComponenteDto>>(ComponentesJson) ?? new List<TemplateComponenteDto>();
+            set => ComponentesJson = JsonConvert.SerializeObject(value);
+        }
+
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
     }

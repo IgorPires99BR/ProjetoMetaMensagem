@@ -84,6 +84,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                         templateExistente.Status = templateApi.Status;
                         templateExistente.DataAtualizacao = DateTime.Now;
 
+                        // Atualiza a árvore simplificada de componentes (O setter cuida da serialização JSON)
+                        templateExistente.Componentes = templateApi.Componentes;
+
                         await _unitOfWork.Template.Alterar(templateExistente);
                     }
                     else
@@ -98,6 +101,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                             Categoria = templateApi.Categoria,
                             Idioma = templateApi.Idioma,
                             Status = templateApi.Status,
+                            Componentes = templateApi.Componentes,
                             DataCriacao = DateTime.Now,
                             DataAtualizacao = DateTime.Now
                         };

@@ -28,6 +28,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new CriaEmpresaValidator();
                 var validateResult = validator.Validate(command);
 
@@ -40,9 +41,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
                 var resultado = await _unitOfWork.Empresa.Incluir(new Entidades.Empresa(command));
 
                 response.AddValue(new CriaEmpresaResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -50,3 +54,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
         }
     }
 }
+
+

@@ -47,7 +47,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             parameters.Add("Senha", empresa.password);
             parameters.Add("CreatedAt", DateTime.Now);
 
-            return await _session._connection.QuerySingleAsync<int>(
+            return await _session.Connection.QuerySingleAsync<int>(
                 sql,
                 parameters,
                 transaction: _session.Transaction
@@ -75,7 +75,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             parameters.Add("password", senha);
 
             // 3. Execução com QueryFirstOrDefaultAsync (retorna 1 ou null)
-            var company = await _session._connection.QueryFirstOrDefaultAsync<Companies>(
+            var company = await _session.Connection.QueryFirstOrDefaultAsync<Companies>(
                 sql,
                 parameters,
                 transaction: _session.Transaction
@@ -103,7 +103,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             parameters.Add("Telefone", command.phone);
             parameters.Add("BotWhatsapp", command.bot_whatsapp);
 
-            await _session._connection.ExecuteAsync(
+            await _session.Connection.ExecuteAsync(
                 sql,
                 parameters,
                 transaction: _session.Transaction
@@ -119,7 +119,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var parameters = new DynamicParameters();
             parameters.Add("Id", companyId);
 
-            await _session._connection.ExecuteAsync(
+            await _session.Connection.ExecuteAsync(
                 sql,
                 parameters,
                 transaction: _session.Transaction
@@ -140,7 +140,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         ORDER BY {nameof(Companies.created_at)} DESC";
 
 
-            var result = await _session._connection.QueryAsync<Companies>(
+            var result = await _session.Connection.QueryAsync<Companies>(
                 sql,
                 transaction: _session.Transaction
             );
@@ -149,3 +149,4 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         }
     }
 }
+

@@ -18,14 +18,14 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             _mediator = mediator; 
         }
 
-        [HttpPost("enviar-meta")]
+        [HttpPost("enviar-mensagem-meta")]
         public async Task<IActionResult> Enviar([FromBody] EnviarMensagemMetaCommand command)
         {
             try
             {
                 var resultado = await _mediator.Send(command);
 
-                if (resultado != null)
+                if (resultado != null && resultado.Erros.Count == 0)
                     return Ok(resultado);
 
                 return BadRequest(resultado);

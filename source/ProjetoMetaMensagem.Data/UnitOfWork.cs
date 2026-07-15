@@ -23,6 +23,12 @@ namespace ProjetoMetaMensagem.Data
         public ITemplateRepository Template { get; set; }
         public IHistoricoDisparoRepository HistoricoDisparo { get; set; }
         public IConversationStateRepository ConversationState { get; set; }
+        public ITagRepository Tag { get; set; }
+        public ICampanhaRepository Campanha { get; set; }
+        public IWebhookConfigRepository WebhookConfig { get; set; }
+        public IProdutoRepository Produto { get; set; }
+        public IPipelineRepository Pipeline { get; set; }
+        public IMensagemRecebidaRepository MensagemRecebida { get; set; }
 
         public UnitOfWork(DbSession session,
             ICompaniesRepository companiesRepository,
@@ -35,7 +41,13 @@ namespace ProjetoMetaMensagem.Data
             ITemplateRepository templateRepository,
             IHistoricoDisparoRepository historicoDisparo,
             IFlowRepository flow,
-            IConversationStateRepository conversationState)
+            IConversationStateRepository conversationState,
+            ITagRepository tagRepository,
+            ICampanhaRepository campanhaRepository,
+            IWebhookConfigRepository webhookConfigRepository,
+            IProdutoRepository produtoRepository,
+            IPipelineRepository pipelineRepository,
+            IMensagemRecebidaRepository mensagemRecebidaRepository)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
@@ -49,6 +61,12 @@ namespace ProjetoMetaMensagem.Data
             HistoricoDisparo = historicoDisparo;
             Flow = flow;
             ConversationState = conversationState;
+            Tag = tagRepository;
+            Campanha = campanhaRepository;
+            WebhookConfig = webhookConfigRepository;
+            Produto = produtoRepository;
+            Pipeline = pipelineRepository;
+            MensagemRecebida = mensagemRecebidaRepository;
         }
 
         public void Commit()
@@ -65,7 +83,7 @@ namespace ProjetoMetaMensagem.Data
 
         public void BeginTransaction()
         {
-            _session.Transaction = _session._connection.BeginTransaction();
+            _session.Transaction = _session.Connection.BeginTransaction();
         }
 
         public void Dispose()

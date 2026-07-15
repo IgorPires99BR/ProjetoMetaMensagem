@@ -39,7 +39,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             // Como o 'id' do Flow parece ser uma string (GUID ou UID vindo do front),
             // geralmente o ExecuteAsync é suficiente. 
             // Se o ID for gerado pelo banco, use o padrão RETURNING que fizemos em Companies.
-            return await _session._connection.ExecuteAsync(
+            return await _session.Connection.ExecuteAsync(
                 sql,
                 flow,
                 transaction: _session.Transaction
@@ -62,7 +62,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var parameters = new DynamicParameters();
             parameters.Add("CompanyId", companyId);
 
-            var result = await _session._connection.QueryAsync<Flows>(
+            var result = await _session.Connection.QueryAsync<Flows>(
                 sql,
                 parameters,
                 transaction: _session.Transaction
@@ -72,3 +72,4 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         }
     }
 }
+

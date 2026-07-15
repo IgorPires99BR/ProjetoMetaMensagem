@@ -1,91 +1,73 @@
 using Microsoft.AspNetCore.Mvc;
-using ProjetoMetaMensagem.Dominio.Interfaces;
-using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using Microsoft.AspNetCore.SignalR;
+using ProjetoMetaMensagem.Dominio.Entidades;
+using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
+using ProjetoMetaMensagem.WebAPI.Hubs;
 
-namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
+namespace ProjetoMetaMensagem.Controllers
 {
     [ApiController]
-    [Route("api/webhook")]
-    public class WebhookController : Controller
+    [Route("api/webhook/whatsapp")]
+    public class WhatsappWebhookController : ControllerBase
     {
-        private readonly IFlowOrchestratorService _flowOrchestrator;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
+        private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IConfiguration _configuration;
 
-        public WebhookController(IFlowOrchestratorService flowOrchestrator, IUnitOfWork unitOfWork)
+        public WhatsappWebhookController(IMediator mediator, IHubContext<ChatHub> hubContext, IConfiguration configuration)
         {
-            _flowOrchestrator = flowOrchestrator;
-            _unitOfWork = unitOfWork;
+            _mediator = mediator;
+            _hubContext = hubContext;
+            _configuration = configuration;
         }
 
-        // GET api/webhook?hub.mode=subscribe&hub.challenge=123&hub.verify_token=TOKEN
-        // Usado pela Meta para verificar o webhook
         [HttpGet]
         public IActionResult VerificarWebhook(
-            [FromQuery(Name = "hub.mode")] string mode,
-            [FromQuery(Name = "hub.challenge")] string challenge,
-            [FromQuery(Name = "hub.verify_token")] string verifyToken)
+        [FromQuery(Name = "hub.mode")] string? mode = null,
+        [FromQuery(Name = "hub.verify_token")] string? verifyToken = null,
+        [FromQuery(Name = "hub.challenge")] string? challenge = null)
         {
-            try
+            // Log para monitorar o que está chegando no Render
+            Console.WriteLine($"[Webhook] Mode: {mode} | Token Recebido: {verifyToken} | Challenge: {challenge}");
+
+            // O "Token" configurado no seu appsettings.json
+            string? tokenConfigurado = _configuration["ApiWhatsappConnectionConfiguration:VerifyToken"];
+
+            if (mode == "subscribe" && verifyToken == tokenConfigurado)
             {
-                if (string.IsNullOrEmpty(mode) || string.IsNullOrEmpty(challenge) || string.IsNullOrEmpty(verifyToken))
-                    return BadRequest("Parametros invalidos.");
-
-                if (mode == "subscribe")
-                {
-                    // Nota: Em producao, valide o verifyToken contra o TokenWebhookLocal da empresa
-                    // Cada empresa tem um TokenWebhookLocal (GUID unico)
-                    // Aqui podemos buscar a empresa pelo token e retornar o challenge se valido
-
-                    // Por enquanto, aceita qualquer token nao vazio
-                    return Content(challenge, "text/plain");
-                }
-
-                return BadRequest("Modo invalido.");
+                // Retorna APENAS o código do challenge como texto puro com status 200 (OK)
+                return Content(challenge ?? string.Empty, "text/plain");
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
-            }
+
+            // Se as condições não forem atendidas, retorna 403 Forbidden
+            return Forbid();
         }
 
-        // POST api/webhook
-        // Recebe notificacoes da Meta (mensagens recebidas, status de entrega, etc.)
         [HttpPost]
-        public async Task<IActionResult> ReceberNotificacao([FromBody] object payload)
+        public async Task<IActionResult> ReceberMensagem([FromBody] RecebeMensagemWebhookCommand payload)
         {
+            if (payload == null) return Ok();
+
             try
             {
-                // A implementacao completa do webhook depende do payload exato da Meta Cloud API
-                // Estrutura esperada:
-                // {
-                //   "entry": [{
-                //     "changes": [{
-                //       "value": {
-                //         "messages": [{
-                //           "from": "5511999998888",
-                //           "text": { "body": "Ola" },
-                //           "type": "text"
-                //         }],
-                //         "metadata": {
-                //           "phone_number_id": "123456789"
-                //         }
-                //       }
-                //     }]
-                //   }]
-                // }
+                var resultado = await _mediator.Send(payload);
 
-                // Log para visualizacao do payload recebido (uteis para debug)
-                Console.WriteLine($"Webhook recebido: {payload}");
-
-                // Por se tratar de um payload complexo e que varia entre versoes da API,
-                // a desserializacao detalhada sera feita apos confirmacao do formato exato.
-                // Retornamos 200 OK para que a Meta nao reenvie a notificacao.
+                // Verifica se a operação foi bem sucedida e se retornou dados válidos
+                if (resultado != null && resultado.Erros.Count() == 0)
+                {
+                    // Sugestão: O grupo do SignalR geralmente deve ser o "empresaId" ou o ID do chat, 
+                    // usar o conteúdo da mensagem como nome do grupo pode não notificar a tela certa.
+                    await _hubContext.Clients.Group("GrupoNotificacao Chat ou Empresa")
+                                .SendAsync("ReceberNovaMensagem", resultado.Value.Mensagem);
+                }
 
                 return Ok();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                // Seu log aqui
+                return Ok();
             }
         }
     }

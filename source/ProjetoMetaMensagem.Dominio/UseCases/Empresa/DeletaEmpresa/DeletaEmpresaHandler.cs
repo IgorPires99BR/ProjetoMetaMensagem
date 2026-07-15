@@ -27,6 +27,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 // Validação: criar e usar um validador específico (AlteraEmpresaValidator) similar ao CriaEmpresaValidator
                 var validator = new DeletaEmpresaValidator();
                 var validateResult = validator.Validate(command);
@@ -38,9 +39,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa
                 }
 
                 await _unitOfWork.Empresa.Excluir(command.IdEmpresa);
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -48,3 +52,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa
         }
     }
 }
+
+

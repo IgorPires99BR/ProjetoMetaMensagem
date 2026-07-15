@@ -66,6 +66,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 // 4. Executa as alterações no banco de dados dentro da mesma transação
 
                 // Atualiza o pai
@@ -87,9 +88,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                 var result = new AlteraFlowResult();
 
                 response.AddValue(result);
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                _unitOfWork.Rollback();
                 // Qualquer quebra (no banco ou integração) faz o UnitOfWork reverter tudo, mantendo o estado anterior
                 response.AddErro($"Erro: {ex.Message}");
             }
@@ -98,3 +101,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
         }
     }
 }
+
+

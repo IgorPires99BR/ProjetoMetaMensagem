@@ -4,6 +4,7 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Helpers;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta
 {
@@ -38,7 +39,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
                 // 2. Chamada ao serviço de integração com a Meta
-                var respostaMeta = await _whatsappService.EnviarTemplateAsync(new Entidades.Servico.Meta.Template.EnviarMensagemTemplate.EnviarMensagemTemplateRequisicao(command), phoneNumberId, token);
+                var respostaMeta = await _whatsappService.EnviarTemplateAsync(new Entidades.Servico.Meta.Template.EnviarMensagemTemplate.EnviarMensagemTemplateRequisicao(command, command.ContatoId.ToString()), phoneNumberId, token);
 
                 if (respostaMeta == null)
                 {
@@ -53,6 +54,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 }
 
                 // 3. Persistencia no historico em caso de sucesso
+<<<<<<< HEAD
                 //var historico = new HistoricoDisparo
                 //{
                 //    EmpresaId = command.EmpresaId,
@@ -66,6 +68,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 //        command.ParametrosButton
                 //    })
                 //};
+=======
+                var historico = new HistoricoDisparo
+                {
+                    EmpresaId = command.IdEmpresa,
+                    ContatoId = command.ContatoId,
+                    TemplateId = command.TemplateId,
+                    TipoDisparo = "Template",
+                    WamidMeta = respostaMeta.WamidMeta,
+                    Conteudo = JsonConvert.SerializeObject(new
+                    {
+                        command.ParametrosBody,
+                        command.ParametrosButton
+                    })
+                };
+>>>>>>> b387abb3251ce22f73d6c24fd5ada05c9d71aff5
 
                 //await _unitOfWork.HistoricoDisparo.Incluir(historico);
 

@@ -26,6 +26,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
 
             try
             {
+                _unitOfWork.BeginTransaction();
                 var validator = new DeletaUsuarioValidator();
                 var validateResult = validator.Validate(command);
 
@@ -38,9 +39,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
                 await _unitOfWork.Usuario.Excluir(command.Id.ToString());
 
                 response.AddValue(new DeletaUsuarioResult());
+                _unitOfWork.Commit();
             }
             catch (Exception ex)
             {
+                    _unitOfWork.Rollback();
+                
                 response.AddErro($"Erro: {ex.Message}");
             }
 
@@ -48,3 +52,5 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
         }
     }
 }
+
+

@@ -60,15 +60,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     {
                         var historico = new HistoricoDisparo
                         {
-                            EmpresaId = command.EmpresaId,
-                            ContatoId = command.ContatoId,
+                            EmpresaId = command.IdEmpresa,
+                            // ✅ Recupera o ID específico e correto que mapeamos para este número de telefone
+                            ContatoId = Guid.Parse(respostaMeta.ContatoId),
                             TemplateId = command.TemplateId,
                             TipoDisparo = "Template",
                             WamidMeta = respostaMeta.WamidMeta,
                             Conteudo = JsonConvert.SerializeObject(new
                             {
                                 command.ParametrosBody,
-                                command.ParametrosButton
+                                command.ParametrosButton,
+                                PayloadEnvio = respostaMeta.JsonEnviado // Guarda o JSON para fins de auditoria/log
                             })
                         };
 
@@ -79,7 +81,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 // 3. Montagem do objeto de resultado mantendo o dicionário original [Telefone -> bool] para a View do CRM
                 var resultadoLote = new EnviarMensagemTemplateMetaLoteResult
                 {
-                    RelatorioDisparos = resultadoDisparos.ToDictionary(x => x.Key, x => x.Value.Sucesso)
+                    RelatorioDisparos = resultadoDisparos.ToDictionary(x => x.Key, x => x.Value.Sucesso),
+                    RelatorioErros = resultadoDisparos
+                        .Where(x => !x.Value.Sucesso && !string.IsNullOrEmpty(x.Value.Erro))
+                        .ToDictionary(x => x.Key, x => x.Value.Erro)
                 };
 
                 // Atribui o resultado de sucesso ao envelope da Response
