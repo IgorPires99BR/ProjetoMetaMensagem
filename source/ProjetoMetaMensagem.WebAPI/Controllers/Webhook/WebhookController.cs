@@ -36,8 +36,7 @@ namespace ProjetoMetaMensagem.Controllers
 
             if (mode == "subscribe" && verifyToken == tokenConfigurado)
             {
-                // Retorna APENAS o código do challenge como texto puro com status 200 (OK)
-                return Content(challenge ?? string.Empty, "text/plain");
+                return Ok(challenge);
             }
 
             // Se as condições não forem atendidas, retorna 403 Forbidden
