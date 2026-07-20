@@ -24,22 +24,20 @@ namespace ProjetoMetaMensagem.Controllers
 
         [HttpGet]
         public IActionResult VerificarWebhook(
-        [FromQuery(Name = "hub.mode")] string? mode = null,
-        [FromQuery(Name = "hub.verify_token")] string? verifyToken = null,
-        [FromQuery(Name = "hub.challenge")] string? challenge = null)
+    [FromQuery(Name = "hub.mode")] string? mode = null,
+    [FromQuery(Name = "hub.verify_token")] string? verifyToken = null,
+    [FromQuery(Name = "hub.challenge")] string? challenge = null)
         {
-            // Log para monitorar o que está chegando no Render
             Console.WriteLine($"[Webhook] Mode: {mode} | Token Recebido: {verifyToken} | Challenge: {challenge}");
 
-            // O "Token" configurado no seu appsettings.json
             string? tokenConfigurado = _configuration["ApiWhatsappConnectionConfiguration:VerifyToken"];
 
             if (mode == "subscribe" && verifyToken == tokenConfigurado)
             {
+                // Retorna o challenge com HTTP 200 OK
                 return Ok(challenge);
             }
 
-            // Se as condições não forem atendidas, retorna 403 Forbidden
             return Forbid();
         }
 
