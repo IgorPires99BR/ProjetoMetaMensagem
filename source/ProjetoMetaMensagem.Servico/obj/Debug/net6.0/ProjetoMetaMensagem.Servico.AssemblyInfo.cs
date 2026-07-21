@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProjetoMetaMensagem.Servico")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+90f0f6fb13e8fba39a34adacb98573211b72cd32")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c47ac163e3411b9ccf22ce2366a7c82a1402c4c9")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProjetoMetaMensagem.Servico")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProjetoMetaMensagem.Servico")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

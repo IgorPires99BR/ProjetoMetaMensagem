@@ -37,7 +37,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = @"
                 SELECT * FROM MensagemRecebida
-                WHERE EmpresaId = @EmpresaId AND ContatoId = @ContatoId
+                WHERE EmpresaId = @EmpresaId AND (ContatoId = @ContatoId OR ContatoId IS NULL)
                 ORDER BY DataRecebimento ASC";
 
             var result = await _session.Connection.QueryAsync<MensagemRecebida>(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);

@@ -53,6 +53,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 using ProjetoMetaMensagem.WebAPI.Hubs;
+using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -212,6 +213,7 @@ builder.Services.AddScoped<IRequestHandler<AlteraFlowCommand, Response<AlteraFlo
 //Registros de Convcrsations
 
 builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<List<ListaConversaPorIdResult>>>, ListaConversaPorIdHandler>();
+builder.Services.AddScoped<IRequestHandler<RecebeMensagemWebhookCommand, Response<RecebeMensagemWebhookResult>>, RecebeMensagemWebhookHandler>();
 
 var app = builder.Build();
  

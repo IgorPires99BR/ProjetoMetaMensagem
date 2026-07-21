@@ -19,3 +19,22 @@ CREATE TABLE MensagemRecebida (
     CONSTRAINT FK_MensagemRecebida_Contatos FOREIGN KEY (ContatoId) 
         REFERENCES Contato (Id) ON DELETE NO ACTION
 );
+
+
+-- Verifica se a FK existe antes de tentar remover
+IF EXISTS (
+    SELECT 1 
+    FROM sys.foreign_keys 
+    WHERE name = 'FK_MensagemRecebida_Contatos' 
+      AND parent_object_id = OBJECT_ID('MensagemRecebida')
+)
+BEGIN
+    ALTER TABLE MensagemRecebida
+    DROP CONSTRAINT FK_MensagemRecebida_Contatos;
+    
+    PRINT 'Chave estrangeira FK_MensagemRecebida_Contatos removida com sucesso.';
+END
+ELSE
+BEGIN
+    PRINT 'A chave estrangeira FK_MensagemRecebida_Contatos não existe ou já foi removida.';
+END;
