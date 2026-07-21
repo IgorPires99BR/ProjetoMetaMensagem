@@ -12,10 +12,10 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 {
-    public interface IMetaService
+    public interface    IMetaService
     {
         Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao, string phoneNumberId, string accessToken);
-        Task<bool> EnviarTextoLivreAsync(string celular, string mensagem);
+        Task<bool> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken);
 
         // Retorno em Dictionary mapeando a resposta detalhada por telefone
         Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote, string phoneNumberId, string accessToken);

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProjetoMetaMensagem.Dominio")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1ec774a8b5b631903d5709ee082010d827d1bb90")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dc822bbcd0454b34085911eb30463c50cc955926")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProjetoMetaMensagem.Dominio")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProjetoMetaMensagem.Dominio")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
