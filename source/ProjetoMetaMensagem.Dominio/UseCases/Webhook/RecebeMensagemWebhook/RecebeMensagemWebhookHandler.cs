@@ -35,47 +35,50 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                     return response;
                 }
 
-                if (command.Entry == null) return response;
+                if (command.Entry == null || !command.Entry.Any()) return response;
 
                 var mensagensParaSalvar = new List<Entidades.MensagemRecebida>();
 
-                // 1. Varre a árvore do payload da Meta
                 foreach (var entry in command.Entry)
                 {
                     if (entry.Changes == null) continue;
 
                     foreach (var change in entry.Changes)
                     {
-                        if (change.Value?.Messages == null) continue;
+                        if (change.Value?.Messages == null || !change.Value.Messages.Any()) continue;
 
                         var metadata = change.Value.Metadata;
+                        if (string.IsNullOrEmpty(metadata?.PhoneNumberId)) continue;
 
-                        // REGRA MULTI-TENANT CRÍTICA:
-                        // Use o metadata.PhoneNumberId ou metadata.DisplayPhoneNumber para descobrir qual EmpresaId é dona desse número.
-                        // Guid empresaId = await _empresaRepository.BuscarIdPorNumeroMetaAsync(metadata?.DisplayPhoneNumber);
-                        Guid? empresaId = await _unitOfWork.Empresa.ObterPorPhoneNumberId(metadata.PhoneNumberId.ToString());// Substitua pela sua busca real
+                        // Busca a empresa associada ao PhoneNumberId recebido
+                        Guid? empresaId = await _unitOfWork.Empresa.ObterPorPhoneNumberId(metadata.PhoneNumberId);
 
-
+                        // Se não encontrar uma empresa cadastrada para esse PhoneNumberId, pula o processamento
+                        if (!empresaId.HasValue) continue;
 
                         foreach (var msgMeta in change.Value.Messages)
                         {
+                            if (string.IsNullOrEmpty(msgMeta.From)) continue;
+
+                            // Busca o contato se existir, mas não bloqueia caso não exista
                             var contato = await _unitOfWork.Contato.ObterPorTelefone(empresaId.Value, msgMeta.From);
 
-                            // Cria o objeto utilizando a sua entidade existente
                             var novaMensagem = new Entidades.MensagemRecebida
                             {
-                                EmpresaId = empresaId ?? Guid.NewGuid(),
+                                Id = Guid.NewGuid(),
+                                EmpresaId = empresaId.Value,
                                 TelefoneRemetente = msgMeta.From,
                                 Tipo = "recebida",
                                 Lida = false,
-                                ContatoId = contato?.Id, // Caso queira buscar o ID do contato pelo telefoneRemetente no banco posteriormente
-                                FlowId = null     // Se a mensagem fizer parte de um fluxo automatizado em execução
+                                ContatoId = contato?.Id, // Mantém null se o contato não existir no banco
+                                FlowId = null,
+                                DataRecebimento = DateTime.UtcNow
                             };
 
-                            // Extrai o conteúdo baseado no tipo de mensagem que o cliente enviou
+                            // Define o conteúdo conforme o tipo de mensagem
                             if (msgMeta.Type == "text" && msgMeta.Text != null)
                             {
-                                novaMensagem.Conteudo = msgMeta.Text.Body;
+                                novaMensagem.Conteudo = msgMeta.Text.Body ?? string.Empty;
                             }
                             else
                             {
@@ -87,7 +90,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                     }
                 }
 
-                // 2. Salva no banco as mensagens mapeadas
+                // Salva todas as mensagens mapeadas
                 if (mensagensParaSalvar.Any())
                 {
                     foreach (var mensagem in mensagensParaSalvar)
