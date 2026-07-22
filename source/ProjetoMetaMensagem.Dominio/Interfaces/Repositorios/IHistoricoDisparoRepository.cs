@@ -11,6 +11,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
     {
         Task Incluir(HistoricoDisparo historicoDisparo);
         Task<HistoricoDisparo?> ObterPorId(Guid id);
+
+        Task<IEnumerable<HistoricoDisparo>> ListarPorContato(Guid empresaId, Guid contatoId);
         Task<HistoricoDisparo?> ObterPorWamidMeta(string wamidMeta);
     }
 }

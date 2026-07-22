@@ -23,20 +23,44 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
             var response = new Response<ListaMensagemRecebidaResult>();
 
             // Busca as mensagens trocadas com este contato específico nesta empresa
-            var mensagens = await _unitOfWork.MensagemRecebida
+            var mensagensRecebidasTask = await _unitOfWork.MensagemRecebida
+                 .ListarPorContato(command.EmpresaId, command.ContatoId);
+
+            var historicoEnviadasTask = await _unitOfWork.HistoricoDisparo
                 .ListarPorContato(command.EmpresaId, command.ContatoId);
 
-            // Mapeia para um DTO que o Angular entenda (id, texto, quem enviou, hora)
-            var resultadoDto = mensagens.Select(m => new ItemMensagemChatDto
+            // 2. Mapeia as recebidas (cliente -> user)
+            var listaRecebidas = mensagensRecebidasTask.Select(m => new
             {
-                Id = m.Id,
-                From = m.Tipo == "recebida" ? "user" : "bot",
+                m.Id,
+                From = "user",
                 Text = m.Conteudo,
-                Time = m.DataRecebimento.ToString("HH:mm")
-            }).ToList();
+                Data = m.DataRecebimento
+            });
+
+            // 3. Mapeia as enviadas (sistema/empresa -> bot ou me)
+            var listaEnviadas = historicoEnviadasTask.Select(h => new
+            {
+                h.Id,
+                From = "bot", // Altere para "me" ou "bot" conforme o padrão da sua UI no Angular
+                Text = h.Conteudo,
+                Data = h.DataEnvio
+            });
+
+            // 4. Une as duas listas e ordena pela data/hora real do evento
+            var resultadoDto = listaRecebidas
+                .Concat(listaEnviadas)
+                .OrderBy(x => x.Data)
+                .Select(x => new ItemMensagemChatDto
+                {
+                    Id = x.Id,
+                    From = x.From,
+                    Text = x.Text,
+                    Time = x.Data.ToString("HH:mm")
+                })
+                .ToList();
 
             var resultFinal = new ListaMensagemRecebidaResult { Mensagens = resultadoDto };
-
             response.AddValue(resultFinal);
 
             return response;

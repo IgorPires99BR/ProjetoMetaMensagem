@@ -61,6 +61,21 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { Id = id }, transaction: _session.Transaction);
         }
 
+        public async Task<IEnumerable<HistoricoDisparo>> ListarPorContato(Guid empresaId, Guid contatoId)
+        {
+            var sql = $@"
+        SELECT * FROM {nameof(HistoricoDisparo)} 
+        WHERE {nameof(HistoricoDisparo.EmpresaId)} = @EmpresaId 
+          AND {nameof(HistoricoDisparo.ContatoId)} = @ContatoId
+        ORDER BY {nameof(HistoricoDisparo.DataEnvio)} ASC";
+
+            return await _session.Connection.QueryAsync<HistoricoDisparo>(
+                sql,
+                new { EmpresaId = empresaId, ContatoId = contatoId },
+                transaction: _session.Transaction
+            );
+        }
+
         public async Task<HistoricoDisparo?> ObterPorWamidMeta(string wamidMeta)
         {
             var sql = $@"
