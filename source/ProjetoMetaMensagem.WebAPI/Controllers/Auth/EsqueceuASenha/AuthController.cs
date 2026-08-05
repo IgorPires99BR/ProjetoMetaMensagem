@@ -8,6 +8,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.EsqueceuASenha
 {
     [ApiController]
     [Route("[controller]")]
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public class AuthController : Controller
     {
         private readonly IMediator _mediator;

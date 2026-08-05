@@ -8,6 +8,7 @@ using System.Net;
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
 {
     [ApiController]
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public class AuthController : Controller
     {
         private readonly IMediator _mediator;

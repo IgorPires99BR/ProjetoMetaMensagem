@@ -73,7 +73,12 @@ builder.Services.AddCors(options =>
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter());
+    options.Filters.Add<ProjetoMetaMensagem.WebAPI.Common.EmpresaAccessFilter>();
+});
+builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -162,6 +167,8 @@ builder.Services.AddScoped<IRequestHandler<CriarTemplateMetaCommand, Response<Cr
 //Estrutura de Login e esqueci minha senha montada
 builder.Services.AddScoped<IRequestHandler<EsqueceuASenhaCommand, Response<EsqueceuASenhaResult>>, EsqueceuASenhaHandler>();
 builder.Services.AddScoped<IRequestHandler<LoginCommand, Response<LoginResult>>, LoginHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas.ObterMetricasCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas.ObterMetricasDashboardResult>>, ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas.ObterMetricasHandler>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 
 //Registros de Empresas
 builder.Services.AddScoped<IRequestHandler<CriaEmpresaCommand, Response<CriaEmpresaResult>>, CriaEmpresaHandler>();

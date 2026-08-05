@@ -9,6 +9,7 @@ namespace ProjetoMetaMensagem.Controllers
 {
     [ApiController]
     [Route("api/webhook/whatsapp")]
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public class WhatsappWebhookController : ControllerBase
     {
         private readonly IMediator _mediator;
