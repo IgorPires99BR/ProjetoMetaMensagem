@@ -257,6 +257,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<ChatHub>("/hubs/chat");
+// O front conecta em `${environment.apiUrl}/hubs/chat`, e apiUrl ja inclui "/api" --
+// sem o prefixo aqui, o negotiate batia 404 (rota nao existia onde o front chamava).
+app.MapHub<ChatHub>("/api/hubs/chat");
 
 app.Run();
