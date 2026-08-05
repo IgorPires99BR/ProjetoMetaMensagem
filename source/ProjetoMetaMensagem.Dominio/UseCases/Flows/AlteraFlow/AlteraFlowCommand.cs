@@ -27,5 +27,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
         public string TipoStep { get; set; } // "Mensagem", "Capturar Input"
         public string MensagemPergunta { get; set; }
         public string VariavelSaida { get; set; }
+        public Guid? TemplateId { get; set; }
     }
 }

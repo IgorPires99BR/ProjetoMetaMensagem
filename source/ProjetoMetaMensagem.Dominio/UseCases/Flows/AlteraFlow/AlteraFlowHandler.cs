@@ -52,7 +52,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                     NomeEtapa = dto.TipoStep,
                     ConteudoLivre = dto.MensagemPergunta,
                     EhEtapaInicial = (i == 0),
-                    GatilhoResposta = dto.TipoStep == "Capturar Input" ? "Qualquer_Resposta" : "Avancar"
+                    GatilhoResposta = dto.TipoStep == "Capturar Input" ? "Qualquer_Resposta" : "Avancar",
+                    TemplateId = dto.TemplateId
                 };
 
                 if (etapaAnterior != null)

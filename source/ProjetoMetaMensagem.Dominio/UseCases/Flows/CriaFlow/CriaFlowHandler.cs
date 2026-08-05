@@ -35,7 +35,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
                     NomeEtapa = dto.TipoStep, // "Mensagem" ou "Capturar Input"
                     ConteudoLivre = dto.MensagemPergunta, // Texto digitado na caixa
                     EhEtapaInicial = (i == 0), // O primeiro item da lista da tela vira a etapa inicial
-                    GatilhoResposta = dto.TipoStep == "Capturar Input" ? "Qualquer_Resposta" : "Avancar"
+                    GatilhoResposta = dto.TipoStep == "Capturar Input" ? "Qualquer_Resposta" : "Avancar",
+                    TemplateId = dto.TemplateId
                 };
 
                 // Se houver uma etapa anterior no loop, atualizamos o ponteiro dela para esta nova

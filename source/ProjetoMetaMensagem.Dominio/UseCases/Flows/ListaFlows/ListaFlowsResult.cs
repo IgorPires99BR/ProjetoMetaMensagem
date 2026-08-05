@@ -32,7 +32,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
                         ConteudoLivre = etapa.ConteudoLivre,
                         GatilhoResposta = etapa.GatilhoResposta,
                         ProximaEtapaId = etapa.ProximaEtapaId,
-                        EhEtapaInicial = etapa.EhEtapaInicial
+                        EhEtapaInicial = etapa.EhEtapaInicial,
+                        TemplateId = etapa.TemplateId
                     })
                     .ToList();
             }
@@ -57,5 +58,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
         public string GatilhoResposta { get; set; }
         public Guid? ProximaEtapaId { get; set; }
         public bool EhEtapaInicial { get; set; }
+        public Guid? TemplateId { get; set; }
     }
 }

@@ -26,5 +26,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         public string MensagemPergunta { get; set; } // "Olá! Bem-vindo..." ou "Qual seu nome?"
         public string VariavelSaida { get; set; } // "nome" (como no step 2 da imagem)
         public bool EhEtapaInicial { get; set; }
+        public Guid? TemplateId { get; set; } // Template que dispara o inicio do flow (quando aplicavel)
     }
 }
