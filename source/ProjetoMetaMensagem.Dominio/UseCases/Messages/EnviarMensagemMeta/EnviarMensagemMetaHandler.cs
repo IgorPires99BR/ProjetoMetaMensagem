@@ -32,8 +32,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                 _unitOfWork.BeginTransaction();
 
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.EmpresaId);
+                var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.EmpresaId);
 
-                var sucesso = await _whatsappService.EnviarTextoLivreAsync(command.Celular, command.textoMensagem, token);
+                var sucesso = await _whatsappService.EnviarTextoLivreAsync(command.Celular, command.textoMensagem, token, phoneNumberId);
 
                 if (sucesso == null)
                 {

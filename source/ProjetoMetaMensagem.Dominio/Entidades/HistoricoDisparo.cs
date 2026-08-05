@@ -24,4 +24,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string WamidMeta { get; set; }
         public DateTime DataEnvio { get; set; }
     }
+
+    // Usado apenas em listagens que precisam do telefone do contato sem consulta extra (ex: chats ativos)
+    public class HistoricoDisparoComTelefone : HistoricoDisparo
+    {
+        public string? TelefoneContato { get; set; }
+    }
 }

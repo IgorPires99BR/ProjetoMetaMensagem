@@ -68,7 +68,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     })
                 };
 
-                //await _unitOfWork.HistoricoDisparo.Incluir(historico);
+                await _unitOfWork.HistoricoDisparo.Incluir(historico);
 
                 // 4. Montagem do resultado positivo
                 var resultado = new EnviarMensagemTemplateMetaResult

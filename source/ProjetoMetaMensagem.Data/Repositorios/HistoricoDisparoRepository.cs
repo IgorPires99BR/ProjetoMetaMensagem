@@ -76,6 +76,22 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             );
         }
 
+        public async Task<IEnumerable<HistoricoDisparoComTelefone>> ListarPorEmpresa(Guid empresaId)
+        {
+            var sql = $@"
+        SELECT h.*, c.Telefone AS TelefoneContato
+        FROM {nameof(HistoricoDisparo)} h
+        LEFT JOIN Contato c ON c.Id = h.{nameof(HistoricoDisparo.ContatoId)}
+        WHERE h.{nameof(HistoricoDisparo.EmpresaId)} = @EmpresaId
+        ORDER BY h.{nameof(HistoricoDisparo.DataEnvio)} ASC";
+
+            return await _session.Connection.QueryAsync<HistoricoDisparoComTelefone>(
+                sql,
+                new { EmpresaId = empresaId },
+                transaction: _session.Transaction
+            );
+        }
+
         public async Task<HistoricoDisparo?> ObterPorWamidMeta(string wamidMeta)
         {
             var sql = $@"

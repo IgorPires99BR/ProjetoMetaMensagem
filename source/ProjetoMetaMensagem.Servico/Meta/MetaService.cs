@@ -341,7 +341,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
         #region MENSAGENS
 
-        public async Task<bool> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken)
+        public async Task<bool> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken, string phoneNumberId)
         {
             var payload = new MetaTextMessageRequest
             {
@@ -355,7 +355,9 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
             var json = JsonConvert.SerializeObject(payload);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_configuration.PhoneNumberId}/messages");
+            var idNumeroEnvio = !string.IsNullOrEmpty(phoneNumberId) ? phoneNumberId : _configuration.PhoneNumberId;
+
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{idNumeroEnvio}/messages");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
