@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta;
@@ -341,7 +342,7 @@ namespace ProjetoMetaMensagem.Servico.Meta
 
         #region MENSAGENS
 
-        public async Task<bool> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken, string phoneNumberId)
+        public async Task<string> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken, string phoneNumberId)
         {
             var payload = new MetaTextMessageRequest
             {
@@ -362,14 +363,17 @@ namespace ProjetoMetaMensagem.Servico.Meta
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Erro na API da Meta: {errorContent}");
+                throw new Exception($"Erro na API da Meta: {responseContent}");
             }
 
-            return response.IsSuccessStatusCode;
+            // Extrai o wamid retornado pela Meta (messages[0].id), usado depois pra
+            // vincular os eventos de status de entrega (webhook) a esta mensagem.
+            var responseObj = JObject.Parse(responseContent);
+            return responseObj["messages"]?.FirstOrDefault()?["id"]?.ToString() ?? string.Empty;
         }
 
         public async Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate, string wabaId, string accessToken)

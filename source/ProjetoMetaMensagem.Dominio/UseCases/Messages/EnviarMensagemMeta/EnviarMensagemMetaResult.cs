@@ -10,6 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
     {
         public bool Sucesso { get; set; }
         public string Mensagem { get; set; }
+        public string WamidMeta { get; set; }
         public object Dados { get; set; }
     }
 }

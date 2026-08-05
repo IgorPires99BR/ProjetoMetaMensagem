@@ -34,13 +34,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.EmpresaId);
                 var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.EmpresaId);
 
-                var sucesso = await _whatsappService.EnviarTextoLivreAsync(command.Celular, command.textoMensagem, token, phoneNumberId);
-
-                if (sucesso == null)
-                {
-                    response.AddErro("Erro ao acessar a Meta");
-                    return response;
-                }
+                var wamid = await _whatsappService.EnviarTextoLivreAsync(command.Celular, command.textoMensagem, token, phoneNumberId);
 
                 // Registra historico do disparo
                 var historico = new HistoricoDisparo
@@ -48,8 +42,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                     EmpresaId = command.EmpresaId,
                     ContatoId = command.ContatoId,
                     TipoDisparo = "Livre",
-                    Conteudo = command.Template,
-                    WamidMeta = "",
+                    Conteudo = command.textoMensagem,
+                    WamidMeta = wamid ?? "",
                     DataEnvio = DateTime.Now
                 };
 
@@ -57,6 +51,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);
 
                 _unitOfWork.Commit();
+
+                response.AddValue(new EnviarMensagemMetaResult
+                {
+                    Sucesso = true,
+                    WamidMeta = historico.WamidMeta
+                });
             }
             catch (Exception ex)
             {

@@ -17,7 +17,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     public interface    IMetaService
     {
         Task<EnviarMensagemTemplateResposta> EnviarTemplateAsync(EnviarMensagemTemplateRequisicao requisicao, string phoneNumberId, string accessToken);
-        Task<bool> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken, string phoneNumberId);
+        Task<string> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken, string phoneNumberId);
 
         // Retorno em Dictionary mapeando a resposta detalhada por telefone
         Task<Dictionary<string, EnviarMensagemTemplateResposta>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateLoteRequisicao requisicaoLote, string phoneNumberId, string accessToken);
