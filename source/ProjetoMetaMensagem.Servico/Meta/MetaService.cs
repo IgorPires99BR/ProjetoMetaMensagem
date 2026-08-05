@@ -188,11 +188,11 @@ namespace ProjetoMetaMensagem.Servico.Meta
             }
         }
 
-        public async Task<AtivaCoexistenciaMetaResposta> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken)
+        public async Task<AtivaCoexistenciaMetaResposta> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken, string pin)
         {
             var endpoint = $"{phoneNumberId}/register";
 
-            var requestMeta = new AtivaCoexistenciaRequest();
+            var requestMeta = new AtivaCoexistenciaRequest { Pin = pin };
             var json = JsonConvert.SerializeObject(requestMeta);
 
             try

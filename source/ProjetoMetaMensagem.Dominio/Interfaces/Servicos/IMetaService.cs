@@ -36,6 +36,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         Task<TrocaCodeMetaResposta> TrocarCodeEmbeddedSignupAsync(string code);
 
         // CoEx: habilita a coexistência entre o app WhatsApp Business e a Cloud API para o phone_number_id informado
-        Task<AtivaCoexistenciaMetaResposta> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken);
+        Task<AtivaCoexistenciaMetaResposta> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken, string pin);
     }
 }

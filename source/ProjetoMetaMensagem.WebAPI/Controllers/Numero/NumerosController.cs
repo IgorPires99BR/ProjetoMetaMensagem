@@ -74,11 +74,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
         }
 
         [HttpPost("api/numero/ativa-coexistencia")]
-        public async Task<IActionResult> AtivaCoexistencia(Guid numeroId, Guid idEmpresa)
+        public async Task<IActionResult> AtivaCoexistencia(Guid numeroId, Guid idEmpresa, [FromBody] AtivaCoexistenciaRequestBody body)
         {
             try
             {
-                var resultado = await _mediator.Send(new AtivaCoexistenciaCommand(numeroId, idEmpresa));
+                var resultado = await _mediator.Send(new AtivaCoexistenciaCommand(numeroId, idEmpresa, body?.Pin));
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
@@ -100,5 +100,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
                 return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
             }
         }
+    }
+
+    public class AtivaCoexistenciaRequestBody
+    {
+        public string? Pin { get; set; }
     }
 }

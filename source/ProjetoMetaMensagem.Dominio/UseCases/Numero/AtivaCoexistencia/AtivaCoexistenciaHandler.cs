@@ -53,7 +53,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia
                     ? numero.SystemUserToken
                     : await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-                var resultadoMeta = await _metaService.AtivarCoexistenciaAsync(numero.InstanciaId, accessToken);
+                var resultadoMeta = await _metaService.AtivarCoexistenciaAsync(numero.InstanciaId, accessToken, command.Pin);
 
                 if (!resultadoMeta.Sucesso)
                 {
