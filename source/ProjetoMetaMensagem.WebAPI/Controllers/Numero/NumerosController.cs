@@ -7,6 +7,7 @@ using System.Net;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
 {
@@ -78,6 +79,20 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             try
             {
                 var resultado = await _mediator.Send(new AtivaCoexistenciaCommand(numeroId, idEmpresa));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpDelete("api/numero/excluir/{id}")]
+        public async Task<IActionResult> Excluir(Guid id)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new DeletaNumeroCommand { Id = id });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
