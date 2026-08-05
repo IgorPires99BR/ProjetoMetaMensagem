@@ -67,10 +67,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         policy =>
         {
+            // AllowAnyOrigin() nao pode ser combinado com AllowCredentials() (a negociacao do
+            // SignalR manda credenciais) — o navegador rejeita Access-Control-Allow-Origin: '*'
+            // quando credentials mode e 'include'. Por isso a lista explicita + AllowCredentials.
             policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "https://angularcontact.vercel.app")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
-                  .AllowAnyOrigin();
+                  .AllowCredentials();
         });
 });
 
