@@ -10,7 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha
 {
     public class EsqueceuASenhaCommand : IRequest<Response<EsqueceuASenhaResult>>
     {
-        public string company_id { get; set; }
-        public string Email { get; set; }
+        public string? company_id { get; set; }
+        public string Email { get; set; } = string.Empty;
     }
 }

@@ -103,7 +103,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<Usuario?> ObterPorId(Guid id)
         {
             var sql = $"SELECT * FROM {nameof(Usuario)} WHERE {nameof(Usuario.Id)} = @Id";
-            return await _session.Connection.QueryFirstAsync<Usuario>(sql, transaction: _session.Transaction);
+            return await _session.Connection.QueryFirstOrDefaultAsync<Usuario>(sql, new { Id = id }, transaction: _session.Transaction);
         }
     }
 }

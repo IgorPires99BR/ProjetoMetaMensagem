@@ -132,7 +132,7 @@ builder.Services.AddScoped<DbSession>();
 //servicos
 builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
 builder.Services.AddHttpClient<IMetaService, MetaService>();
-builder.Services.AddHttpClient<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 //Configura��es
 

@@ -35,7 +35,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
                     return response;
                 }
 
-                await _unitOfWork.Usuario.Alterar(new Entidades.Usuario(command));
+                // Preserva o hash existente quando a senha e deixada em branco na edicao
+                // (o UPDATE sempre sobrescreve SenhaHash, entao sem isso o campo era
+                // zerado toda vez que o usuario era editado sem trocar a senha).
+                var usuarioExistente = await _unitOfWork.Usuario.ObterPorId(command.Id);
+                if (usuarioExistente == null)
+                {
+                    response.AddErro("Usuário não encontrado.");
+                    return response;
+                }
+
+                var usuario = new Entidades.Usuario(command)
+                {
+                    SenhaHash = !string.IsNullOrEmpty(command.SenhaHash)
+                        ? BCrypt.Net.BCrypt.HashPassword(command.SenhaHash)
+                        : usuarioExistente.SenhaHash
+                };
+
+                await _unitOfWork.Usuario.Alterar(usuario);
 
                 response.AddValue(new AlteraUsuarioResult());
                 _unitOfWork.Commit();
