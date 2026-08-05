@@ -23,11 +23,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
         {
             var response = new Response<ListaMensagemRecebidaResult>();
 
+            // Busca ate TamanhoPagina de cada fonte na mesma pagina; como sao duas tabelas
+            // diferentes intercaladas por data, o merge abaixo corta o total certo, mas o
+            // "corte" de cada fonte individualmente e uma aproximacao (assume distribuicao
+            // razoavelmente equilibrada entre enviadas/recebidas por pagina).
             var mensagensRecebidasTask = await _unitOfWork.MensagemRecebida
-                 .ListarPorContato(command.EmpresaId, command.ContatoId);
+                 .ListarPorContatoPaginado(command.EmpresaId, command.ContatoId, command.Pagina, command.TamanhoPagina);
 
             var historicoEnviadasTask = await _unitOfWork.HistoricoDisparo
-                .ListarPorContato(command.EmpresaId, command.ContatoId);
+                .ListarPorContatoPaginado(command.EmpresaId, command.ContatoId, command.Pagina, command.TamanhoPagina);
 
             // 2. Mapeia as recebidas (cliente -> user)
             var listaRecebidas = mensagensRecebidasTask.Select(m => new
@@ -47,9 +51,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
                 Data = h.DataEnvio
             });
 
-            // 4. Une as duas listas e ordena pela data/hora
+            // 4. Une as duas listas, pega as TamanhoPagina mais recentes (desc) e devolve em
+            // ordem cronologica (asc) pro chat renderizar de cima pra baixo
             var resultadoDto = listaRecebidas
                 .Concat(listaEnviadas)
+                .OrderByDescending(x => x.Data)
+                .Take(command.TamanhoPagina)
                 .OrderBy(x => x.Data)
                 .Select(x => new ItemMensagemChatDto
                 {

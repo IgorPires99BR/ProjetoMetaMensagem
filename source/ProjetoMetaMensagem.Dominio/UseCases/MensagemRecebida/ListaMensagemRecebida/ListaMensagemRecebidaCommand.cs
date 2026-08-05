@@ -12,5 +12,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
     {
         public Guid EmpresaId{ get; set; }
         public Guid ContatoId{ get; set; }
+
+        // Paginacao pro infinite scroll (0 = pagina mais recente)
+        public int Pagina { get; set; } = 0;
+        public int TamanhoPagina { get; set; } = 30;
     }
 }

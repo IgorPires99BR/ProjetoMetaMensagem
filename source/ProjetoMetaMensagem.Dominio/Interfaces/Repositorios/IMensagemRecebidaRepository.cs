@@ -7,6 +7,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task Incluir(MensagemRecebida mensagem);
         Task<List<MensagemRecebida>> ListarPorEmpresa(Guid empresaId);
         Task<List<MensagemRecebida>> ListarPorContato(Guid empresaId, Guid contatoId);
+        Task<List<MensagemRecebida>> ListarPorContatoPaginado(Guid empresaId, Guid contatoId, int pagina, int tamanhoPagina);
         Task MarcarComoLida(Guid id);
         Task<int> ContarNaoLidas(Guid empresaId, Guid contatoId);
     }

@@ -76,6 +76,21 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             );
         }
 
+        public async Task<IEnumerable<HistoricoDisparo>> ListarPorContatoPaginado(Guid empresaId, Guid contatoId, int pagina, int tamanhoPagina)
+        {
+            var sql = $@"
+        SELECT * FROM {nameof(HistoricoDisparo)}
+        WHERE {nameof(HistoricoDisparo.EmpresaId)} = @EmpresaId AND {nameof(HistoricoDisparo.ContatoId)} = @ContatoId
+        ORDER BY {nameof(HistoricoDisparo.DataEnvio)} DESC
+        OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY";
+
+            return await _session.Connection.QueryAsync<HistoricoDisparo>(
+                sql,
+                new { EmpresaId = empresaId, ContatoId = contatoId, Skip = pagina * tamanhoPagina, Take = tamanhoPagina },
+                transaction: _session.Transaction
+            );
+        }
+
         public async Task<IEnumerable<HistoricoDisparoComTelefone>> ListarPorEmpresa(Guid empresaId)
         {
             var sql = $@"

@@ -46,7 +46,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
         // GET /api/chat/mensagens/{empresaId}/{contatoId}
         // Histórico de mensagens de um contato via Mediator
         [HttpGet("mensagens/{idEmpresa}/{contatoId}")]
-        public async Task<IActionResult> ListarMensagens(Guid idEmpresa, Guid contatoId)
+        public async Task<IActionResult> ListarMensagens(Guid idEmpresa, Guid contatoId, int pagina = 0, int tamanho = 30)
         {
             try
             {
@@ -54,7 +54,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
                 var command = new ListaMensagemRecebidaCommand
                 {
                     EmpresaId = idEmpresa,
-                    ContatoId = contatoId
+                    ContatoId = contatoId,
+                    Pagina = pagina,
+                    TamanhoPagina = tamanho
                 };
 
                 var resultado = await _mediator.Send(command);

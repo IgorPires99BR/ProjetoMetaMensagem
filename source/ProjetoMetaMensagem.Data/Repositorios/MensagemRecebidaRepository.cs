@@ -44,6 +44,20 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return result.ToList();
         }
 
+        public async Task<List<MensagemRecebida>> ListarPorContatoPaginado(Guid empresaId, Guid contatoId, int pagina, int tamanhoPagina)
+        {
+            var sql = @"
+                SELECT * FROM MensagemRecebida
+                WHERE EmpresaId = @EmpresaId AND (ContatoId = @ContatoId OR ContatoId IS NULL)
+                ORDER BY DataRecebimento DESC
+                OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY";
+
+            var result = await _session.Connection.QueryAsync<MensagemRecebida>(sql,
+                new { EmpresaId = empresaId, ContatoId = contatoId, Skip = pagina * tamanhoPagina, Take = tamanhoPagina },
+                transaction: _session.Transaction);
+            return result.ToList();
+        }
+
         public async Task MarcarComoLida(Guid id)
         {
             var sql = "UPDATE MensagemRecebida SET Lida = 1 WHERE Id = @Id";
