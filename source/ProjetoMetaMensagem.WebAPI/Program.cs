@@ -28,6 +28,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario;
@@ -181,6 +183,8 @@ builder.Services.AddScoped<IRequestHandler<AlteraNumeroCommand, Response<AlteraN
 builder.Services.AddScoped<IRequestHandler<DeletaNumeroCommand, Response<DeletaNumeroResult>>, DeletaNumeroHandler>();
 builder.Services.AddScoped<IRequestHandler<ListarNumerosCommand, Response<List<ListarNumerosResult>>>, ListarNumerosHandler>();
 builder.Services.AddScoped<IRequestHandler<AtualizaNumeroMetaCommand, Response<List<AtualizaNumeroMetaResult>>>, AtualizaNumeroMetaHandler>();
+builder.Services.AddScoped<IRequestHandler<IniciaEmbeddedSignupCommand, Response<IniciaEmbeddedSignupResult>>, IniciaEmbeddedSignupHandler>();
+builder.Services.AddScoped<IRequestHandler<AtivaCoexistenciaCommand, Response<AtivaCoexistenciaResult>>, AtivaCoexistenciaHandler>();
 
 //Registros de Template
 builder.Services.AddScoped<IRequestHandler<CriaTemplateCommand, Response<CriaTemplateResult>>, CriaTemplateHandler>();
