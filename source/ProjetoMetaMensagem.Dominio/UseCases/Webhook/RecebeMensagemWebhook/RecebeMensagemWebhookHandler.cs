@@ -1,6 +1,7 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Help.Error;
+using ProjetoMetaMensagem.Dominio.Helpers.HTMLHelper;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook;
@@ -15,6 +16,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
     public class RecebeMensagemWebhookHandler : IRequestHandler<RecebeMensagemWebhookCommand, Response<RecebeMensagemWebhookResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+
         public RecebeMensagemWebhookHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;

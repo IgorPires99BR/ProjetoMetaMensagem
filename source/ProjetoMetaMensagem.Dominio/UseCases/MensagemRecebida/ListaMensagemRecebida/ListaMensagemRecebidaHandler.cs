@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Newtonsoft.Json.Linq;
+using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Helpers.HTMLHelper;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
@@ -12,17 +14,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
     public class ListaMensagemRecebidaHandler : IRequestHandler<ListaMensagemRecebidaCommand, Response<ListaMensagemRecebidaResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private HTMLHelper _htmlHelper;
 
         public ListaMensagemRecebidaHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
+            _htmlHelper = new HTMLHelper();
         }
 
-        public async  Task<Response<ListaMensagemRecebidaResult>> Handle(ListaMensagemRecebidaCommand command)
+        public async Task<Response<ListaMensagemRecebidaResult>> Handle(ListaMensagemRecebidaCommand command)
         {
             var response = new Response<ListaMensagemRecebidaResult>();
 
-            // Busca as mensagens trocadas com este contato específico nesta empresa
             var mensagensRecebidasTask = await _unitOfWork.MensagemRecebida
                  .ListarPorContato(command.EmpresaId, command.ContatoId);
 
@@ -38,16 +41,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
                 Data = m.DataRecebimento
             });
 
-            // 3. Mapeia as enviadas (sistema/empresa -> bot ou me)
+            // 3. Mapeia as enviadas tratando o JSON de disparo de template
             var listaEnviadas = historicoEnviadasTask.Select(h => new
             {
                 h.Id,
-                From = "bot", // Altere para "me" ou "bot" conforme o padrão da sua UI no Angular
-                Text = h.Conteudo,
+                From = "me", // ou "bot", dependendo da UI
+                Text = FormatarConteudoHistorico(h.Conteudo),
                 Data = h.DataEnvio
             });
 
-            // 4. Une as duas listas e ordena pela data/hora real do evento
+            // 4. Une as duas listas e ordena pela data/hora
             var resultadoDto = listaRecebidas
                 .Concat(listaEnviadas)
                 .OrderBy(x => x.Data)
@@ -64,6 +67,42 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
             response.AddValue(resultFinal);
 
             return response;
+        }
+
+        private string FormatarConteudoHistorico(string conteudo)
+        {
+            if (string.IsNullOrWhiteSpace(conteudo))
+                return string.Empty;
+
+            // Se não for um JSON, retorna limpo pelo HTMLHelper
+            if (!conteudo.TrimStart().StartsWith("{"))
+                return _htmlHelper.LimparHtml(conteudo);
+
+            try
+            {
+                var jsonObj = JObject.Parse(conteudo);
+
+                // Tenta extrair o PayloadEnvio para pegar o nome do template
+                if (jsonObj["PayloadEnvio"] != null)
+                {
+                    var payloadString = jsonObj["PayloadEnvio"].ToString();
+                    var payloadObj = JObject.Parse(payloadString);
+
+                    var templateName = payloadObj["template"]?["name"]?.ToString();
+
+                    if (!string.IsNullOrEmpty(templateName))
+                    {
+                        // Exemplo de retorno: "📄 [Template: hello_world]"
+                        return $"📄 [Template: {templateName}]";
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback caso a desserialização falhe
+            }
+
+            return _htmlHelper.LimparHtml(conteudo);
         }
     }
 }
