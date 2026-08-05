@@ -39,7 +39,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message });
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
             }
         }
 
@@ -69,7 +69,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message });
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
             }
         }
 

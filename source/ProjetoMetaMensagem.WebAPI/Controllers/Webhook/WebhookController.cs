@@ -14,12 +14,14 @@ namespace ProjetoMetaMensagem.Controllers
         private readonly IMediator _mediator;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<WhatsappWebhookController> _logger;
 
-        public WhatsappWebhookController(IMediator mediator, IHubContext<ChatHub> hubContext, IConfiguration configuration)
+        public WhatsappWebhookController(IMediator mediator, IHubContext<ChatHub> hubContext, IConfiguration configuration, ILogger<WhatsappWebhookController> logger)
         {
             _mediator = mediator;
             _hubContext = hubContext;
             _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -63,7 +65,9 @@ namespace ProjetoMetaMensagem.Controllers
             }
             catch (Exception ex)
             {
-                // Seu log aqui
+                // Retorna 200 propositalmente: a Meta reenvia (e pode desativar o webhook)
+                // se receber erro. O detalhe fica registrado no log do servidor.
+                _logger.LogError(ex, "Falha ao processar webhook da Meta. Payload: {@Payload}", payload);
                 return Ok();
             }
         }
