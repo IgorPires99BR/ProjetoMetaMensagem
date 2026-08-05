@@ -229,6 +229,7 @@ builder.Services.AddScoped<IRequestHandler<ListaMensagemRecebidaCommand, Respons
 
 builder.Services.AddScoped<IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>, ListaFlowsHandler>();
 builder.Services.AddScoped<IRequestHandler<CriaFlowCommand, Response<CriaFlowResult>>, CriaFlowHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow.DeletaFlowCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow.DeletaFlowResult>>, ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow.DeletaFlowHandler>();
 builder.Services.AddScoped<IRequestHandler<AlteraFlowCommand, Response<AlteraFlowResult>>, AlteraFlowHandler>();
 
 //Registros de Convcrsations

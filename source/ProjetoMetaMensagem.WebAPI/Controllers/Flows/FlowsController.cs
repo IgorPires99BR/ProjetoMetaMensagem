@@ -2,6 +2,7 @@
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
+using ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
@@ -60,6 +61,25 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             try
             {
                 var resultado = await _mediator.Send(command);
+
+                if (resultado != null)
+                    return Ok(resultado);
+
+                return BadRequest(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Excluir(Guid id)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new DeletaFlowCommand(id));
 
                 if (resultado != null)
                     return Ok(resultado);

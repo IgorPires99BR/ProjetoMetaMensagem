@@ -31,6 +31,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
 
                 var novaEtapa = new FlowEtapa
                 {
+                    // Sem isso, toda etapa nascia com Guid.Empty -- a segunda etapa de qualquer
+                    // flow violava a PK ao tentar salvar (mesmo Id que a primeira).
+                    Id = Guid.NewGuid(),
                     FlowId = flow.Id,
                     NomeEtapa = dto.TipoStep, // "Mensagem" ou "Capturar Input"
                     ConteudoLivre = dto.MensagemPergunta, // Texto digitado na caixa
@@ -55,11 +58,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
                 // 3. Salva o Flow Pai
                 await _unitOfWork.Flow.Incluir(flow);
 
-                // 4. Salva os filhos (Etapas) já encadeadas
-                foreach (var etapa in etapasParaSalvar)
+                // 4. Salva os filhos (Etapas) já encadeadas -- de tras pra frente, porque
+                // ProximaEtapaId e uma FK auto-referenciada: a etapa N aponta pra etapa N+1,
+                // entao a etapa N+1 precisa existir no banco antes da etapa N ser inserida.
+                for (int i = etapasParaSalvar.Count - 1; i >= 0; i--)
                 {
-                    // Nota: Certifique-se que seu UnitOfWork dê acesso ao método de incluir etapas
-                    await _unitOfWork.Flow.IncluirEtapa(etapa);
+                    await _unitOfWork.Flow.IncluirEtapa(etapasParaSalvar[i]);
                 }
 
                 // 7. Retorno de sucesso

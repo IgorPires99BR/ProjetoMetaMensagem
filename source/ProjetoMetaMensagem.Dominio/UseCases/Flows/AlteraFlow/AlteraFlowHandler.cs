@@ -48,6 +48,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
 
                 var novaEtapa = new FlowEtapa
                 {
+                    // Mesmo bug do CriaFlowHandler: sem Id explicito, toda etapa nascia
+                    // com Guid.Empty e a segunda etapa violava a PK ao salvar.
+                    Id = Guid.NewGuid(),
                     FlowId = flowExistente.Id,
                     NomeEtapa = dto.TipoStep,
                     ConteudoLivre = dto.MensagemPergunta,
@@ -76,10 +79,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                 // Remove todas as etapas antigas do banco para limpar o Grafo anterior
                 await _unitOfWork.Flow.ExcluirEtapasPorFlowId(flowExistente.Id);
 
-                // Insere a nova árvore de etapas atualizada
-                foreach (var etapa in novasEtapas)
+                // Insere a nova arvore de etapas atualizada -- de tras pra frente, mesmo motivo
+                // do CriaFlowHandler (ProximaEtapaId e uma FK auto-referenciada em FlowEtapa)
+                for (int i = novasEtapas.Count - 1; i >= 0; i--)
                 {
-                    await _unitOfWork.Flow.IncluirEtapa(etapa);
+                    await _unitOfWork.Flow.IncluirEtapa(novasEtapas[i]);
                 }
 
                 // 5. Integração com a Meta

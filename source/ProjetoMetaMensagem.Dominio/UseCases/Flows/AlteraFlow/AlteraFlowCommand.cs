@@ -12,9 +12,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
     {
         public Guid Id { get; set; }
         public Guid IdEmpresa { get; set; }
-        public string Nome { get; set; }
-        public string Descricao { get; set; }
-        public string GatilhoPalavraChave { get; set; }
+        public string Nome { get; set; } = string.Empty;
+        public string? Descricao { get; set; }
+        public string? GatilhoPalavraChave { get; set; }
         public bool Ativo { get; set; }
 
         // Nova estrutura de etapas vinda da edição na tela
@@ -24,9 +24,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
     public class AlteraFlowEtapaDto
     {
         public int Ordem { get; set; }
-        public string TipoStep { get; set; } // "Mensagem", "Capturar Input"
-        public string MensagemPergunta { get; set; }
-        public string VariavelSaida { get; set; }
+        public string? TipoStep { get; set; } // "Mensagem", "Capturar Input"
+        public string? MensagemPergunta { get; set; }
+        public string? VariavelSaida { get; set; }
         public Guid? TemplateId { get; set; }
     }
 }
