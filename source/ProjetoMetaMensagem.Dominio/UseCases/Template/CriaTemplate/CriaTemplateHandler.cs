@@ -1,5 +1,7 @@
 ﻿using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
+using ProjetoMetaMensagem.Dominio.Enums;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -41,21 +43,39 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
             {
                 _unitOfWork.BeginTransaction();
                 // 2. Monta o payload estruturado que o 'CriarTemplateMetaAsync' do seu MetaService espera
+                var componentesMeta = new List<ComponenteTemplate>
+                {
+                    new ComponenteTemplate
+                    {
+                        Tipo = "BODY",
+                        Texto = command.Conteudo
+                    }
+                };
+
+                var temBotoes = command.Botoes != null && command.Botoes.Any();
+
+                if (temBotoes)
+                {
+                    componentesMeta.Add(new ComponenteTemplate
+                    {
+                        Tipo = "BUTTONS",
+                        Botoes = command.Botoes.Select(b => new BotaoTemplate
+                        {
+                            Tipo = b.Tipo,
+                            Texto = b.Texto,
+                            Url = b.Url,
+                            NumeroTelefone = b.NumeroTelefone
+                        }).ToList()
+                    });
+                }
+
                 var requisicaoMeta = new CreateTemplateRequisicao
                 {
                     Nome = command.NomeTemplate,
                     Categoria = command.Categoria,
                     Idioma = command.Idioma ?? "pt_BR",
                     // A Meta exige os componentes separados (HEADER, BODY, BUTTONS).
-                    // Criamos o componente do tipo BODY com o texto principal vindo do comando.
-                    Componentes = new List<ComponenteTemplate>
-                    {
-                        new ComponenteTemplate
-                        {
-                            Tipo = "BODY",
-                            Texto = command.Conteudo
-                        }
-                    }
+                    Componentes = componentesMeta
                 };
 
                 var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
@@ -85,6 +105,28 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     Status = "PENDING",
                     DataCriacao = DateTime.Now
                 };
+
+                if (temBotoes)
+                {
+                    novoTemplate.Componentes = new List<TemplateComponenteDto>
+                    {
+                        new TemplateComponenteDto
+                        {
+                            Tipo = TipoComponenteTemplate.Buttons,
+                            Botoes = command.Botoes.Select(b => new TemplateBotaoDto
+                            {
+                                Tipo = b.Tipo switch
+                                {
+                                    "URL" => TipoBotaoTemplate.Url,
+                                    "PHONE_NUMBER" => TipoBotaoTemplate.PhoneNumber,
+                                    _ => TipoBotaoTemplate.QuickReply
+                                },
+                                Texto = b.Texto,
+                                Url = b.Url
+                            }).ToList()
+                        }
+                    };
+                }
 
                 // 5. Persiste as alterações via Unit of Work
                 await _unitOfWork.Template.Incluir(novoTemplate);
