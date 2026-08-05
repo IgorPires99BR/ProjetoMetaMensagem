@@ -54,12 +54,21 @@ namespace ProjetoMetaMensagem.Controllers
                 var resultado = await _mediator.Send(payload);
 
                 // Verifica se a operação foi bem sucedida e se retornou dados válidos
-                if (resultado != null && resultado.Erros.Count() == 0)
+                if (resultado != null && resultado.Erros.Count() == 0 && resultado.Value != null)
                 {
-                    // Sugestão: O grupo do SignalR geralmente deve ser o "empresaId" ou o ID do chat, 
-                    // usar o conteúdo da mensagem como nome do grupo pode não notificar a tela certa.
-                    await _hubContext.Clients.Group("GrupoNotificacao Chat ou Empresa")
-                                .SendAsync("ReceberNovaMensagem", resultado.Value.Mensagem);
+                    // Broadcast por empresa: cada front so entra no grupo da sua propria empresa
+                    // (ver ChatHub.EntrarNoGrupo), entao aqui notificamos so quem precisa saber.
+                    foreach (var mensagem in resultado.Value.MensagensSalvas)
+                    {
+                        await _hubContext.Clients.Group(mensagem.EmpresaId.ToString())
+                            .SendAsync("ReceberNovaMensagem", new
+                            {
+                                contatoId = mensagem.ContatoId,
+                                telefone = mensagem.TelefoneRemetente,
+                                conteudo = mensagem.Conteudo,
+                                dataRecebimento = mensagem.DataRecebimento
+                            });
+                    }
                 }
 
                 return Ok();

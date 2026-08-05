@@ -104,7 +104,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                 response.AddValue(new RecebeMensagemWebhookResult
                 {
                     Sucesso = true,
-                    Mensagem = mensagensParaSalvar.FirstOrDefault()?.Conteudo ?? "Evento processado sem novas mensagens."
+                    Mensagem = mensagensParaSalvar.FirstOrDefault()?.Conteudo ?? "Evento processado sem novas mensagens.",
+                    MensagensSalvas = mensagensParaSalvar.Select(m => new MensagemRecebidaBroadcastDto
+                    {
+                        EmpresaId = m.EmpresaId,
+                        ContatoId = m.ContatoId,
+                        TelefoneRemetente = m.TelefoneRemetente,
+                        Conteudo = m.Conteudo,
+                        DataRecebimento = m.DataRecebimento
+                    }).ToList()
                 });
             }
             catch (Exception ex) 

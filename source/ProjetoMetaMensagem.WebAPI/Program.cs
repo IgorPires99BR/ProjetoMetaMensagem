@@ -247,6 +247,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<ChatHub>("/ChatHub");
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

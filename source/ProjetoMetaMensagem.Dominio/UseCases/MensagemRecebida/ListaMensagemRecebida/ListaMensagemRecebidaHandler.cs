@@ -1,6 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using ProjetoMetaMensagem.Dominio.Common;
-using ProjetoMetaMensagem.Dominio.Helpers.HTMLHelper;
+﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
@@ -14,12 +13,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
     public class ListaMensagemRecebidaHandler : IRequestHandler<ListaMensagemRecebidaCommand, Response<ListaMensagemRecebidaResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private HTMLHelper _htmlHelper;
 
         public ListaMensagemRecebidaHandler(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _htmlHelper = new HTMLHelper();
         }
 
         public async Task<Response<ListaMensagemRecebidaResult>> Handle(ListaMensagemRecebidaCommand command)
@@ -46,7 +43,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
             {
                 h.Id,
                 From = "me", // ou "bot", dependendo da UI
-                Text = FormatarConteudoHistorico(h.Conteudo),
+                Text = MensagemFormatter.FormatarConteudo(h.Conteudo),
                 Data = h.DataEnvio
             });
 
@@ -67,42 +64,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
             response.AddValue(resultFinal);
 
             return response;
-        }
-
-        private string FormatarConteudoHistorico(string conteudo)
-        {
-            if (string.IsNullOrWhiteSpace(conteudo))
-                return string.Empty;
-
-            // Se não for um JSON, retorna limpo pelo HTMLHelper
-            if (!conteudo.TrimStart().StartsWith("{"))
-                return _htmlHelper.LimparHtml(conteudo);
-
-            try
-            {
-                var jsonObj = JObject.Parse(conteudo);
-
-                // Tenta extrair o PayloadEnvio para pegar o nome do template
-                if (jsonObj["PayloadEnvio"] != null)
-                {
-                    var payloadString = jsonObj["PayloadEnvio"].ToString();
-                    var payloadObj = JObject.Parse(payloadString);
-
-                    var templateName = payloadObj["template"]?["name"]?.ToString();
-
-                    if (!string.IsNullOrEmpty(templateName))
-                    {
-                        // Exemplo de retorno: "📄 [Template: hello_world]"
-                        return $"📄 [Template: {templateName}]";
-                    }
-                }
-            }
-            catch
-            {
-                // Fallback caso a desserialização falhe
-            }
-
-            return _htmlHelper.LimparHtml(conteudo);
         }
     }
 }
