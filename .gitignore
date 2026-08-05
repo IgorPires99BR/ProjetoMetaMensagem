@@ -15,9 +15,7 @@ out/
 ################################################################################
 # Ignora o arquivo com suas senhas da Azure, Meta e Gmail
 appsettings.json
-
-# Se você quiser manter um modelo para outros devs, mantenha o Development
-# appsettings.Development.json
+appsettings.Development.json
 
 ################################################################################
 # Docker
