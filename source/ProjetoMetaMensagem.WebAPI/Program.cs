@@ -43,6 +43,9 @@ using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplateConexoes;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
@@ -145,6 +148,7 @@ builder.Services.AddScoped<IEmpresaRepository, EmpresaRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IContatoRepository, ContatoRepository>();
 builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
+builder.Services.AddScoped<ITemplateConexaoRepository, TemplateConexaoRepository>();
 builder.Services.AddScoped<INumeroRepository, NumeroRepository>();
 builder.Services.AddScoped<IHistoricoDisparoRepository, HistoricoDisparoRepository>();
 builder.Services.AddScoped<IFlowRepository, FlowRepository>();
@@ -198,6 +202,9 @@ builder.Services.AddScoped<IRequestHandler<CriaTemplateCommand, Response<CriaTem
 builder.Services.AddScoped<IRequestHandler<DeletaTemplateCommand, Response<DeletaTemplateResult>>, DeletaTemplateHandler>();
 builder.Services.AddScoped<IRequestHandler<ListaTemplateCommand, Response<List<ListaTemplateResult>>>, ListaTemplateHandler>();
 builder.Services.AddScoped<IRequestHandler<AtualizaTemplateMetaCommand, Response<AtualizaTemplateMetaResult>>, AtualizaTemplateMetaHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaTemplateConexoesCommand, Response<List<ListaTemplateConexoesResult>>>, ListaTemplateConexoesHandler>();
+builder.Services.AddScoped<IRequestHandler<CriaTemplateConexaoCommand, Response<CriaTemplateConexaoResult>>, CriaTemplateConexaoHandler>();
+builder.Services.AddScoped<IRequestHandler<ExcluiTemplateConexaoCommand, Response<ExcluiTemplateConexaoResult>>, ExcluiTemplateConexaoHandler>();
 
 
 //Registros de Contato

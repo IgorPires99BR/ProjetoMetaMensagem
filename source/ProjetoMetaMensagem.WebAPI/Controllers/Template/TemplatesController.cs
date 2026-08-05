@@ -3,6 +3,9 @@ using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplateConexoes;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
 
@@ -48,6 +51,48 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             try
             {
                 var resultado = await _mediator.Send(new AtualizaTemplateMetaCommand(empresaId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpGet("api/template/conexoes/{empresaId}")]
+        public async Task<IActionResult> ListarConexoes(Guid empresaId)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ListaTemplateConexoesCommand(empresaId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("api/template/conexoes")]
+        public async Task<IActionResult> IncluirConexao([FromBody] CriaTemplateConexaoCommand command)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpDelete("api/template/conexoes/{id}")]
+        public async Task<IActionResult> ExcluirConexao(Guid id)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ExcluiTemplateConexaoCommand(id));
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
