@@ -30,6 +30,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
                     return response;
                 }
 
+                // Sem essa verificacao, qualquer senha era aceita para um email valido —
+                // o handler nunca comparava a senha enviada com o hash salvo.
+                var senhaValida = BCrypt.Net.BCrypt.Verify(request.password, usuario.SenhaHash);
+                if (!senhaValida)
+                {
+                    response.AddErro("Usuário e senha não encontrados no banco de dados.");
+                    return response;
+                }
+
                 var token = _tokenService.GerarToken(usuario.Id.ToString(), usuario.Email, usuario.Nome, usuario.EmpresaId.ToString(), usuario.IsAdmin?.ToString() ?? "false");
 
                 response.AddValue(new LoginResult(usuario, token));
