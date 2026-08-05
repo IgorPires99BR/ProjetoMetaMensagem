@@ -22,6 +22,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string TipoDisparo { get; set; } // Ex: "Template" ou "Livre"
         public string Conteudo { get; set; }
         public string WamidMeta { get; set; }
+        public string? StatusEntrega { get; set; }
         public DateTime DataEnvio { get; set; }
     }
 

@@ -69,6 +69,17 @@ namespace ProjetoMetaMensagem.Controllers
                                 dataRecebimento = mensagem.DataRecebimento
                             });
                     }
+
+                    // Broadcast de status de entrega (sent/delivered/read/failed) recebidos nesta chamada.
+                    foreach (var status in resultado.Value.StatusAtualizados)
+                    {
+                        await _hubContext.Clients.Group(status.EmpresaId.ToString())
+                            .SendAsync("AtualizaStatusEntrega", new
+                            {
+                                wamid = status.WamidMeta,
+                                status = status.Status
+                            });
+                    }
                 }
 
                 return Ok();

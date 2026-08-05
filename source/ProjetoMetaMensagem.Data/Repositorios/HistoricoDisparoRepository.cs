@@ -117,6 +117,17 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { WamidMeta = wamidMeta }, transaction: _session.Transaction);
         }
 
+        public async Task AtualizarStatusEntregaPorWamid(string wamid, string status)
+        {
+            var sql = $@"
+                UPDATE {nameof(HistoricoDisparo)}
+                SET {nameof(HistoricoDisparo.StatusEntrega)} = @Status
+                WHERE {nameof(HistoricoDisparo.WamidMeta)} = @Wamid";
+
+            await _session.Connection.ExecuteAsync(
+                sql, new { Wamid = wamid, Status = status }, transaction: _session.Transaction);
+        }
+
     }
 }
 

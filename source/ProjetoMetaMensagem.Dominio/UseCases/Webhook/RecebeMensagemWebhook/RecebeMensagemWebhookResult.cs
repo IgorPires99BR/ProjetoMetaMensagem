@@ -17,6 +17,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         // Mensagens efetivamente salvas nesta chamada do webhook, usadas pelo
         // controller pra fazer o broadcast em tempo real via SignalR, uma por empresa/contato.
         public List<MensagemRecebidaBroadcastDto> MensagensSalvas { get; set; } = new();
+
+        // Statuses de entrega (sent/delivered/read/failed) atualizados nesta chamada do webhook,
+        // usados pelo controller pra fazer o broadcast em tempo real via SignalR.
+        public List<StatusAtualizadoBroadcastDto> StatusAtualizados { get; set; } = new();
+    }
+
+    public class StatusAtualizadoBroadcastDto
+    {
+        public string WamidMeta { get; set; }
+        public string Status { get; set; }
+        public Guid EmpresaId { get; set; }
     }
 
     public class MensagemRecebidaBroadcastDto

@@ -56,6 +56,29 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         [JsonPropertyName("messages")]
         [JsonProperty("messages")]
         public List<WebhookMessageCommand> Messages { get; set; } = new List<WebhookMessageCommand>();
+
+        [JsonPropertyName("statuses")]
+        [JsonProperty("statuses")]
+        public List<WebhookStatusCommand> Statuses { get; set; } = new List<WebhookStatusCommand>();
+    }
+
+    public class WebhookStatusCommand
+    {
+        [JsonPropertyName("id")]
+        [JsonProperty("id")]
+        public string? Id { get; set; }
+
+        [JsonPropertyName("status")]
+        [JsonProperty("status")]
+        public string? Status { get; set; }
+
+        [JsonPropertyName("timestamp")]
+        [JsonProperty("timestamp")]
+        public string? Timestamp { get; set; }
+
+        [JsonPropertyName("recipient_id")]
+        [JsonProperty("recipient_id")]
+        public string? RecipientId { get; set; }
     }
 
     public class WebhookMetadataCommand

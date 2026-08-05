@@ -40,6 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                 if (command.Entry == null || !command.Entry.Any()) return response;
 
                 var mensagensParaSalvar = new List<Entidades.MensagemRecebida>();
+                var statusAtualizados = new List<StatusAtualizadoBroadcastDto>();
 
                 foreach (var entry in command.Entry)
                 {
@@ -47,9 +48,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
 
                     foreach (var change in entry.Changes)
                     {
-                        if (change.Value?.Messages == null || !change.Value.Messages.Any()) continue;
-
-                        var metadata = change.Value.Metadata;
+                        var metadata = change.Value?.Metadata;
                         if (string.IsNullOrEmpty(metadata?.PhoneNumberId)) continue;
 
                         // Busca a empresa associada ao PhoneNumberId recebido
@@ -57,6 +56,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
 
                         // Se não encontrar uma empresa cadastrada para esse PhoneNumberId, pula o processamento
                         if (!empresaId.HasValue) continue;
+
+                        // Processa os statuses de entrega (sent/delivered/read/failed) do disparo
+                        if (change.Value?.Statuses != null && change.Value.Statuses.Any())
+                        {
+                            foreach (var statusMeta in change.Value.Statuses)
+                            {
+                                if (string.IsNullOrEmpty(statusMeta.Id) || string.IsNullOrEmpty(statusMeta.Status)) continue;
+
+                                await _unitOfWork.HistoricoDisparo.AtualizarStatusEntregaPorWamid(statusMeta.Id, statusMeta.Status);
+
+                                statusAtualizados.Add(new StatusAtualizadoBroadcastDto
+                                {
+                                    WamidMeta = statusMeta.Id,
+                                    Status = statusMeta.Status,
+                                    EmpresaId = empresaId.Value
+                                });
+                            }
+                        }
+
+                        if (change.Value?.Messages == null || !change.Value.Messages.Any()) continue;
 
                         foreach (var msgMeta in change.Value.Messages)
                         {
@@ -112,7 +131,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                         TelefoneRemetente = m.TelefoneRemetente,
                         Conteudo = m.Conteudo,
                         DataRecebimento = m.DataRecebimento
-                    }).ToList()
+                    }).ToList(),
+                    StatusAtualizados = statusAtualizados
                 });
             }
             catch (Exception ex) 

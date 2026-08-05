@@ -16,5 +16,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<IEnumerable<HistoricoDisparo>> ListarPorContatoPaginado(Guid empresaId, Guid contatoId, int pagina, int tamanhoPagina);
         Task<IEnumerable<HistoricoDisparoComTelefone>> ListarPorEmpresa(Guid empresaId);
         Task<HistoricoDisparo?> ObterPorWamidMeta(string wamidMeta);
+        Task AtualizarStatusEntregaPorWamid(string wamid, string status);
     }
 }
