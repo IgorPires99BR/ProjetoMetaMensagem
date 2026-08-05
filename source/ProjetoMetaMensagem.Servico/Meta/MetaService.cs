@@ -3,7 +3,9 @@ using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.AtivaCoexistencia;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.EmbeddedSignup;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.ObtemNumerosMeta;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplate;
@@ -13,7 +15,9 @@ using ProjetoMetaMensagem.Dominio.Enums;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Meta.Mensagens.EnviarMensagemTemplate;
+using ProjetoMetaMensagem.Servico.Meta.Numeros.AtivaCoexistencia;
 using ProjetoMetaMensagem.Servico.Meta.Numeros.CriaNumeroMeta;
+using ProjetoMetaMensagem.Servico.Meta.Numeros.EmbeddedSignup;
 using ProjetoMetaMensagem.Servico.Meta.Numeros.ObtemNumerosMeta;
 using ProjetoMetaMensagem.Servico.Meta.Templates.ObtemTemplateMeta;
 using ProjetoMetaMensagem.Servico.Meta.WhatsappAccount.BuscarWabaIDMeta;
@@ -153,6 +157,77 @@ namespace ProjetoMetaMensagem.Servico.Meta
             catch (Exception ex)
             {
                 throw new Exception($"Falha na comunicação de criação com a Meta: {ex.Message}");
+            }
+        }
+        public async Task<TrocaCodeMetaResposta> TrocarCodeEmbeddedSignupAsync(string code)
+        {
+            var endpoint = $"oauth/access_token?client_id={_configuration.AppId}&client_secret={_configuration.AppSecret}&code={code}";
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Erro ao trocar code do Embedded Signup: {responseContent}");
+                }
+
+                var metaResponse = JsonConvert.DeserializeObject<TrocaCodeMetaResponse>(responseContent);
+
+                return new TrocaCodeMetaResposta
+                {
+                    SystemUserToken = metaResponse.AccessToken
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Falha ao trocar code do Embedded Signup na Meta: {ex.Message}");
+            }
+        }
+
+        public async Task<AtivaCoexistenciaMetaResposta> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken)
+        {
+            var endpoint = $"{phoneNumberId}/register";
+
+            var requestMeta = new AtivaCoexistenciaRequest();
+            var json = JsonConvert.SerializeObject(requestMeta);
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new AtivaCoexistenciaMetaResposta
+                    {
+                        Sucesso = false,
+                        Erro = responseContent
+                    };
+                }
+
+                var metaResponse = JsonConvert.DeserializeObject<AtivaCoexistenciaResponse>(responseContent);
+
+                return new AtivaCoexistenciaMetaResposta
+                {
+                    Sucesso = metaResponse.Success,
+                    StatusConexao = metaResponse.Success ? "Conectado" : "Erro"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AtivaCoexistenciaMetaResposta
+                {
+                    Sucesso = false,
+                    Erro = $"Falha na comunicação de ativação de coexistência com a Meta: {ex.Message}"
+                };
             }
         }
         #endregion

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero;
+using ProjetoMetaMensagem.Dominio.Enums;
 
 namespace ProjetoMetaMensagem.Dominio.Entidades
 {
@@ -60,5 +61,13 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? QualidadeMeta { get; set; }
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
+
+        public TipoConexaoNumero TipoConexao { get; set; } = TipoConexaoNumero.ApiOficial;
+        public string? StatusConexao { get; set; }
+        public string? SystemUserToken { get; set; }
+
+        [MaxLength(100)]
+        public string? WabaId { get; set; }
+        public DateTime? DataUltimaSincronizacao { get; set; }
     }
 }

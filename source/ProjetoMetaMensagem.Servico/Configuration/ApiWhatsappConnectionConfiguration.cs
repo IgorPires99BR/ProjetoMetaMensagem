@@ -13,5 +13,7 @@ namespace ProjetoMetaMensagem.Servico.Configuration
         public string AccessToken { get; set; }
         public string PhoneNumberId { get; set; }
         public string WabaID { get; set; }
+        public string AppId { get; set; }
+        public string AppSecret { get; set; }
     }
 }

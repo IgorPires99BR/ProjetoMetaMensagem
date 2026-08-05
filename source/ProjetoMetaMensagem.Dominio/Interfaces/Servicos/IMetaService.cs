@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
+﻿using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.AtivaCoexistencia;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
+using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.EmbeddedSignup;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.ObtemNumerosMeta;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplate;
@@ -29,5 +31,11 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         Task<ObtemNumerosMetaResposta> ObterNumerosMetaAsync(string wabaId, string accessToken);
         Task<CriaNumeroMetaResposta> CriarNumeroMetaAsync(CriaNumeroMetaRequisicao requisicao, string wabaId, string accessToken);
         Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId, string accessToken);
+
+        // Embedded Signup: troca o "code" de autorização retornado pelo SDK JS da Meta por um token de sistema
+        Task<TrocaCodeMetaResposta> TrocarCodeEmbeddedSignupAsync(string code);
+
+        // CoEx: habilita a coexistência entre o app WhatsApp Business e a Cloud API para o phone_number_id informado
+        Task<AtivaCoexistenciaMetaResposta> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken);
     }
 }

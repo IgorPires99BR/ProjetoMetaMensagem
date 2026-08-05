@@ -13,6 +13,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task Alterar(Numero numero);
         Task Excluir(Guid id);
         Task<Numero?> ObterPorId(int id);
+        Task<Numero?> ObterPorId(Guid id);
         Task<IEnumerable<Numero>> Obter();
         Task<IEnumerable<Numero>> ObterPorUsuario(Guid usuarioId);
     }

@@ -5,6 +5,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
 {
@@ -48,6 +50,34 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             try
             {
                 var resultado = await _mediator.Send(new AtualizaNumeroMetaCommand(usuarioId, idEmpresa));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("api/numero/embedded-signup")]
+        public async Task<IActionResult> EmbeddedSignup([FromBody] IniciaEmbeddedSignupCommand command)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("api/numero/ativa-coexistencia")]
+        public async Task<IActionResult> AtivaCoexistencia(Guid numeroId, Guid idEmpresa)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new AtivaCoexistenciaCommand(numeroId, idEmpresa));
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)

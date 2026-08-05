@@ -22,15 +22,21 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = $@"
                 INSERT INTO {nameof(Numero)} (
-                    {nameof(Numero.UsuarioId)}, 
-                    {nameof(Numero.Telefone)}, 
-                    {nameof(Numero.Descricao)}, 
+                    {nameof(Numero.UsuarioId)},
+                    {nameof(Numero.Telefone)},
+                    {nameof(Numero.Descricao)},
                     {nameof(Numero.InstanciaId)},
                     {nameof(Numero.StatusMeta)},
                     {nameof(Numero.QualidadeMeta)},
-                    {nameof(Numero.DataCriacao)}
-                ) 
-                VALUES (@UsuarioId, @Telefone, @Descricao, @InstanciaId,@StatusMeta,@QualidadeMeta, @DataCriacao);
+                    {nameof(Numero.DataCriacao)},
+                    {nameof(Numero.TipoConexao)},
+                    {nameof(Numero.StatusConexao)},
+                    {nameof(Numero.SystemUserToken)},
+                    {nameof(Numero.WabaId)},
+                    {nameof(Numero.DataUltimaSincronizacao)}
+                )
+                VALUES (@UsuarioId, @Telefone, @Descricao, @InstanciaId,@StatusMeta,@QualidadeMeta, @DataCriacao,
+                    @TipoConexao, @StatusConexao, @SystemUserToken, @WabaId, @DataUltimaSincronizacao);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             await _session.Connection.ExecuteAsync(sql, numero, transaction: _session.Transaction);
@@ -39,13 +45,18 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task Alterar(Numero numero)
         {
             var sql = $@"
-                UPDATE {nameof(Numero)} 
-                SET 
-                    {nameof(Numero.Telefone)} = @Telefone, 
-                    {nameof(Numero.Descricao)} = @Descricao, 
+                UPDATE {nameof(Numero)}
+                SET
+                    {nameof(Numero.Telefone)} = @Telefone,
+                    {nameof(Numero.Descricao)} = @Descricao,
                     {nameof(Numero.InstanciaId)} = @InstanciaId,
                     {nameof(Numero.StatusMeta)} = @StatusMeta,
-                    {nameof(Numero.QualidadeMeta)} = @QualidadeMeta
+                    {nameof(Numero.QualidadeMeta)} = @QualidadeMeta,
+                    {nameof(Numero.TipoConexao)} = @TipoConexao,
+                    {nameof(Numero.StatusConexao)} = @StatusConexao,
+                    {nameof(Numero.SystemUserToken)} = @SystemUserToken,
+                    {nameof(Numero.WabaId)} = @WabaId,
+                    {nameof(Numero.DataUltimaSincronizacao)} = @DataUltimaSincronizacao
                 WHERE {nameof(Numero.Id)} = @Id";
 
             await _session.Connection.ExecuteAsync(sql, numero, transaction: _session.Transaction);
@@ -58,6 +69,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         }
 
         public async Task<Numero?> ObterPorId(int id)
+        {
+            var sql = $"SELECT * FROM {nameof(Numero)} WHERE {nameof(Numero.Id)} = @Id";
+            return await _session.Connection.QueryFirstOrDefaultAsync<Numero>(sql, new { Id = id }, transaction: _session.Transaction);
+        }
+
+        public async Task<Numero?> ObterPorId(Guid id)
         {
             var sql = $"SELECT * FROM {nameof(Numero)} WHERE {nameof(Numero.Id)} = @Id";
             return await _session.Connection.QueryFirstOrDefaultAsync<Numero>(sql, new { Id = id }, transaction: _session.Transaction);
