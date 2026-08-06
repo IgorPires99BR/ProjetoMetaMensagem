@@ -77,9 +77,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
 
                         if (change.Value?.Messages == null || !change.Value.Messages.Any()) continue;
 
+                        // Numero da propria empresa que recebeu o evento (digitos apenas), usado
+                        // abaixo pra detectar mensagens "ecoadas" pelo WhatsApp Business App em
+                        // clientes com Coexistencia ativa -- sem isso, uma resposta que o atendente
+                        // manda pelo celular chega aqui pelo webhook igual a uma mensagem do cliente
+                        // e aparece do lado errado no chat (como se o cliente tivesse mandado).
+                        var numeroDaEmpresa = new string((metadata.DisplayPhoneNumber ?? "").Where(char.IsDigit).ToArray());
+
                         foreach (var msgMeta in change.Value.Messages)
                         {
                             if (string.IsNullOrEmpty(msgMeta.From)) continue;
+
+                            var remetenteNormalizado = new string(msgMeta.From.Where(char.IsDigit).ToArray());
+                            if (!string.IsNullOrEmpty(numeroDaEmpresa) && remetenteNormalizado == numeroDaEmpresa)
+                            {
+                                // Mensagem enviada pelo proprio numero da empresa (ex: atendente
+                                // respondeu direto pelo app) -- nao e uma mensagem recebida do
+                                // cliente, entao nao processa aqui. TODO: capturar isso no
+                                // historico de disparo pra aparecer do lado certo no chat.
+                                continue;
+                            }
 
                             // Busca o contato se existir, mas não bloqueia caso não exista
                             var contato = await _unitOfWork.Contato.ObterPorTelefone(empresaId.Value, msgMeta.From);

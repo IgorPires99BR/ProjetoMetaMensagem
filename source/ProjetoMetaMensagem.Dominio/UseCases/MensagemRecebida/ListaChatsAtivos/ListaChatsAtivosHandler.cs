@@ -91,6 +91,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                          QuantidadeNaoLidas = naoLidas
                      };
                  })
+                 // Sem isso a lista saia na ordem "de agrupamento" (basicamente aleatoria),
+                 // entao quem mandou a mensagem mais recente nao subia pro topo da lista.
+                 .OrderByDescending(c => c.DataUltimaMensagem)
                  .ToList();
 
                 response.AddValue(resultFinal);

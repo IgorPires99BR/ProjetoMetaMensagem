@@ -78,18 +78,26 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone)
         {
-            // Cenário A: Se a sua tabela Contato possui a coluna EmpresaId direta:
-            var sql = $@"
-        SELECT * FROM {nameof(Contato)} 
-        WHERE Telefone = @Telefone";
+            // Contato nao tem EmpresaId direto (so UsuarioId), entao o escopo por empresa
+            // precisa passar por Usuario. Sem esse JOIN/WHERE (como estava antes), a busca
+            // batia com QUALQUER contato de QUALQUER empresa que tivesse o mesmo telefone --
+            // um vazamento entre tenants, e a causa de mensagens do webhook nao encontrarem
+            // o contato certo (ou nenhum) quando havia telefone duplicado entre usuarios.
+            // Tambem normaliza os dois lados pra digitos apenas, ja que a Meta manda o "from"
+            // sempre sem "+"/espacos, mas o cadastro manual do Contato pode ter formatacao.
+            var sql = @"
+        SELECT c.* FROM Contato c
+        INNER JOIN Usuario u ON u.Id = c.UsuarioId
+        WHERE u.EmpresaId = @EmpresaId
+          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone";
 
+            var telefoneNormalizado = new string(telefone.Where(char.IsDigit).ToArray());
 
             return await _session.Connection.QueryFirstOrDefaultAsync<Contato>(
                 sql,
-                new { Telefone = telefone},
+                new { EmpresaId = empresaId, Telefone = telefoneNormalizado },
                 transaction: _session.Transaction
             );
-
         }
 
 
