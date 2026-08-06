@@ -37,5 +37,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         public string TelefoneRemetente { get; set; }
         public string Conteudo { get; set; }
         public DateTime DataRecebimento { get; set; }
+        public string? MidiaId { get; set; }
+        public string? TipoMidia { get; set; }
     }
 }

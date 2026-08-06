@@ -165,7 +165,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                         ContatoId = m.ContatoId,
                         TelefoneRemetente = m.TelefoneRemetente,
                         Conteudo = m.Conteudo,
-                        DataRecebimento = m.DataRecebimento
+                        DataRecebimento = m.DataRecebimento,
+                        MidiaId = m.MidiaId,
+                        TipoMidia = m.TipoMidia
                     }).ToList(),
                     StatusAtualizados = statusAtualizados
                 });

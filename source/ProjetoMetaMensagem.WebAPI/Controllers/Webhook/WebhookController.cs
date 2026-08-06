@@ -66,7 +66,9 @@ namespace ProjetoMetaMensagem.Controllers
                                 contatoId = mensagem.ContatoId,
                                 telefone = mensagem.TelefoneRemetente,
                                 conteudo = mensagem.Conteudo,
-                                dataRecebimento = mensagem.DataRecebimento
+                                dataRecebimento = mensagem.DataRecebimento,
+                                midiaId = mensagem.MidiaId,
+                                tipoMidia = mensagem.TipoMidia
                             });
                     }
 
