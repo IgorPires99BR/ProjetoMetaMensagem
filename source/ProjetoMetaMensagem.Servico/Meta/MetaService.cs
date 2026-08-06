@@ -563,8 +563,14 @@ namespace ProjetoMetaMensagem.Servico.Meta
                 using var form = new MultipartFormDataContent();
                 form.Add(new StringContent("whatsapp"), "messaging_product");
 
+                // A Meta só aceita o mime type "puro" (ex: audio/ogg) -- parâmetros extras
+                // (ex: ";codecs=opus", vindos do MediaRecorder do navegador) fazem o upload
+                // ser aceito e processado silenciosamente como falha, sem erro nenhum, e a
+                // mensagem nunca sai do status "pendente" no destinatário.
+                var mimeTypePuro = mimeType?.Split(';')[0].Trim() ?? mimeType;
+
                 var fileContent = new ByteArrayContent(arquivo);
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeTypePuro);
                 form.Add(fileContent, "file", "arquivo");
 
                 var uploadRequest = new HttpRequestMessage(HttpMethod.Post, $"{idNumeroEnvio}/media");
