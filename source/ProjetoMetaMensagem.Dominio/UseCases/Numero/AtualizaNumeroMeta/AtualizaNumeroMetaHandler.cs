@@ -76,6 +76,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
                             ? numeroApi.NomeVerificado
                             : numeroExistente.Descricao;
                         numeroExistente.DataAtualizacao = DateTime.Now;
+                        numeroExistente.DataUltimaSincronizacao = DateTime.Now;
 
                         await _unitOfWork.Numero.Alterar(numeroExistente);
                     }
