@@ -79,7 +79,8 @@ namespace ProjetoMetaMensagem.Controllers
                             .SendAsync("AtualizaStatusEntrega", new
                             {
                                 wamid = status.WamidMeta,
-                                status = status.Status
+                                status = status.Status,
+                                erro = status.Erro
                             });
                     }
                 }

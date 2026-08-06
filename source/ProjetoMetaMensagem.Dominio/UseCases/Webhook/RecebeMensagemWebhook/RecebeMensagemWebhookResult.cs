@@ -28,6 +28,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         public string WamidMeta { get; set; }
         public string Status { get; set; }
         public Guid EmpresaId { get; set; }
+        public string? Erro { get; set; }
     }
 
     public class MensagemRecebidaBroadcastDto

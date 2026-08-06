@@ -79,6 +79,38 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         [JsonPropertyName("recipient_id")]
         [JsonProperty("recipient_id")]
         public string? RecipientId { get; set; }
+
+        // A Meta manda o motivo real da falha aqui quando status = "failed"
+        // (ex: mídia inválida, número não whitelistado, janela de 24h expirada).
+        [JsonPropertyName("errors")]
+        [JsonProperty("errors")]
+        public List<WebhookStatusErrorCommand> Errors { get; set; } = new();
+    }
+
+    public class WebhookStatusErrorCommand
+    {
+        [JsonPropertyName("code")]
+        [JsonProperty("code")]
+        public int? Code { get; set; }
+
+        [JsonPropertyName("title")]
+        [JsonProperty("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("message")]
+        [JsonProperty("message")]
+        public string? Message { get; set; }
+
+        [JsonPropertyName("error_data")]
+        [JsonProperty("error_data")]
+        public WebhookStatusErrorDataCommand? ErrorData { get; set; }
+    }
+
+    public class WebhookStatusErrorDataCommand
+    {
+        [JsonPropertyName("details")]
+        [JsonProperty("details")]
+        public string? Details { get; set; }
     }
 
     public class WebhookMetadataCommand

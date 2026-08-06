@@ -5,6 +5,7 @@ using ProjetoMetaMensagem.Dominio.Helpers.HTMLHelper;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,10 +17,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
     public class RecebeMensagemWebhookHandler : IRequestHandler<RecebeMensagemWebhookCommand, Response<RecebeMensagemWebhookResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<RecebeMensagemWebhookHandler> _logger;
 
-        public RecebeMensagemWebhookHandler(IUnitOfWork unitOfWork)
+        public RecebeMensagemWebhookHandler(IUnitOfWork unitOfWork, ILogger<RecebeMensagemWebhookHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<RecebeMensagemWebhookResult>> Handle(RecebeMensagemWebhookCommand command)
@@ -66,11 +69,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
 
                                 await _unitOfWork.HistoricoDisparo.AtualizarStatusEntregaPorWamid(statusMeta.Id, statusMeta.Status);
 
+                                string? erroDetalhado = null;
+                                if (statusMeta.Status == "failed" && statusMeta.Errors != null && statusMeta.Errors.Any())
+                                {
+                                    var primeiroErro = statusMeta.Errors.First();
+                                    erroDetalhado = $"({primeiroErro.Code}) {primeiroErro.Title}: {primeiroErro.ErrorData?.Details ?? primeiroErro.Message}";
+                                    _logger.LogWarning("Falha na entrega da mensagem {Wamid}: {Erro}", statusMeta.Id, erroDetalhado);
+                                }
+
                                 statusAtualizados.Add(new StatusAtualizadoBroadcastDto
                                 {
                                     WamidMeta = statusMeta.Id,
                                     Status = statusMeta.Status,
-                                    EmpresaId = empresaId.Value
+                                    EmpresaId = empresaId.Value,
+                                    Erro = erroDetalhado
                                 });
                             }
                         }
