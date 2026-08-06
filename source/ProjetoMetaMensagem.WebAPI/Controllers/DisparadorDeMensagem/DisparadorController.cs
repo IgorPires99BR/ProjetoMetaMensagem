@@ -94,17 +94,27 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
 
         [HttpPost("enviar-midia-meta")]
         public async Task<IActionResult> EnviarMidia(
-            [FromForm] IFormFile arquivo,
-            [FromForm] string celular,
-            [FromForm] Guid empresaId,
-            [FromForm] Guid contatoId,
-            [FromForm] string tipoMidia)
+            [FromForm] IFormFile? arquivo,
+            [FromForm] string? celular,
+            [FromForm] Guid? empresaId,
+            [FromForm] Guid? contatoId,
+            [FromForm] string? tipoMidia)
         {
             try
             {
+                // Os parametros sao nullable de proposito: com tipos nao-anulaveis (Guid,
+                // string), se o multipart chegasse com algum campo vazio o [ApiController]
+                // interceptava ANTES desse metodo rodar e devolvia um ProblemDetails generico
+                // do ASP.NET (formato diferente do erro customizado do projeto), escondendo
+                // qual campo realmente faltou.
                 if (arquivo == null || arquivo.Length == 0)
                 {
                     return BadRequest(new { erro = "Arquivo não informado." });
+                }
+                if (string.IsNullOrWhiteSpace(celular) || empresaId == null || empresaId == Guid.Empty
+                    || contatoId == null || contatoId == Guid.Empty || string.IsNullOrWhiteSpace(tipoMidia))
+                {
+                    return BadRequest(new { erro = "Celular, empresaId, contatoId e tipoMidia são obrigatórios." });
                 }
 
                 byte[] bytes;
@@ -117,8 +127,8 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
                 var command = new EnviarMidiaMetaCommand
                 {
                     Celular = celular,
-                    EmpresaId = empresaId,
-                    ContatoId = contatoId,
+                    EmpresaId = empresaId.Value,
+                    ContatoId = contatoId.Value,
                     Arquivo = bytes,
                     MimeType = string.IsNullOrEmpty(arquivo.ContentType) ? "application/octet-stream" : arquivo.ContentType,
                     TipoMidia = tipoMidia
