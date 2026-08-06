@@ -35,7 +35,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
                     return response;
                 }
 
-                // Lógica para adicionar o contato via UnitOfWork aqui
+                // Evita duplicar contato com o mesmo telefone na mesma empresa (ja aconteceu
+                // com dados de teste e quebrava o agrupamento de mensagens no chat, deixando
+                // conversas do mesmo lead espalhadas em duas linhas diferentes).
+                var usuario = await _unitOfWork.Usuario.ObterPorId(command.UsuarioId);
+                if (usuario != null)
+                {
+                    var existente = await _unitOfWork.Contato.ObterPorTelefone(usuario.EmpresaId, command.Telefone);
+                    if (existente != null)
+                    {
+                        response.AddErro("Já existe um contato cadastrado com esse telefone.");
+                        return response;
+                    }
+                }
+
                 await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
 
                 response.AddValue(new CriaContatoResult());
