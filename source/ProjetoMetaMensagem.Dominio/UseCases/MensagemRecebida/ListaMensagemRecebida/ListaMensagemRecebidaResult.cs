@@ -36,5 +36,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
         /// Status de entrega (sent/delivered/read/failed) do disparo. Nulo para mensagens recebidas.
         /// </summary>
         public string? Status { get; set; }
+
+        /// <summary>
+        /// Id da mídia na Meta (quando a mensagem é imagem/áudio/documento). Usado pelo front pra montar a URL de proxy.
+        /// </summary>
+        public string? MidiaId { get; set; }
+
+        /// <summary>
+        /// Tipo da mídia (image/audio/document). Nulo para mensagens de texto.
+        /// </summary>
+        public string? TipoMidia { get; set; }
     }
 }

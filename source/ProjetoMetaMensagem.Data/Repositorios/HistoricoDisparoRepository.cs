@@ -28,18 +28,22 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(historico.TemplateId)}, 
                     {nameof(historico.TipoDisparo)}, 
                     {nameof(historico.Conteudo)}, 
-                    {nameof(historico.WamidMeta)}, 
-                    {nameof(historico.DataEnvio)}
-                ) 
+                    {nameof(historico.WamidMeta)},
+                    {nameof(historico.DataEnvio)},
+                    {nameof(historico.MidiaId)},
+                    {nameof(historico.TipoMidia)}
+                )
                 VALUES (
-                    @{nameof(historico.Id)}, 
-                    @{nameof(historico.EmpresaId)}, 
-                    @{nameof(historico.ContatoId)}, 
-                    @{nameof(historico.TemplateId)}, 
-                    @{nameof(historico.TipoDisparo)}, 
-                    @{nameof(historico.Conteudo)}, 
-                    @{nameof(historico.WamidMeta)}, 
-                    @{nameof(historico.DataEnvio)}
+                    @{nameof(historico.Id)},
+                    @{nameof(historico.EmpresaId)},
+                    @{nameof(historico.ContatoId)},
+                    @{nameof(historico.TemplateId)},
+                    @{nameof(historico.TipoDisparo)},
+                    @{nameof(historico.Conteudo)},
+                    @{nameof(historico.WamidMeta)},
+                    @{nameof(historico.DataEnvio)},
+                    @{nameof(historico.MidiaId)},
+                    @{nameof(historico.TipoMidia)}
                 );";
 
             // Garante que a data seja preenchida caso não tenha sido setada na entidade

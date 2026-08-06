@@ -24,6 +24,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero;
@@ -230,6 +232,8 @@ builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaLoteCommand
 builder.Services.AddScoped<IRequestHandler<ListaChatsAtivosCommand, Response<ListaChatsAtivosResult>>, ListaChatsAtivosHandler>();
 builder.Services.AddScoped<IRequestHandler<ListaMensagemRecebidaCommand, Response<ListaMensagemRecebidaResult>>, ListaMensagemRecebidaHandler>();
 builder.Services.AddScoped<IRequestHandler<MarcarComoLidaCommand, Response<MarcarComoLidaResult>>, MarcarComoLidaHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemMidiaCommand, Response<ObtemMidiaResult>>, ObtemMidiaHandler>();
+builder.Services.AddScoped<IRequestHandler<EnviarMidiaMetaCommand, Response<EnviarMidiaMetaResult>>, EnviarMidiaMetaHandler>();
 builder.Services.AddScoped<IRequestHandler<ListaRelatorioMensagensCommand, Response<ListaRelatorioMensagensResult>>, ListaRelatorioMensagensHandler>();
 
 

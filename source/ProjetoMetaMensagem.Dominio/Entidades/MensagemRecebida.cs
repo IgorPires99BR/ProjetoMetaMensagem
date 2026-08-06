@@ -17,5 +17,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public DateTime DataRecebimento { get; set; }
         public bool Lida { get; set; }
         public Guid? FlowId { get; set; }
+        public string? MidiaId { get; set; }
+        public string? TipoMidia { get; set; }
     }
 }

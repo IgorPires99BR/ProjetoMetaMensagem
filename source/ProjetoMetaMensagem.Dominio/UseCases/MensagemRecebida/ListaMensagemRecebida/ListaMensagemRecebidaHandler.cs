@@ -42,7 +42,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
                 Text = m.Conteudo,
                 Data = m.DataRecebimento,
                 Wamid = (string?)null,
-                Status = (string?)null
+                Status = (string?)null,
+                MidiaId = m.MidiaId,
+                TipoMidia = m.TipoMidia
             });
 
             // 3. Mapeia as enviadas tratando o JSON de disparo de template.
@@ -54,7 +56,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
                 Text = MensagemFormatter.FormatarConteudo(h.Conteudo),
                 Data = h.DataEnvio,
                 Wamid = (string?)h.WamidMeta,
-                Status = h.StatusEntrega
+                Status = h.StatusEntrega,
+                MidiaId = h.MidiaId,
+                TipoMidia = h.TipoMidia
             });
 
             // 4. Une as duas listas, pega as TamanhoPagina mais recentes (desc) e devolve em
@@ -71,7 +75,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
                     Text = x.Text,
                     Time = x.Data.ToString("HH:mm"),
                     Wamid = x.Wamid,
-                    Status = x.Status
+                    Status = x.Status,
+                    MidiaId = x.MidiaId,
+                    TipoMidia = x.TipoMidia
                 })
                 .ToList();
 

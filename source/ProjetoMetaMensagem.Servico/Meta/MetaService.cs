@@ -506,6 +506,119 @@ namespace ProjetoMetaMensagem.Servico.Meta
             return resultadoLote;
         }
 
+        public async Task<(byte[] Bytes, string MimeType)> BaixarMidiaAsync(string mediaId, string accessToken)
+        {
+            try
+            {
+                // 1. Consulta o metadado da mídia pra obter a URL temporária e o mime_type
+                var metaRequest = new HttpRequestMessage(HttpMethod.Get, $"https://graph.facebook.com/v20.0/{mediaId}");
+                metaRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var metaResponse = await _httpClient.SendAsync(metaRequest);
+                var metaContent = await metaResponse.Content.ReadAsStringAsync();
+
+                if (!metaResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Erro ao obter metadados da mídia na Meta: {metaContent}");
+                }
+
+                var metaJson = JObject.Parse(metaContent);
+                var url = metaJson["url"]?.ToString();
+                var mimeType = metaJson["mime_type"]?.ToString() ?? "application/octet-stream";
+
+                if (string.IsNullOrEmpty(url))
+                {
+                    throw new Exception("A Meta não retornou a URL da mídia.");
+                }
+
+                // 2. Baixa os bytes da mídia (a Meta exige o Bearer token também nessa chamada)
+                var downloadRequest = new HttpRequestMessage(HttpMethod.Get, url);
+                downloadRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var downloadResponse = await _httpClient.SendAsync(downloadRequest);
+
+                if (!downloadResponse.IsSuccessStatusCode)
+                {
+                    var erroConteudo = await downloadResponse.Content.ReadAsStringAsync();
+                    throw new Exception($"Erro ao baixar bytes da mídia na Meta: {erroConteudo}");
+                }
+
+                var bytes = await downloadResponse.Content.ReadAsByteArrayAsync();
+
+                return (bytes, mimeType);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Falha ao baixar mídia da Meta: {ex.Message}");
+            }
+        }
+
+        public async Task<(string WamidMeta, string MediaId)> EnviarMidiaAsync(string celular, byte[] arquivo, string mimeType, string tipoMidia, string accessToken, string phoneNumberId)
+        {
+            var idNumeroEnvio = !string.IsNullOrEmpty(phoneNumberId) ? phoneNumberId : _configuration.PhoneNumberId;
+
+            try
+            {
+                // 1. Sobe o arquivo pro endpoint de mídia da Meta (multipart/form-data)
+                using var form = new MultipartFormDataContent();
+                form.Add(new StringContent("whatsapp"), "messaging_product");
+
+                var fileContent = new ByteArrayContent(arquivo);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+                form.Add(fileContent, "file", "arquivo");
+
+                var uploadRequest = new HttpRequestMessage(HttpMethod.Post, $"{idNumeroEnvio}/media");
+                uploadRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                uploadRequest.Content = form;
+
+                var uploadResponse = await _httpClient.SendAsync(uploadRequest);
+                var uploadContent = await uploadResponse.Content.ReadAsStringAsync();
+
+                if (!uploadResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Erro ao subir mídia pra Meta: {uploadContent}");
+                }
+
+                var mediaId = JObject.Parse(uploadContent)["id"]?.ToString();
+                if (string.IsNullOrEmpty(mediaId))
+                {
+                    throw new Exception("A Meta não retornou o ID da mídia enviada.");
+                }
+
+                // 2. Envia a mensagem referenciando a mídia recém-subida
+                var payload = new JObject
+                {
+                    ["messaging_product"] = "whatsapp",
+                    ["to"] = celular,
+                    ["type"] = tipoMidia,
+                    [tipoMidia] = new JObject { ["id"] = mediaId }
+                };
+
+                var json = payload.ToString();
+
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{idNumeroEnvio}/messages");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Erro na API da Meta ao enviar mídia: {responseContent}");
+                }
+
+                var responseObj = JObject.Parse(responseContent);
+                var wamid = responseObj["messages"]?.FirstOrDefault()?["id"]?.ToString() ?? string.Empty;
+
+                return (wamid, mediaId);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Falha ao enviar mídia pra Meta: {ex.Message}");
+            }
+        }
+
         #endregion
 
         #region MAPEAMENTO INTERNO

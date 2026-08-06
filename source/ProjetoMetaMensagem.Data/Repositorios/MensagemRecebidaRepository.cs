@@ -16,8 +16,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task Incluir(MensagemRecebida mensagem)
         {
             var sql = @"
-                INSERT INTO MensagemRecebida (Id, EmpresaId, ContatoId, TelefoneRemetente, Conteudo, Tipo, DataRecebimento, Lida, FlowId)
-                VALUES (@Id, @EmpresaId, @ContatoId, @TelefoneRemetente, @Conteudo, @Tipo, @DataRecebimento, @Lida, @FlowId)";
+                INSERT INTO MensagemRecebida (Id, EmpresaId, ContatoId, TelefoneRemetente, Conteudo, Tipo, DataRecebimento, Lida, FlowId, MidiaId, TipoMidia)
+                VALUES (@Id, @EmpresaId, @ContatoId, @TelefoneRemetente, @Conteudo, @Tipo, @DataRecebimento, @Lida, @FlowId, @MidiaId, @TipoMidia)";
 
             await _session.Connection.ExecuteAsync(sql, mensagem, transaction: _session.Transaction);
         }

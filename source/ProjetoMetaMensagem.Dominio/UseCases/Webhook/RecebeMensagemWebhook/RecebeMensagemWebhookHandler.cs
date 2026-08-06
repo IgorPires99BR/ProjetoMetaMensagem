@@ -118,6 +118,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             {
                                 novaMensagem.Conteudo = msgMeta.Text.Body ?? string.Empty;
                             }
+                            else if (msgMeta.Type == "image" && msgMeta.Image != null)
+                            {
+                                novaMensagem.MidiaId = msgMeta.Image.Id;
+                                novaMensagem.TipoMidia = "image";
+                                novaMensagem.Conteudo = "[Imagem]";
+                            }
+                            else if (msgMeta.Type == "audio" && msgMeta.Audio != null)
+                            {
+                                novaMensagem.MidiaId = msgMeta.Audio.Id;
+                                novaMensagem.TipoMidia = "audio";
+                                novaMensagem.Conteudo = "[Áudio]";
+                            }
+                            else if (msgMeta.Type == "document" && msgMeta.Document != null)
+                            {
+                                novaMensagem.MidiaId = msgMeta.Document.Id;
+                                novaMensagem.TipoMidia = "document";
+                                novaMensagem.Conteudo = "[Documento]";
+                            }
                             else
                             {
                                 novaMensagem.Conteudo = $"[Mídia do tipo {msgMeta.Type}]";

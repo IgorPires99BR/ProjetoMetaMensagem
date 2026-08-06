@@ -6,6 +6,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 {
@@ -99,6 +100,33 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             catch (Exception ex)
             {
                 return StatusCode(500, new { erro = ex.Message });
+            }
+        }
+        // GET /api/chat/midia/{midiaId}?empresaId=...
+        // Proxy pra baixar a mídia da Meta sem expor o access token pro front
+        [HttpGet("midia/{midiaId}")]
+        public async Task<IActionResult> ObtemMidia(string midiaId, Guid empresaId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(midiaId) || empresaId == Guid.Empty)
+                {
+                    return BadRequest(new { erro = "midiaId e empresaId são obrigatórios." });
+                }
+
+                var command = new ObtemMidiaCommand { MidiaId = midiaId, EmpresaId = empresaId };
+                var resultado = await _mediator.Send(command);
+
+                if (resultado == null || resultado.Erros.Count > 0 || resultado.Value == null)
+                {
+                    return NotFound(new { erro = "Mídia não encontrada ou indisponível.", erros = resultado?.Erros });
+                }
+
+                return File(resultado.Value.Bytes, resultado.Value.MimeType);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
             }
         }
     }

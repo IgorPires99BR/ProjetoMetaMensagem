@@ -143,6 +143,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         [JsonPropertyName("image")]
         [JsonProperty("image")]
         public WebhookImageCommand? Image { get; set; }
+
+        [JsonPropertyName("audio")]
+        [JsonProperty("audio")]
+        public WebhookAudioCommand? Audio { get; set; }
+
+        [JsonPropertyName("document")]
+        [JsonProperty("document")]
+        public WebhookDocumentCommand? Document { get; set; }
     }
 
     public class WebhookTextCommand
@@ -153,6 +161,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
     }
 
     public class WebhookImageCommand
+    {
+        [JsonPropertyName("id")]
+        [JsonProperty("id")]
+        public string? Id { get; set; }
+    }
+
+    public class WebhookAudioCommand
+    {
+        [JsonPropertyName("id")]
+        [JsonProperty("id")]
+        public string? Id { get; set; }
+    }
+
+    public class WebhookDocumentCommand
     {
         [JsonPropertyName("id")]
         [JsonProperty("id")]

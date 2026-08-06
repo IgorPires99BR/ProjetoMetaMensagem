@@ -41,5 +41,11 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
         // CoEx: habilita a coexistência entre o app WhatsApp Business e a Cloud API para o phone_number_id informado
         Task<AtivaCoexistenciaMetaResposta> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken, string pin);
+
+        // Baixa os bytes de uma mídia recebida via webhook (mediaId) usando o token da empresa
+        Task<(byte[] Bytes, string MimeType)> BaixarMidiaAsync(string mediaId, string accessToken);
+
+        // Sobe um arquivo (imagem/audio/documento) pra Meta e envia como mensagem pro contato; retorna o wamid e o mediaId gerado
+        Task<(string WamidMeta, string MediaId)> EnviarMidiaAsync(string celular, byte[] arquivo, string mimeType, string tipoMidia, string accessToken, string phoneNumberId);
     }
 }
