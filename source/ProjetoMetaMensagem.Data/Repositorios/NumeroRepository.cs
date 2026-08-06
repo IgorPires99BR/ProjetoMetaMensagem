@@ -56,7 +56,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Numero.StatusConexao)} = @StatusConexao,
                     {nameof(Numero.SystemUserToken)} = @SystemUserToken,
                     {nameof(Numero.WabaId)} = @WabaId,
-                    {nameof(Numero.DataUltimaSincronizacao)} = @DataUltimaSincronizacao
+                    {nameof(Numero.DataUltimaSincronizacao)} = @DataUltimaSincronizacao,
+                    {nameof(Numero.DataAtualizacao)} = @DataAtualizacao
                 WHERE {nameof(Numero.Id)} = @Id";
 
             await _session.Connection.ExecuteAsync(sql, numero, transaction: _session.Transaction);
