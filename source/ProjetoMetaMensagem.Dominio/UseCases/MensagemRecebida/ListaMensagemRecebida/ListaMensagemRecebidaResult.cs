@@ -26,5 +26,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
         /// Hora formatada em string (HH:mm) para exibição direta nos balões do chat
         /// </summary>
         public string Time { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Identificador da mensagem na Meta (wamid), usado pra casar com o status de entrega. Nulo para mensagens recebidas.
+        /// </summary>
+        public string? Wamid { get; set; }
+
+        /// <summary>
+        /// Status de entrega (sent/delivered/read/failed) do disparo. Nulo para mensagens recebidas.
+        /// </summary>
+        public string? Status { get; set; }
     }
 }

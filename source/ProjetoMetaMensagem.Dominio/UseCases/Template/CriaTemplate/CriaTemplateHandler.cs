@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
@@ -43,14 +44,45 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
             {
                 _unitOfWork.BeginTransaction();
                 // 2. Monta o payload estruturado que o 'CriarTemplateMetaAsync' do seu MetaService espera
-                var componentesMeta = new List<ComponenteTemplate>
+                var temHeader = !string.IsNullOrEmpty(command.HeaderTipo) && command.HeaderTipo != "NONE";
+                var quantidadeVariaveis = Regex.Matches(command.Conteudo ?? string.Empty, @"\{\{\d+\}\}").Count;
+
+                var componentesMeta = new List<ComponenteTemplate>();
+
+                if (temHeader)
                 {
-                    new ComponenteTemplate
+                    var headerMeta = new ComponenteTemplate
                     {
-                        Tipo = "BODY",
-                        Texto = command.Conteudo
+                        Tipo = "HEADER",
+                        Formato = command.HeaderTipo
+                    };
+
+                    if (command.HeaderTipo == "TEXT")
+                    {
+                        headerMeta.Texto = command.HeaderTexto;
                     }
+                    else
+                    {
+                        // IMAGE/VIDEO/DOCUMENT: a Meta exige o handle do upload prévio (Resumable Upload API), não aceita URL direta
+                        headerMeta.Example = new TemplateExample { HeaderHandle = new List<string> { command.HeaderExemploHandle } };
+                    }
+
+                    componentesMeta.Add(headerMeta);
+                }
+
+                var bodyMeta = new ComponenteTemplate
+                {
+                    Tipo = "BODY",
+                    Texto = command.Conteudo
                 };
+
+                if (quantidadeVariaveis > 0)
+                {
+                    // A Meta exige um valor de exemplo por variável do corpo
+                    bodyMeta.Example = new TemplateExample { BodyText = new List<List<string>> { command.ExemplosBody } };
+                }
+
+                componentesMeta.Add(bodyMeta);
 
                 var temBotoes = command.Botoes != null && command.Botoes.Any();
 
@@ -106,26 +138,47 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     DataCriacao = DateTime.Now
                 };
 
+                var componentesLocais = new List<TemplateComponenteDto>();
+
+                if (temHeader)
+                {
+                    componentesLocais.Add(new TemplateComponenteDto
+                    {
+                        Tipo = TipoComponenteTemplate.Header,
+                        Texto = command.HeaderTipo == "TEXT" ? command.HeaderTexto : null,
+                        FormatMidia = command.HeaderTipo switch
+                        {
+                            "TEXT" => TipoMidiaTemplate.Text,
+                            "IMAGE" => TipoMidiaTemplate.Image,
+                            "VIDEO" => TipoMidiaTemplate.Video,
+                            "DOCUMENT" => TipoMidiaTemplate.Document,
+                            _ => TipoMidiaTemplate.None
+                        }
+                    });
+                }
+
                 if (temBotoes)
                 {
-                    novoTemplate.Componentes = new List<TemplateComponenteDto>
+                    componentesLocais.Add(new TemplateComponenteDto
                     {
-                        new TemplateComponenteDto
+                        Tipo = TipoComponenteTemplate.Buttons,
+                        Botoes = command.Botoes.Select(b => new TemplateBotaoDto
                         {
-                            Tipo = TipoComponenteTemplate.Buttons,
-                            Botoes = command.Botoes.Select(b => new TemplateBotaoDto
+                            Tipo = b.Tipo switch
                             {
-                                Tipo = b.Tipo switch
-                                {
-                                    "URL" => TipoBotaoTemplate.Url,
-                                    "PHONE_NUMBER" => TipoBotaoTemplate.PhoneNumber,
-                                    _ => TipoBotaoTemplate.QuickReply
-                                },
-                                Texto = b.Texto,
-                                Url = b.Url
-                            }).ToList()
-                        }
-                    };
+                                "URL" => TipoBotaoTemplate.Url,
+                                "PHONE_NUMBER" => TipoBotaoTemplate.PhoneNumber,
+                                _ => TipoBotaoTemplate.QuickReply
+                            },
+                            Texto = b.Texto,
+                            Url = b.Url
+                        }).ToList()
+                    });
+                }
+
+                if (componentesLocais.Any())
+                {
+                    novoTemplate.Componentes = componentesLocais;
                 }
 
                 // 5. Persiste as alterações via Unit of Work

@@ -21,7 +21,7 @@ namespace ProjetoMetaMensagem.Data
         {
             _configuration = configuration;
             #if DEBUG
-            var connectionSQLServer = configuration.GetConnectionString("ContactProdDB"); //ContactSolutionDB
+            var connectionSQLServer = configuration.GetConnectionString("ContactSolutionDB");
 #else
             var connectionSQLServer = configuration.GetConnectionString("ContactProdDB");
 #endif

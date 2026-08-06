@@ -17,6 +17,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
         public string AccessToken { get; set; } = string.Empty;
         public string? WabaId { get; set; }
         public string? PhoneNumberId { get; set; }
+        public string? AppIdMeta { get; set; }
         public string PlanoId { get; set; } = string.Empty;
     }
 }

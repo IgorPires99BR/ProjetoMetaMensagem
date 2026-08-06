@@ -16,6 +16,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
         public string Idioma { get; set; }        // Ex: "pt_BR" (Pode vir default)
         public string Conteudo { get; set; }
         public List<CriaTemplateBotaoCommand>? Botoes { get; set; }
+
+        // Cabeçalho opcional: "TEXT", "IMAGE", "VIDEO", "DOCUMENT" ou nulo/"NONE" (sem cabeçalho)
+        public string? HeaderTipo { get; set; }
+        public string? HeaderTexto { get; set; } // usado quando HeaderTipo == "TEXT"
+        public string? HeaderExemploHandle { get; set; } // handle do upload, usado quando HeaderTipo é mídia
+
+        // Valores de exemplo para cada {{n}} do corpo, na ordem — a Meta exige isso
+        // quando o Conteudo tem variáveis
+        public List<string>? ExemplosBody { get; set; }
     }
 
     public class CriaTemplateBotaoCommand

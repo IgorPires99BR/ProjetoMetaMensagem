@@ -62,6 +62,22 @@ namespace ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template
 
         [JsonProperty("buttons", NullValueHandling = NullValueHandling.Ignore)]
         public List<BotaoTemplate> Botoes { get; set; }
+
+        // Exigido pela Meta quando o componente tem variável ({{n}} no BODY) ou é
+        // mídia no HEADER — sem isso a Meta rejeita a criação do template.
+        [JsonProperty("example", NullValueHandling = NullValueHandling.Ignore)]
+        public TemplateExample Example { get; set; }
+    }
+
+    public class TemplateExample
+    {
+        // Handle retornado pela Resumable Upload API da Meta (não aceita URL direta)
+        [JsonProperty("header_handle", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> HeaderHandle { get; set; }
+
+        // Um conjunto de valores de exemplo, na ordem das variáveis {{1}}, {{2}}...
+        [JsonProperty("body_text", NullValueHandling = NullValueHandling.Ignore)]
+        public List<List<string>> BodyText { get; set; }
     }
 
     public class BotaoTemplate

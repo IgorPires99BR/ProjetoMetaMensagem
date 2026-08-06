@@ -46,6 +46,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplateConexoes;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.UploadMidiaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
@@ -57,6 +58,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens;
 using ProjetoMetaMensagem.WebAPI.Hubs;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
 
@@ -162,6 +165,7 @@ builder.Services.AddScoped<IWebhookConfigRepository, WebhookConfigRepository>();
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 builder.Services.AddScoped<IPipelineRepository, PipelineRepository>();
 builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaRepository>();
+builder.Services.AddScoped<IRelatorioRepository, RelatorioRepository>();
 
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();
@@ -208,6 +212,7 @@ builder.Services.AddScoped<IRequestHandler<AtualizaTemplateMetaCommand, Response
 builder.Services.AddScoped<IRequestHandler<ListaTemplateConexoesCommand, Response<List<ListaTemplateConexoesResult>>>, ListaTemplateConexoesHandler>();
 builder.Services.AddScoped<IRequestHandler<CriaTemplateConexaoCommand, Response<CriaTemplateConexaoResult>>, CriaTemplateConexaoHandler>();
 builder.Services.AddScoped<IRequestHandler<ExcluiTemplateConexaoCommand, Response<ExcluiTemplateConexaoResult>>, ExcluiTemplateConexaoHandler>();
+builder.Services.AddScoped<IRequestHandler<UploadMidiaTemplateCommand, Response<UploadMidiaTemplateResult>>, UploadMidiaTemplateHandler>();
 
 
 //Registros de Contato
@@ -224,6 +229,8 @@ builder.Services.AddScoped<IRequestHandler<EnviarMensagemTemplateMetaLoteCommand
 //Registros de Mensagem
 builder.Services.AddScoped<IRequestHandler<ListaChatsAtivosCommand, Response<ListaChatsAtivosResult>>, ListaChatsAtivosHandler>();
 builder.Services.AddScoped<IRequestHandler<ListaMensagemRecebidaCommand, Response<ListaMensagemRecebidaResult>>, ListaMensagemRecebidaHandler>();
+builder.Services.AddScoped<IRequestHandler<MarcarComoLidaCommand, Response<MarcarComoLidaResult>>, MarcarComoLidaHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaRelatorioMensagensCommand, Response<ListaRelatorioMensagensResult>>, ListaRelatorioMensagensHandler>();
 
 
 

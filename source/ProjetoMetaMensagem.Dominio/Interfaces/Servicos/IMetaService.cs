@@ -25,6 +25,10 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         // Ajustado: Incluído os parâmetros de wabaId e accessToken para criação dinâmica de templates da empresa
         Task<string> CriarTemplateMetaAsync(CreateTemplateRequisicao novoTemplate, string wabaId, string accessToken);
 
+        // Resumable Upload API da Meta: sobe um arquivo de exemplo (imagem/vídeo/documento) e devolve
+        // o "handle" exigido no campo example.header_handle da criação de template com HEADER de mídia
+        Task<string> UploadMidiaExemploAsync(string appId, string accessToken, byte[] arquivo, string mimeType);
+
         Task<string?> BuscarWabaIdDaMetaAsync(string accessToken);
 
         // Ajustados: Inclusão do parâmetro accessToken para isolamento do cabeçalho Authorization local

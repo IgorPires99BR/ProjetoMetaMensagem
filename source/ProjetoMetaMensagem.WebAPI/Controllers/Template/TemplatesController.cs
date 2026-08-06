@@ -6,7 +6,9 @@ using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplateConexoes;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.UploadMidiaTemplate;
 using ProjetoMetaMensagem.WebAPI.Common;
+using System.IO;
 using System.Net;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
@@ -24,6 +26,36 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             {
                 var resultado = await _mediator.Send(command);
                 return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpPost("api/template/upload-midia-exemplo")]
+        [RequestSizeLimit(20_000_000)]
+        public async Task<IActionResult> UploadMidiaExemplo([FromForm] Guid empresaId, [FromForm] IFormFile arquivo)
+        {
+            try
+            {
+                if (arquivo == null || arquivo.Length == 0)
+                {
+                    return BadRequest(new { erro = "Nenhum arquivo enviado." });
+                }
+
+                using var memoryStream = new MemoryStream();
+                await arquivo.CopyToAsync(memoryStream);
+
+                var command = new UploadMidiaTemplateCommand
+                {
+                    EmpresaId = empresaId,
+                    Arquivo = memoryStream.ToArray(),
+                    MimeType = arquivo.ContentType
+                };
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {

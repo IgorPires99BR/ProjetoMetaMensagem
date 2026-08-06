@@ -22,6 +22,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             Cnpj = command.Cnpj;
             Telefone = command.Telefone;
             MetaAccessToken = command.AccessToken;
+            WabaId = command.WabaId;
+            PhoneNumberId = command.PhoneNumberId;
+            AppIdMeta = command.AppIdMeta;
             PlanoId = command.PlanoId;
             DataCriacao = DateTime.Now;
         }

@@ -294,6 +294,59 @@ namespace ProjetoMetaMensagem.Servico.Meta
             };
         }
 
+        public async Task<string> UploadMidiaExemploAsync(string appId, string accessToken, byte[] arquivo, string mimeType)
+        {
+            try
+            {
+                // 1. Inicia a sessão de upload
+                var initUrl = $"https://graph.facebook.com/v20.0/{appId}/uploads" +
+                    $"?file_length={arquivo.Length}&file_type={Uri.EscapeDataString(mimeType)}&access_token={Uri.EscapeDataString(accessToken)}";
+
+                var initRequest = new HttpRequestMessage(HttpMethod.Post, initUrl);
+                var initResponse = await _httpClient.SendAsync(initRequest);
+                var initContent = await initResponse.Content.ReadAsStringAsync();
+
+                if (!initResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Erro ao iniciar upload de mídia na Meta: {initContent}");
+                }
+
+                var sessionId = JObject.Parse(initContent)["id"]?.ToString();
+                if (string.IsNullOrEmpty(sessionId))
+                {
+                    throw new Exception("A Meta não retornou o ID da sessão de upload.");
+                }
+
+                // 2. Envia os bytes do arquivo pra sessão aberta
+                var uploadUrl = $"https://graph.facebook.com/v20.0/{sessionId}";
+                var uploadRequest = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
+                uploadRequest.Headers.TryAddWithoutValidation("Authorization", $"OAuth {accessToken}");
+                uploadRequest.Headers.TryAddWithoutValidation("file_offset", "0");
+                uploadRequest.Content = new ByteArrayContent(arquivo);
+                uploadRequest.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+
+                var uploadResponse = await _httpClient.SendAsync(uploadRequest);
+                var uploadContent = await uploadResponse.Content.ReadAsStringAsync();
+
+                if (!uploadResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Erro ao enviar bytes do arquivo pra Meta: {uploadContent}");
+                }
+
+                var handle = JObject.Parse(uploadContent)["h"]?.ToString();
+                if (string.IsNullOrEmpty(handle))
+                {
+                    throw new Exception("A Meta não retornou o handle do arquivo enviado.");
+                }
+
+                return handle;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Falha ao subir mídia de exemplo pra Meta: {ex.Message}");
+            }
+        }
+
         public async Task<ObtemTemplatesMetaResposta> ObterTemplatesMetaAsync(string wabaId, string accessToken)
         {
             var endpoint = $"{wabaId}/message_templates";

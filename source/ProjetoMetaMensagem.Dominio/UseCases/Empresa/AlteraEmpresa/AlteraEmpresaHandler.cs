@@ -53,6 +53,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
                 existente.Telefone = command.Telefone;
                 existente.Cnpj = command.Cnpj;
                 existente.MetaAccessToken = command.AccessToken;
+                existente.WabaId = command.WabaId;
+                existente.PhoneNumberId = command.PhoneNumberId;
+                existente.AppIdMeta = command.AppIdMeta;
                 existente.PlanoId = command.PlanoId;
 
                 await _unitOfWork.Empresa.Alterar(existente);

@@ -33,13 +33,14 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Empresa.Email)}, 
                     {nameof(Empresa.Cnpj)}, 
                     {nameof(Empresa.MetaAccessToken)}, 
-                    {nameof(Empresa.PhoneNumberId)}, 
-                    {nameof(Empresa.WabaId)}, 
-                    {nameof(Empresa.PlanoId)}, 
-                    {nameof(Empresa.Telefone)}, 
+                    {nameof(Empresa.PhoneNumberId)},
+                    {nameof(Empresa.WabaId)},
+                    {nameof(Empresa.AppIdMeta)},
+                    {nameof(Empresa.PlanoId)},
+                    {nameof(Empresa.Telefone)},
                     {nameof(Empresa.DataCriacao)}
-                ) 
-                VALUES (@Id, @Nome, @Email, @Cnpj, @MetaAccessToken,@PhoneNumberId,@WabaId, @PlanoId, @Telefone, @DataCriacao)";
+                )
+                VALUES (@Id, @Nome, @Email, @Cnpj, @MetaAccessToken,@PhoneNumberId,@WabaId, @AppIdMeta, @PlanoId, @Telefone, @DataCriacao)";
 
             var parameters = new
             {
@@ -50,6 +51,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 empresa.MetaAccessToken,
                 empresa.PhoneNumberId,
                 empresa.WabaId,
+                empresa.AppIdMeta,
                 empresa.PlanoId,
                 empresa.Telefone,
                 DataCriacao = DateTime.Now
@@ -71,6 +73,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Empresa.Telefone)} = @Telefone,
                     {nameof(Empresa.WabaId)} = @WabaId,
                     {nameof(Empresa.PhoneNumberId)} = @PhoneNumberId,
+                    {nameof(Empresa.AppIdMeta)} = @AppIdMeta,
                     {nameof(Empresa.MetaAccessToken)} = @MetaAccessToken,
                     {nameof(Empresa.PlanoId)} = @PlanoId
                 WHERE {nameof(Empresa.Id)} = @Id";
@@ -124,6 +127,15 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = $@"SELECT {nameof(Empresa.PhoneNumberId)} 
                  FROM {nameof(Empresa)} 
+                 WHERE {nameof(Empresa.Id)} = @Id";
+
+            return await _session.Connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
+        }
+
+        public async Task<string?> ObterAppIdMeta(Guid id)
+        {
+            var sql = $@"SELECT {nameof(Empresa.AppIdMeta)}
+                 FROM {nameof(Empresa)}
                  WHERE {nameof(Empresa.Id)} = @Id";
 
             return await _session.Connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);

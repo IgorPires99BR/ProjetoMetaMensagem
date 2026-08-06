@@ -29,6 +29,7 @@ namespace ProjetoMetaMensagem.Data
         public IProdutoRepository Produto { get; set; }
         public IPipelineRepository Pipeline { get; set; }
         public IMensagemRecebidaRepository MensagemRecebida { get; set; }
+        public IRelatorioRepository Relatorio { get; set; }
 
         public UnitOfWork(DbSession session,
             ICompaniesRepository companiesRepository,
@@ -47,7 +48,8 @@ namespace ProjetoMetaMensagem.Data
             IWebhookConfigRepository webhookConfigRepository,
             IProdutoRepository produtoRepository,
             IPipelineRepository pipelineRepository,
-            IMensagemRecebidaRepository mensagemRecebidaRepository)
+            IMensagemRecebidaRepository mensagemRecebidaRepository,
+            IRelatorioRepository relatorioRepository)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
@@ -67,6 +69,7 @@ namespace ProjetoMetaMensagem.Data
             Produto = produtoRepository;
             Pipeline = pipelineRepository;
             MensagemRecebida = mensagemRecebidaRepository;
+            Relatorio = relatorioRepository;
         }
 
         public void Commit()

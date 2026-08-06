@@ -64,6 +64,15 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
+        public async Task MarcarTodasComoLidas(Guid empresaId, Guid contatoId)
+        {
+            var sql = @"
+                UPDATE MensagemRecebida SET Lida = 1
+                WHERE EmpresaId = @EmpresaId AND ContatoId = @ContatoId AND Lida = 0 AND Tipo = 'recebida'";
+
+            await _session.Connection.ExecuteAsync(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
+        }
+
         public async Task<int> ContarNaoLidas(Guid empresaId, Guid contatoId)
         {
             var sql = @"

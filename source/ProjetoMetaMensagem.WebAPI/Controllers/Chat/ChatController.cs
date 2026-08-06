@@ -5,6 +5,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 {
@@ -75,30 +76,36 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
         }
 
-        //[HttpPost("marcar-como-lida")]
-        //public async Task<IActionResult> MarcarComoLida([FromBody] MarcarComoLidaRequest request)
-        //{
-        //    if (request == null || request.EmpresaId == Guid.Empty || request.ContatoId == Guid.Empty)
-        //    {
-        //        return BadRequest(new { erro = "EmpresaId e ContatoId inválidos." });
-        //    }
+        [HttpPost("marcar-como-lida")]
+        public async Task<IActionResult> MarcarComoLida([FromBody] MarcarComoLidaRequest request)
+        {
+            if (request == null || request.EmpresaId == Guid.Empty || request.ContatoId == Guid.Empty)
+            {
+                return BadRequest(new { erro = "EmpresaId e ContatoId inválidos." });
+            }
 
-        //    try
-        //    {
-        //        var command = new MarcarMensagensComoLidasCommand(request.EmpresaId, request.ContatoId);
-        //        var resultado = await _mediator.Send(command);
+            try
+            {
+                var command = new MarcarComoLidaCommand { EmpresaId = request.EmpresaId, ContatoId = request.ContatoId };
+                var resultado = await _mediator.Send(command);
 
-        //        if (resultado == null)
-        //        {
-        //            return BadRequest(new { erro = "Não foi possível marcar as mensagens como lidas." });
-        //        }
+                if (resultado == null || resultado.Erros.Count > 0)
+                {
+                    return BadRequest(new { erro = "Não foi possível marcar as mensagens como lidas." });
+                }
 
-        //        return Ok(new { sucesso = true });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { erro = ex.Message });
-        //    }
-        //}
+                return Ok(new { sucesso = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = ex.Message });
+            }
+        }
+    }
+
+    public class MarcarComoLidaRequest
+    {
+        public Guid EmpresaId { get; set; }
+        public Guid ContatoId { get; set; }
     }
 }
