@@ -27,6 +27,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.UploadMidiaTemplate
         {
             var response = new Response<UploadMidiaTemplateResult>();
 
+            var validator = new UploadMidiaTemplateValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var appId = await _unitOfWork.Empresa.ObterAppIdMeta(command.EmpresaId);

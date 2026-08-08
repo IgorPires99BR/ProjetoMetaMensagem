@@ -22,6 +22,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha
         {
             var response = new Response<CancelaCampanhaResult>();
 
+            var validator = new CancelaCampanhaValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();

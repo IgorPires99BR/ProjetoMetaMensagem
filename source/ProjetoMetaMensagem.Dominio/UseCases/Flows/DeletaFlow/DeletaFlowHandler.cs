@@ -25,6 +25,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow
         {
             var response = new Response<DeletaFlowResult>();
 
+            var validator = new DeletaFlowValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();

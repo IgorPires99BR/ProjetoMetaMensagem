@@ -30,6 +30,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId
         {
             var response = new Response<AtualizaWabaIdResult>();
 
+            var validator = new AtualizaWabaIdValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();

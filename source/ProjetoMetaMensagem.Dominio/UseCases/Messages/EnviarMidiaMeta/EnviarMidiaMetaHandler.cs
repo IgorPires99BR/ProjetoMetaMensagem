@@ -28,6 +28,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta
         {
             var response = new Response<EnviarMidiaMetaResult>();
 
+            var validator = new EnviarMidiaMetaValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();

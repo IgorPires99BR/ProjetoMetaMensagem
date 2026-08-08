@@ -22,6 +22,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha
         {
             var response = new Response<List<ListaCampanhaResult>>();
 
+            var validator = new ListaCampanhaValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var campanhas = await _unitOfWork.Campanha.Listar(command.EmpresaId);

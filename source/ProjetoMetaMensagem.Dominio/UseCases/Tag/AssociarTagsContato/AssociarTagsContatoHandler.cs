@@ -27,6 +27,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato
         {
             var response = new Response<AssociarTagsContatoResult>();
 
+            var validator = new AssociarTagsContatoValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();

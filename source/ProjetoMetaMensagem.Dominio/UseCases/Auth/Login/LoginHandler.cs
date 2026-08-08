@@ -25,6 +25,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
         {
             var response = new Response<LoginResult>();
 
+            var validator = new LoginValidator();
+            var validateResult = validator.Validate(request);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var usuario = await _unitOfWork.Usuario.ObterPorEmail(request.email);

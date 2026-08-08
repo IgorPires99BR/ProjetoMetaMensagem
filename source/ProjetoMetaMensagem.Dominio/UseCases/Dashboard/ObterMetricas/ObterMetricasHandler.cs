@@ -21,6 +21,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas
         public async Task<Response<ObterMetricasDashboardResult>> Handle(ObterMetricasCommand command)
         {
             var response = new Response<ObterMetricasDashboardResult>();
+
+            var validator = new ObterMetricasValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var metricas = await _dashboardRepository.ObterMetricas(command.EmpresaId);

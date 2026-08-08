@@ -27,16 +27,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
         {
             var response = new Response<CriaContatoEmLoteResult>();
 
-            // 1. Validação simples do lote básico
-            if (command.Contatos == null || !command.Contatos.Any())
+            var validator = new CriaContatoEmLoteValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
             {
-                response.AddErro("A lista de contatos não pode estar vazia.");
-                return response;
-            }
-
-            if (command.IdEmpresa == Guid.Empty)
-            {
-                response.AddErro("O Id da Empresa é obrigatório para importação em lote.");
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
                 return response;
             }
 

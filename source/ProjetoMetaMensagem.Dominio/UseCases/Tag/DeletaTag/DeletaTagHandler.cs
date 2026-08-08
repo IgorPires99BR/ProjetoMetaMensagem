@@ -27,6 +27,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag
         {
             var response = new Response<DeletaTagResult>();
 
+            var validator = new DeletaTagValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();

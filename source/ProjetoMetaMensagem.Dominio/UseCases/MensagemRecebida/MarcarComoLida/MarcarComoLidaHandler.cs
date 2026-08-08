@@ -24,6 +24,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida
         {
             var response = new Response<MarcarComoLidaResult>();
 
+            var validator = new MarcarComoLidaValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 await _unitOfWork.MensagemRecebida.MarcarTodasComoLidas(command.EmpresaId, command.ContatoId);

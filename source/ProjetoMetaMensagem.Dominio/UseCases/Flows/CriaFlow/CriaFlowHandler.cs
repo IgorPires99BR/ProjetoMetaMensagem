@@ -22,6 +22,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         {
             var response = new Response<CriaFlowResult>();
 
+            var validator = new CriaFlowValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
 
             Flow flow = new Flow(command);
             var etapasParaSalvar = new List<FlowEtapa>();

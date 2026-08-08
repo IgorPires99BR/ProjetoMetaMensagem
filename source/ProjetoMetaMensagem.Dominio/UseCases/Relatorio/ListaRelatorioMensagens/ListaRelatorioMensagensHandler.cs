@@ -24,6 +24,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens
         {
             var response = new Response<ListaRelatorioMensagensResult>();
 
+            var validator = new ListaRelatorioMensagensValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var mensagens = await _unitOfWork.Relatorio.ListarMensagens(

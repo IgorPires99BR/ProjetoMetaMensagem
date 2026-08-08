@@ -27,6 +27,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag
         {
             var response = new Response<List<ListaTagResult>>();
 
+            var validator = new ListaTagValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var listaResultados = new List<ListaTagResult>();

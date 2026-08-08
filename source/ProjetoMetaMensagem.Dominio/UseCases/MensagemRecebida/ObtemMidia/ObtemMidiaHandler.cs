@@ -27,14 +27,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia
         {
             var response = new Response<ObtemMidiaResult>();
 
+            var validator = new ObtemMidiaValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
-                if (string.IsNullOrWhiteSpace(command.MidiaId) || command.EmpresaId == Guid.Empty)
-                {
-                    response.AddErro("MidiaId e EmpresaId são obrigatórios.");
-                    return response;
-                }
-
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.EmpresaId);
 
                 if (string.IsNullOrEmpty(token))

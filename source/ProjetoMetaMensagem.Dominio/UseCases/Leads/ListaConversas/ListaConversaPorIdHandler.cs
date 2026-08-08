@@ -27,18 +27,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas
         {
             var response = new Response<List<ListaConversaPorIdResult>>();
 
+            var validator = new ListaConversaPorIdValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var listaResultados = new List<ListaConversaPorIdResult>();
-
-                //var validator = new CriaClienteValidator();
-                //var validateResult = validator.Validate(request);
-
-                //if (!validateResult.IsValid)
-                //{
-                //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-                //    return response;
-                //}
 
                 var conversations = await _unitOfWork.ConversationsRepository.Obter(command.CompanyId);
 

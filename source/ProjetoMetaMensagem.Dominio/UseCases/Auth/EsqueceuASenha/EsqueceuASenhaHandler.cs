@@ -30,6 +30,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha
         {
             var response = new Response<EsqueceuASenhaResult>();
 
+            var validator = new EsqueceuASenhaValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 var usuario = await _unitOfWork.Usuario.ObterPorEmail(command.Email);

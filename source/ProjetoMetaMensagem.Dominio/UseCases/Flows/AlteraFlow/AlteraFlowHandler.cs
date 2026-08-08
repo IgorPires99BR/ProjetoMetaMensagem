@@ -28,6 +28,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
         {
             var response = new Response<AlteraFlowResult>();
 
+            var validator = new AlteraFlowValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             // 1. Verifica se o Flow realmente existe no banco
             var flowExistente = await _unitOfWork.Flow.ObterPorId(command.Id);
             if (flowExistente == null)

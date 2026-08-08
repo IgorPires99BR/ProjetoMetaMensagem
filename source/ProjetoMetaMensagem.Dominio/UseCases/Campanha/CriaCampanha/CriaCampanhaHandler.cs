@@ -22,6 +22,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
         {
             var response = new Response<CriaCampanhaResult>();
 
+            var validator = new CriaCampanhaValidator();
+            var validateResult = validator.Validate(command);
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();
