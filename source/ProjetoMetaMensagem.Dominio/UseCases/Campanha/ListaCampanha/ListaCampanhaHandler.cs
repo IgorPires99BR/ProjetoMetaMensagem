@@ -40,7 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaCampanhaHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaCampanhaHandler));
             }
 
             return response;

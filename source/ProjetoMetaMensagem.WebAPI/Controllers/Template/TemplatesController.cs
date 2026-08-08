@@ -36,7 +36,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -48,7 +48,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             {
                 if (arquivo == null || arquivo.Length == 0)
                 {
-                    return BadRequest(new { erro = "Nenhum arquivo enviado." });
+                    return BadRequest(new { mensagem = "Nenhum arquivo enviado.", tipo = "Negocio" });
                 }
 
                 using var memoryStream = new MemoryStream();
@@ -66,7 +66,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.UploadMidiaExemplo") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.UploadMidiaExemplo"), tipo = "Servico" });
             }
         }
 
@@ -80,7 +80,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Listar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Listar"), tipo = "Servico" });
             }
         }
 
@@ -94,7 +94,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Alterar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Alterar"), tipo = "Servico" });
             }
         }
 
@@ -108,7 +108,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.ListarConexoes") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.ListarConexoes"), tipo = "Servico" });
             }
         }
 
@@ -122,7 +122,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.IncluirConexao") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.IncluirConexao"), tipo = "Servico" });
             }
         }
 
@@ -140,7 +140,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.ExcluirConexao") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.ExcluirConexao"), tipo = "Servico" });
             }
         }
     }

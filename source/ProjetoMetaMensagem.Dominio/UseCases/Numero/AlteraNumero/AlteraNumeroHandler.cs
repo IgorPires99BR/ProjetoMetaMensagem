@@ -58,7 +58,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraNumeroHandler)));
+                response.AddErroServico(ex, _logger, nameof(AlteraNumeroHandler));
             }
 
             return response;

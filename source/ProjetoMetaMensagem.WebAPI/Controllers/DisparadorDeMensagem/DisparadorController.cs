@@ -38,7 +38,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.Enviar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.Enviar"), tipo = "Servico" });
             }
         }
 
@@ -56,7 +56,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.CriaTemplate") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.CriaTemplate"), tipo = "Servico" });
             }
         }
 
@@ -74,7 +74,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMensagemTemplate") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMensagemTemplate"), tipo = "Servico" });
             }
         }
 
@@ -92,7 +92,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMensagemTemplateLote") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMensagemTemplateLote"), tipo = "Servico" });
             }
         }
 
@@ -113,12 +113,12 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
                 // qual campo realmente faltou.
                 if (arquivo == null || arquivo.Length == 0)
                 {
-                    return BadRequest(new { erro = "Arquivo não informado." });
+                    return BadRequest(new { mensagem = "Arquivo não informado.", tipo = "Negocio" });
                 }
                 if (string.IsNullOrWhiteSpace(celular) || empresaId == null || empresaId == Guid.Empty
                     || contatoId == null || contatoId == Guid.Empty || string.IsNullOrWhiteSpace(tipoMidia))
                 {
-                    return BadRequest(new { erro = "Celular, empresaId, contatoId e tipoMidia são obrigatórios." });
+                    return BadRequest(new { mensagem = "Celular, empresaId, contatoId e tipoMidia são obrigatórios.", tipo = "Negocio" });
                 }
 
                 byte[] bytes;
@@ -147,7 +147,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMidia") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMidia"), tipo = "Servico" });
             }
         }
     }

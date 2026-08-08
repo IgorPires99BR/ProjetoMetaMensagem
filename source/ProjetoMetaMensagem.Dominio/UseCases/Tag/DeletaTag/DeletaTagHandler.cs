@@ -48,7 +48,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaTagHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaTagHandler));
             }
 
             return response;

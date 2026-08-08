@@ -56,7 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaWebhookHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaWebhookHandler));
             }
 
             return response;

@@ -40,7 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaWebhookHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaWebhookHandler));
             }
 
             return response;

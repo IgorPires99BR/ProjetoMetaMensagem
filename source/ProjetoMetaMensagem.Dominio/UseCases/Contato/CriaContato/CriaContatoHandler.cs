@@ -74,7 +74,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaContatoHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaContatoHandler));
             }
 
             return response;

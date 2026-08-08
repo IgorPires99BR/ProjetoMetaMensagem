@@ -36,7 +36,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.EsqueceuASenha
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "AuthController.Enviar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "AuthController.Enviar"), tipo = "Servico" });
             }
         }
     }

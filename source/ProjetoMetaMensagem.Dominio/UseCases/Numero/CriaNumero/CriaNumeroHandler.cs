@@ -96,7 +96,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
             {
                 _unitOfWork.Rollback();
                 // Captura falhas de comunicação com a API ou erros internos do banco
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaNumeroHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaNumeroHandler));
             }
 
             return response;

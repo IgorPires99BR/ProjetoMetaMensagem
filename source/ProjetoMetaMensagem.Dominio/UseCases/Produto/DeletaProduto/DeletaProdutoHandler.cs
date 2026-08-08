@@ -45,7 +45,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaProdutoHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaProdutoHandler));
             }
 
             return response;

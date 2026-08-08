@@ -94,7 +94,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(IniciaEmbeddedSignupHandler)));
+                response.AddErroServico(ex, _logger, nameof(IniciaEmbeddedSignupHandler));
             }
 
             return response;

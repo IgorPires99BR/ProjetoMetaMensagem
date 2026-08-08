@@ -32,7 +32,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaPipelineHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaPipelineHandler));
             }
             return response;
         }

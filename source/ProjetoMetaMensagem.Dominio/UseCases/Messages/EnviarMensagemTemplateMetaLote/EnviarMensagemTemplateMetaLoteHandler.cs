@@ -98,7 +98,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             }
             catch (Exception ex) 
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EnviarMensagemTemplateMetaLoteHandler)));
+                response.AddErroServico(ex, _logger, nameof(EnviarMensagemTemplateMetaLoteHandler));
             }
 
 

@@ -50,7 +50,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ExcluiTemplateConexaoHandler)));
+                response.AddErroServico(ex, _logger, nameof(ExcluiTemplateConexaoHandler));
             }
 
             return response;

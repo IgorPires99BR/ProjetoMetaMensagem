@@ -133,7 +133,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
             {
                 _unitOfWork.Rollback();
                 // Qualquer quebra (no banco ou integração) faz o UnitOfWork reverter tudo, mantendo o estado anterior
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraFlowHandler)));
+                response.AddErroServico(ex, _logger, nameof(AlteraFlowHandler));
             }
 
             return response;

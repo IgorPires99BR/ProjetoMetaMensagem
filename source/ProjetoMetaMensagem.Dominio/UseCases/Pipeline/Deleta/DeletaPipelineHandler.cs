@@ -37,7 +37,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Deleta
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaPipelineHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaPipelineHandler));
             }
             return response;
         }

@@ -35,7 +35,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -52,7 +52,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Alterar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Alterar"), tipo = "Servico" });
             }
         }
 
@@ -70,7 +70,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Excluir"), tipo = "Servico" });
             }
         }
 
@@ -84,7 +84,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.ListarPorEmpresa") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ProdutosController.ListarPorEmpresa"), tipo = "Servico" });
             }
         }
     }

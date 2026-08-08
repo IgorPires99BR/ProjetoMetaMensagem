@@ -45,7 +45,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaProdutoHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaProdutoHandler));
             }
 
             return response;

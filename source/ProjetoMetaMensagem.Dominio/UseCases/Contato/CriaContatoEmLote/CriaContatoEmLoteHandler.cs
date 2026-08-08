@@ -90,7 +90,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
             {
                 _unitOfWork.Rollback();
 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaContatoEmLoteHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaContatoEmLoteHandler));
             }
 
             return response;

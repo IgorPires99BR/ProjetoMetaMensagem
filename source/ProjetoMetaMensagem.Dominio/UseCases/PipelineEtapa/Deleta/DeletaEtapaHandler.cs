@@ -43,7 +43,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaEtapaHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaEtapaHandler));
             }
             return response;
         }

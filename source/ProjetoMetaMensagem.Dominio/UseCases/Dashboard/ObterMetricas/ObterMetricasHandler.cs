@@ -28,7 +28,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObterMetricasHandler)));
+                response.AddErroServico(ex, _logger, nameof(ObterMetricasHandler));
             }
             return response;
         }

@@ -63,7 +63,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EnviarMidiaMetaHandler)));
+                response.AddErroServico(ex, _logger, nameof(EnviarMidiaMetaHandler));
             }
 
             return response;

@@ -47,7 +47,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraEtapaHandler)));
+                response.AddErroServico(ex, _logger, nameof(AlteraEtapaHandler));
             }
             return response;
         }

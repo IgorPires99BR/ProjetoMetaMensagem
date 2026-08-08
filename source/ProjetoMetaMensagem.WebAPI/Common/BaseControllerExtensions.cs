@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Common;
-using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace ProjetoMetaMensagem.WebAPI.Common
 {
@@ -46,34 +46,31 @@ namespace ProjetoMetaMensagem.WebAPI.Common
 
         public static IActionResult ValidateGenericResponse(this ControllerBase controllerBase, Response response)
         {
-            if (response.HasValidations)
-            {
-                foreach (var error in response.Erros)
-                {
-                    if (error.StartsWith("302:"))
-                        return controllerBase.Redirect(error.Substring(4));
-                    if (error.StartsWith("400:"))
-                        return controllerBase.BadRequest(SemPrefixo(response.Erros));
-                    if (error.StartsWith("403:"))
-                        return controllerBase.Forbid();
-                    if (error.StartsWith("404:"))
-                        return controllerBase.NotFound(SemPrefixo(response.Erros));
-                    if (error.StartsWith("500:"))
-                        return controllerBase.StatusCode(StatusCodes.Status500InternalServerError, SemPrefixo(response.Erros));
-                }
+            if (!response.HasValidations)
+                return null;
 
-                return controllerBase.BadRequest(response.Erros);
-            }
-            return null;
+            var corpo = MontarCorpo(response.Erros);
+
+            // Erro de servico (banco, integracao externa) manda no status: mesmo que tambem
+            // exista erro de negocio na mesma resposta, o endpoint nao pode fingir que foi
+            // so uma validacao (400) quando algo tecnico quebrou.
+            var erroServico = response.Erros.FirstOrDefault(e => e.Tipo == TipoErro.Servico);
+            if (erroServico != null)
+                return controllerBase.StatusCode(erroServico.StatusCode ?? StatusCodes.Status500InternalServerError, corpo);
+
+            // Erro de negocio com status proprio (ex: 404 "nao encontrado", 403 "acesso negado").
+            var comStatusProprio = response.Erros.FirstOrDefault(e => e.StatusCode.HasValue);
+            if (comStatusProprio != null)
+                return controllerBase.StatusCode(comStatusProprio.StatusCode.Value, corpo);
+
+            return controllerBase.BadRequest(corpo);
         }
 
-        // O prefixo "NNN:" só serve pra escolher o status HTTP; ele não pode aparecer
-        // na mensagem que o usuário vê.
-        private static List<string> SemPrefixo(IEnumerable<string> erros)
+        // Formato exposto ao front: mensagem (sempre segura pra mostrar) + tipo (Negocio ou
+        // Servico, pra decidir COMO mostrar -- direto ou com uma mensagem generica de erro).
+        private static object MontarCorpo(System.Collections.Generic.IReadOnlyCollection<Erro> erros)
         {
-            return erros
-                .Select(erro => Regex.IsMatch(erro, @"^\d{3}:") ? erro.Substring(4) : erro)
-                .ToList();
+            return erros.Select(erro => new { mensagem = erro.Mensagem, tipo = erro.Tipo.ToString() });
         }
     }
 }

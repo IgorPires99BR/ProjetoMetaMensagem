@@ -70,7 +70,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaFlowHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaFlowHandler));
             }
 
             return response;

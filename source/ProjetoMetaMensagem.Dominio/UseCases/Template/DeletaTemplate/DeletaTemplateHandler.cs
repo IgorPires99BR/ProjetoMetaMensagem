@@ -29,7 +29,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaTemplateHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaTemplateHandler));
             }
 
             return response;

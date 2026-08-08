@@ -30,7 +30,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowConversationController.ListarConversations") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "FlowConversationController.ListarConversations"), tipo = "Servico" });
             }
         }
     }

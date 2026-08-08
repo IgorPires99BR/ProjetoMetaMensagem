@@ -43,7 +43,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraPipelineHandler)));
+                response.AddErroServico(ex, _logger, nameof(AlteraPipelineHandler));
             }
             return response;
         }

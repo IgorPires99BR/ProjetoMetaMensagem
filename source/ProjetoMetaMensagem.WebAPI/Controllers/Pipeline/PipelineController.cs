@@ -39,7 +39,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Criar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.Criar"), tipo = "Servico" });
             }
         }
 
@@ -53,7 +53,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Listar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.Listar"), tipo = "Servico" });
             }
         }
 
@@ -67,7 +67,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.ObterComEtapas") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.ObterComEtapas"), tipo = "Servico" });
             }
         }
 
@@ -84,7 +84,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Alterar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.Alterar"), tipo = "Servico" });
             }
         }
 
@@ -101,7 +101,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.Excluir"), tipo = "Servico" });
             }
         }
 
@@ -116,7 +116,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.CriarEtapa") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.CriarEtapa"), tipo = "Servico" });
             }
         }
 
@@ -130,7 +130,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.ListarEtapas") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.ListarEtapas"), tipo = "Servico" });
             }
         }
 
@@ -146,7 +146,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.AlterarEtapa") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.AlterarEtapa"), tipo = "Servico" });
             }
         }
 
@@ -163,7 +163,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.ExcluirEtapa") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.ExcluirEtapa"), tipo = "Servico" });
             }
         }
 
@@ -178,7 +178,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.AdicionarLead") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.AdicionarLead"), tipo = "Servico" });
             }
         }
 
@@ -194,7 +194,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.MoverLead") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.MoverLead"), tipo = "Servico" });
             }
         }
 
@@ -211,7 +211,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.RemoverLead") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "PipelineController.RemoverLead"), tipo = "Servico" });
             }
         }
     }

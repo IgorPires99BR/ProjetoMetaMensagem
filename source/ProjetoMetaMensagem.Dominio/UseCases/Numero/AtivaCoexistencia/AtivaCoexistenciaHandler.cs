@@ -89,7 +89,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AtivaCoexistenciaHandler)));
+                response.AddErroServico(ex, _logger, nameof(AtivaCoexistenciaHandler));
             }
 
             return response;

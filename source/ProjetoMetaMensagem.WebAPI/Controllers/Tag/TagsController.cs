@@ -33,7 +33,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TagsController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -47,7 +47,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.Listar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TagsController.Listar"), tipo = "Servico" });
             }
         }
 
@@ -66,7 +66,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TagsController.Excluir"), tipo = "Servico" });
             }
         }
 
@@ -83,7 +83,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.AssociarContato") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TagsController.AssociarContato"), tipo = "Servico" });
             }
         }
     }

@@ -42,7 +42,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaTagHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaTagHandler));
             }
 
             return response;

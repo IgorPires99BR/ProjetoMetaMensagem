@@ -36,7 +36,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ContatosController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -50,7 +50,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.IncluirEmLote") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ContatosController.IncluirEmLote"), tipo = "Servico" });
             }
         }
 
@@ -67,7 +67,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.Alterar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ContatosController.Alterar"), tipo = "Servico" });
             }
         }
 
@@ -81,7 +81,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.ObterPorUsuario") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ContatosController.ObterPorUsuario"), tipo = "Servico" });
             }
         }
 
@@ -99,7 +99,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ContatosController.Excluir"), tipo = "Servico" });
             }
         }
     }

@@ -32,7 +32,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Campanha
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "CampanhasController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "CampanhasController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -46,7 +46,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Campanha
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "CampanhasController.Listar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "CampanhasController.Listar"), tipo = "Servico" });
             }
         }
 
@@ -65,7 +65,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Campanha
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "CampanhasController.Cancelar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "CampanhasController.Cancelar"), tipo = "Servico" });
             }
         }
     }

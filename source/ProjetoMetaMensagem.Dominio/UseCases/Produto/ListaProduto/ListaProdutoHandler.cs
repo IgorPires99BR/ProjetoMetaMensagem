@@ -39,7 +39,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto
             }
             catch (System.Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaProdutoHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaProdutoHandler));
             }
 
             return response;

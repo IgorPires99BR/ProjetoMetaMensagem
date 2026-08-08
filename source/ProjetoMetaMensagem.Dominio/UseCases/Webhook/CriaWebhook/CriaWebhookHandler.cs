@@ -53,7 +53,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaWebhookHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaWebhookHandler));
             }
 
             return response;

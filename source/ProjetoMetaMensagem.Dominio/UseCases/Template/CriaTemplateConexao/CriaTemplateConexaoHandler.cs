@@ -60,7 +60,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaTemplateConexaoHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaTemplateConexaoHandler));
             }
 
             return response;

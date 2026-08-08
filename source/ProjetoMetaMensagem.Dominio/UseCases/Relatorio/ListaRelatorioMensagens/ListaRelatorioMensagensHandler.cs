@@ -33,7 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaRelatorioMensagensHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaRelatorioMensagensHandler));
             }
 
             return response;

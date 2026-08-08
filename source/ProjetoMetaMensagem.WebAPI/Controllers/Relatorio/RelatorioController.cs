@@ -41,7 +41,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "RelatorioController.Mensagens") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.Mensagens"), tipo = "Servico" });
             }
         }
     }

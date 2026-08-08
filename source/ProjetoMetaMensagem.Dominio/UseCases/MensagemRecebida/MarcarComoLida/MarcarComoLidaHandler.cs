@@ -33,7 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(MarcarComoLidaHandler)));
+                response.AddErroServico(ex, _logger, nameof(MarcarComoLidaHandler));
             }
 
             return response;

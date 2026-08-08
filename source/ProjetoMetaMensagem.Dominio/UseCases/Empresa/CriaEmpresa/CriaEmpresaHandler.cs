@@ -51,7 +51,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaEmpresaHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaEmpresaHandler));
             }
 
             return response;

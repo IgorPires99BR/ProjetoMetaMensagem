@@ -38,7 +38,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AssociarTagsContatoHandler)));
+                response.AddErroServico(ex, _logger, nameof(AssociarTagsContatoHandler));
             }
 
             return response;

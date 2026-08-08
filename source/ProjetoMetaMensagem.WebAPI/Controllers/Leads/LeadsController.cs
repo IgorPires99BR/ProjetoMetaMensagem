@@ -42,7 +42,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Leads
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "LeadsController.Listar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "LeadsController.Listar"), tipo = "Servico" });
             }
         }
     }

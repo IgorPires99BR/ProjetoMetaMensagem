@@ -56,7 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaCampanhaHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaCampanhaHandler));
             }
 
             return response;

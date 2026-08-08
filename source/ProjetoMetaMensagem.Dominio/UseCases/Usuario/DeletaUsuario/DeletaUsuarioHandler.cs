@@ -60,7 +60,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaUsuarioHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaUsuarioHandler));
             }
 
             return response;

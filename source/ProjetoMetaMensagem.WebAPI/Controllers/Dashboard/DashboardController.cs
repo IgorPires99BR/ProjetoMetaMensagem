@@ -29,7 +29,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Dashboard
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DashboardController.ObterMetricas") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DashboardController.ObterMetricas"), tipo = "Servico" });
             }
         }
     }

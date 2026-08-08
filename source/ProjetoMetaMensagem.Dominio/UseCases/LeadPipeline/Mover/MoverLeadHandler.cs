@@ -49,7 +49,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(MoverLeadHandler)));
+                response.AddErroServico(ex, _logger, nameof(MoverLeadHandler));
             }
             return response;
         }
@@ -96,7 +96,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AdicionarLeadHandler)));
+                response.AddErroServico(ex, _logger, nameof(AdicionarLeadHandler));
             }
             return response;
         }
@@ -133,7 +133,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(RemoverLeadHandler)));
+                response.AddErroServico(ex, _logger, nameof(RemoverLeadHandler));
             }
             return response;
         }

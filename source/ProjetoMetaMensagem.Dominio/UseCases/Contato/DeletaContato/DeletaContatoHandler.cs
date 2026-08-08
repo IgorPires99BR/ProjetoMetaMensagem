@@ -58,7 +58,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaContatoHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaContatoHandler));
             }
 
             return response;

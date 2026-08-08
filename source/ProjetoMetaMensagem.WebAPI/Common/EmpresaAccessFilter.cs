@@ -95,7 +95,7 @@ namespace ProjetoMetaMensagem.WebAPI.Common
         private static void Negar(ActionExecutingContext context)
         {
             context.Result = new Microsoft.AspNetCore.Mvc.ObjectResult(
-                new { erro = "Acesso negado: você não tem permissão para acessar dados de outra empresa." })
+                new { mensagem = "Acesso negado: você não tem permissão para acessar dados de outra empresa.", tipo = "Negocio" })
             {
                 StatusCode = 403
             };

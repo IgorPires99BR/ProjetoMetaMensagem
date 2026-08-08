@@ -61,7 +61,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaTemplateHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaTemplateHandler));
             }
 
             return response;

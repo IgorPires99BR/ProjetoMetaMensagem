@@ -61,7 +61,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemPipelineComEtapasHandler)));
+                response.AddErroServico(ex, _logger, nameof(ObtemPipelineComEtapasHandler));
             }
             return response;
         }

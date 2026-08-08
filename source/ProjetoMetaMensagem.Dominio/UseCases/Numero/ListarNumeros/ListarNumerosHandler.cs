@@ -56,7 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListarNumerosHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListarNumerosHandler));
             }
 
             return response;

@@ -34,7 +34,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -48,7 +48,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.ListarNumeros") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.ListarNumeros"), tipo = "Servico" });
             }
         }
 
@@ -62,7 +62,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.AtualizarNumerosMeta") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.AtualizarNumerosMeta"), tipo = "Servico" });
             }
         }
 
@@ -76,7 +76,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.EmbeddedSignup") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.EmbeddedSignup"), tipo = "Servico" });
             }
         }
 
@@ -90,7 +90,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.AtivaCoexistencia") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.AtivaCoexistencia"), tipo = "Servico" });
             }
         }
 
@@ -109,7 +109,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.Excluir"), tipo = "Servico" });
             }
         }
     }

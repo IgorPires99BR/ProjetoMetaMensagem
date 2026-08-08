@@ -196,7 +196,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
             {
                 _unitOfWork.Rollback();
                 // Captura e formata erros de HttpClient da Meta ou falhas no banco local
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaTemplateHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaTemplateHandler));
             }
 
             return response;

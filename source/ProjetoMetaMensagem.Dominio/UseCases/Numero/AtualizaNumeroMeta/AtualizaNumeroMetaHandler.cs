@@ -108,7 +108,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AtualizaNumeroMetaHandler)));
+                response.AddErroServico(ex, _logger, nameof(AtualizaNumeroMetaHandler));
             }
 
             return response;

@@ -52,7 +52,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemUsuarioHandler)));
+                response.AddErroServico(ex, _logger, nameof(ObtemUsuarioHandler));
             }
 
             return response;

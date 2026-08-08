@@ -75,7 +75,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EsqueceuASenhaHandler)));
+                response.AddErroServico(ex, _logger, nameof(EsqueceuASenhaHandler));
             }
 
             return response;

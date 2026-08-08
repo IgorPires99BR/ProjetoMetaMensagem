@@ -119,7 +119,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AtualizaTemplateMetaHandler)));
+                response.AddErroServico(ex, _logger, nameof(AtualizaTemplateMetaHandler));
             }
 
             return response;

@@ -49,7 +49,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaEmpresaHandler)));
+                response.AddErroServico(ex, _logger, nameof(DeletaEmpresaHandler));
             }
 
             return response;

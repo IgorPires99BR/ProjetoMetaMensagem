@@ -51,7 +51,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemContatoHandler)));
+                response.AddErroServico(ex, _logger, nameof(ObtemContatoHandler));
             }
 
             return response;

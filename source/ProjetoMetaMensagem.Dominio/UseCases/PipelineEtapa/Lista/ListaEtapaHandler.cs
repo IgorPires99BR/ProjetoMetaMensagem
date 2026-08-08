@@ -44,7 +44,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaEtapaHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaEtapaHandler));
             }
             return response;
         }

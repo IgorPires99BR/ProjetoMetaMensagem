@@ -51,7 +51,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaConversaPorIdHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaConversaPorIdHandler));
             }
 
             return response;

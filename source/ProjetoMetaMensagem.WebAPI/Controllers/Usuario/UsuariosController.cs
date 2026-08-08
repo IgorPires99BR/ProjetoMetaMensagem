@@ -32,7 +32,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "UsuariosController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "UsuariosController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -52,7 +52,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "UsuariosController.Deletar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "UsuariosController.Deletar"), tipo = "Servico" });
             }
         }
 
@@ -69,7 +69,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "UsuariosController.Alterar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "UsuariosController.Alterar"), tipo = "Servico" });
             }
         }
 
@@ -83,7 +83,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "UsuariosController.ObterPorId") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "UsuariosController.ObterPorId"), tipo = "Servico" });
             }
         }
     }

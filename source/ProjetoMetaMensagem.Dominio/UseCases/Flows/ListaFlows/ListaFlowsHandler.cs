@@ -50,7 +50,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaFlowsHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaFlowsHandler));
             }
 
             return response;

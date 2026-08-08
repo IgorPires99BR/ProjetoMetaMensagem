@@ -66,7 +66,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EnviarMensagemMetaHandler)));
+                response.AddErroServico(ex, _logger, nameof(EnviarMensagemMetaHandler));
             }
 
             return response;

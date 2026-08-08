@@ -82,7 +82,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
                 _unitOfWork.Rollback();
                 // Caso ocorra qualquer erro no processo do banco ou da Meta, a transação sofre rollback
                 // e o banco não fica com dados fragmentados.
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaFlowHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaFlowHandler));
             }
 
             return response;

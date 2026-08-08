@@ -36,7 +36,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Listar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "FlowsController.Listar"), tipo = "Servico" });
             }
         }
 
@@ -51,7 +51,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "FlowsController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -69,7 +69,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Alterar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "FlowsController.Alterar"), tipo = "Servico" });
             }
         }
 
@@ -88,7 +88,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "FlowsController.Excluir"), tipo = "Servico" });
             }
         }
     }

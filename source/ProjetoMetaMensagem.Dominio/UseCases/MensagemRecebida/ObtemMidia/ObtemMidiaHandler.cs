@@ -53,7 +53,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemMidiaHandler)));
+                response.AddErroServico(ex, _logger, nameof(ObtemMidiaHandler));
             }
 
             return response;

@@ -49,7 +49,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaTagHandler)));
+                response.AddErroServico(ex, _logger, nameof(CriaTagHandler));
             }
 
             return response;

@@ -45,7 +45,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplateConexoes
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaTemplateConexoesHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaTemplateConexoesHandler));
             }
 
             return response;

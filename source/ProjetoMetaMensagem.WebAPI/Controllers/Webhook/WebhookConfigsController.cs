@@ -34,7 +34,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -48,7 +48,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Obter") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Obter"), tipo = "Servico" });
             }
         }
 
@@ -67,7 +67,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Excluir"), tipo = "Servico" });
             }
         }
     }

@@ -50,7 +50,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(LoginHandler)));
+                response.AddErroServico(ex, _logger, nameof(LoginHandler));
             }
 
             return response;

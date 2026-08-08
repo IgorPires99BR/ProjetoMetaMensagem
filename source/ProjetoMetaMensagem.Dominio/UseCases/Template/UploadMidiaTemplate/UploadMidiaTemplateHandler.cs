@@ -44,7 +44,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.UploadMidiaTemplate
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(UploadMidiaTemplateHandler)));
+                response.AddErroServico(ex, _logger, nameof(UploadMidiaTemplateHandler));
             }
 
             return response;

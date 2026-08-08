@@ -45,7 +45,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.ListarConversas") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.ListarConversas"), tipo = "Servico" });
             }
         }
 
@@ -77,7 +77,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.ListarMensagens") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.ListarMensagens"), tipo = "Servico" });
             }
         }
 
@@ -86,7 +86,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
         {
             if (request == null || request.EmpresaId == Guid.Empty || request.ContatoId == Guid.Empty)
             {
-                return BadRequest(new { erro = "EmpresaId e ContatoId inválidos." });
+                return BadRequest(new { mensagem = "EmpresaId e ContatoId inválidos.", tipo = "Negocio" });
             }
 
             try
@@ -96,14 +96,14 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 
                 if (resultado == null || resultado.Erros.Count > 0)
                 {
-                    return BadRequest(new { erro = "Não foi possível marcar as mensagens como lidas." });
+                    return BadRequest(new { mensagem = "Não foi possível marcar as mensagens como lidas.", tipo = "Negocio" });
                 }
 
                 return Ok(new { sucesso = true });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.MarcarComoLida") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.MarcarComoLida"), tipo = "Servico" });
             }
         }
         // GET /api/chat/midia/{midiaId}?empresaId=...
@@ -115,7 +115,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             {
                 if (string.IsNullOrWhiteSpace(midiaId) || empresaId == Guid.Empty)
                 {
-                    return BadRequest(new { erro = "midiaId e empresaId são obrigatórios." });
+                    return BadRequest(new { mensagem = "midiaId e empresaId são obrigatórios.", tipo = "Negocio" });
                 }
 
                 var command = new ObtemMidiaCommand { MidiaId = midiaId, EmpresaId = empresaId };
@@ -123,14 +123,14 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 
                 if (resultado == null || resultado.Erros.Count > 0 || resultado.Value == null)
                 {
-                    return NotFound(new { erro = "Mídia não encontrada ou indisponível.", erros = resultado?.Erros });
+                    return NotFound(new { mensagem = "Mídia não encontrada ou indisponível.", tipo = "Negocio" });
                 }
 
                 return File(resultado.Value.Bytes, resultado.Value.MimeType);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.ObtemMidia") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.ObtemMidia"), tipo = "Servico" });
             }
         }
     }

@@ -34,7 +34,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Incluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Incluir"), tipo = "Servico" });
             }
         }
 
@@ -48,7 +48,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Alterar") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Alterar"), tipo = "Servico" });
             }
         }
 
@@ -62,7 +62,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Excluir") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Excluir"), tipo = "Servico" });
             }
         }
 
@@ -93,7 +93,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Obter") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Obter"), tipo = "Servico" });
             }
         }
 
@@ -107,7 +107,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.AtualizarWabaId") });
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.AtualizarWabaId"), tipo = "Servico" });
             }
         }
     }

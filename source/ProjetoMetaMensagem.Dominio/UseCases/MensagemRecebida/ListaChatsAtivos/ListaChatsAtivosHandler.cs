@@ -120,7 +120,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
             }
             catch (Exception ex)
             {
-                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaChatsAtivosHandler)));
+                response.AddErroServico(ex, _logger, nameof(ListaChatsAtivosHandler));
             }
 
             return response;
