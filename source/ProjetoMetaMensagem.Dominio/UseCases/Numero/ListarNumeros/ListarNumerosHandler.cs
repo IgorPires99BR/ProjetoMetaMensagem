@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -11,10 +12,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public ListarNumerosHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<ListarNumerosHandler> _logger;
+
+        public ListarNumerosHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<ListarNumerosHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
 
@@ -52,7 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListarNumerosHandler)));
             }
 
             return response;

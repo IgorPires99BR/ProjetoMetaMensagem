@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
@@ -14,9 +15,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Leads
     {
         private readonly IMediator _mediator;
 
-        public LeadsController(IMediator mediator)
+        private readonly ILogger<LeadsController> _logger;
+
+        public LeadsController(IMediator mediator, ILogger<LeadsController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
 
@@ -38,7 +42,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Leads
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "LeadsController.Listar") });
             }
         }
     }

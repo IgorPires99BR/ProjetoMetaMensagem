@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
@@ -7,7 +9,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas
     public class ObtemPipelineComEtapasHandler : IRequestHandler<ObtemPipelineComEtapasCommand, Response<ObtemPipelineComEtapasResult>>
     {
         private readonly IPipelineRepository _repository;
-        public ObtemPipelineComEtapasHandler(IPipelineRepository repository) => _repository = repository;
+        private readonly ILogger<ObtemPipelineComEtapasHandler> _logger;
+
+        public ObtemPipelineComEtapasHandler(IPipelineRepository repository, ILogger<ObtemPipelineComEtapasHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
         public async Task<Response<ObtemPipelineComEtapasResult>> Handle(ObtemPipelineComEtapasCommand command)
         {
@@ -53,7 +61,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao obter pipeline: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemPipelineComEtapasHandler)));
             }
             return response;
         }

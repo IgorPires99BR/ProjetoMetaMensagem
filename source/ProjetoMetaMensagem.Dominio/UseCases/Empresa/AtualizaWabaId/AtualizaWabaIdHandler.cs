@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -16,10 +17,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
-        public AtualizaWabaIdHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<AtualizaWabaIdHandler> _logger;
+
+        public AtualizaWabaIdHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<AtualizaWabaIdHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<AtualizaWabaIdResult>> Handle(AtualizaWabaIdCommand command)
@@ -43,7 +47,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AtualizaWabaIdHandler)));
             }
 
             return response;

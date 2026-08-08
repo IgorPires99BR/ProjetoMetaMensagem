@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -17,10 +18,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public ListaTemplateHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<ListaTemplateHandler> _logger;
+
+        public ListaTemplateHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<ListaTemplateHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<List<ListaTemplateResult>>> Handle(ListaTemplateCommand command)
@@ -57,7 +61,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaTemplateHandler)));
             }
 
             return response;

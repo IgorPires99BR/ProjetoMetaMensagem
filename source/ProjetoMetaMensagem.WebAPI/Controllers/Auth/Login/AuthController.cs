@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
@@ -13,9 +14,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
     {
         private readonly IMediator _mediator;
 
-        public AuthController(IMediator mediator)
+        private readonly ILogger<AuthController> _logger;
+
+        public AuthController(IMediator mediator, ILogger<AuthController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         [HttpPost("api/auth/login")]
@@ -32,7 +36,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "AuthController.Enviar") });
             }
         }
     }

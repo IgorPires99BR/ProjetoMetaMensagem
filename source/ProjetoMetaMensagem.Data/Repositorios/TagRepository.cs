@@ -38,13 +38,37 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return tag.Id;
         }
 
-        public async Task Excluir(Guid id)
-        {
-            var sql = $@"
-                DELETE FROM {nameof(ContatoTag)} WHERE {nameof(ContatoTag.TagId)} = @Id;
-                DELETE FROM {nameof(Tag)} WHERE {nameof(Tag.Id)} = @Id;";
+        // Recorte de empresa aplicado direto no WHERE. Antes o DELETE casava so pelo Id, entao
+        // bastava conhecer (ou adivinhar) o id pra apagar tag de outra empresa.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
 
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+        public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
+        {
+            // ContatoTag nao guarda EmpresaId: o vinculo passa pela Tag. Sem esse recorte,
+            // os vinculos de uma tag alheia seriam limpos mesmo com o DELETE da Tag barrado.
+            var sqlVinculos = $@"
+                DELETE FROM {nameof(ContatoTag)}
+                WHERE {nameof(ContatoTag.TagId)} = @Id
+                  AND (@EmpresaIdSolicitante IS NULL
+                       OR {nameof(ContatoTag.TagId)} IN (
+                           SELECT {nameof(Tag.Id)} FROM {nameof(Tag)}
+                           WHERE {nameof(Tag.EmpresaId)} = @EmpresaIdSolicitante));";
+
+            await _session.Connection.ExecuteAsync(sqlVinculos,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
+
+            // So o DELETE da propria tag conta como exclusao; os vinculos removidos acima
+            // inflariam o total e mascarariam uma tag inexistente.
+            var sql = $@"
+                DELETE FROM {nameof(Tag)}
+                WHERE {nameof(Tag.Id)} = @Id
+                {RecorteDaEmpresa};";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Tag>> ListarPorEmpresa(Guid empresaId)
@@ -80,34 +104,55 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { ContatoId = contatoId }, transaction: _session.Transaction);
         }
 
-        public async Task AssociarTagsContato(Guid contatoId, List<Guid> tagIds)
+        // Contato chega na empresa por Usuario; Tag tem EmpresaId proprio. Sem esses recortes
+        // qualquer usuario logado reescrevia as tags de um contato de outra empresa (o DELETE
+        // abaixo limpa todos os vinculos do contato) so mandando o ContatoId no corpo.
+        private const string ContatoDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL
+                   OR EXISTS (SELECT 1 FROM Contato c
+                              INNER JOIN Usuario u ON u.Id = c.UsuarioId
+                              WHERE c.Id = @ContatoId AND u.EmpresaId = @EmpresaIdSolicitante))";
+
+        public async Task AssociarTagsContato(Guid contatoId, List<Guid> tagIds, Guid? empresaIdSolicitante)
         {
-            // Remove associaÃ§Ãµes existentes
+            // Remove associações existentes
             var sqlDelete = $@"
                 DELETE FROM {nameof(ContatoTag)}
-                WHERE {nameof(ContatoTag.ContatoId)} = @ContatoId;";
+                WHERE {nameof(ContatoTag.ContatoId)} = @ContatoId
+                {ContatoDaEmpresa};";
 
             await _session.Connection.ExecuteAsync(sqlDelete,
-                new { ContatoId = contatoId }, transaction: _session.Transaction);
+                new { ContatoId = contatoId, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
 
             if (tagIds == null || tagIds.Count == 0) return;
 
-            // Insere novas associaÃ§Ãµes
+            // Insere novas associações. O INSERT ... SELECT ... WHERE deixa o recorte valer
+            // tambem na inclusao: nem contato de outra empresa, nem tag de outra empresa.
             var sqlInsert = $@"
                 INSERT INTO {nameof(ContatoTag)} (
                     {nameof(ContatoTag.ContatoId)},
                     {nameof(ContatoTag.TagId)},
                     {nameof(ContatoTag.DataCriacao)}
-                ) VALUES (
-                    @ContatoId,
-                    @TagId,
-                    @DataCriacao
-                );";
+                )
+                SELECT @ContatoId, @TagId, @DataCriacao
+                WHERE 1 = 1
+                {ContatoDaEmpresa}
+                  AND (@EmpresaIdSolicitante IS NULL
+                       OR EXISTS (SELECT 1 FROM {nameof(Tag)}
+                                  WHERE {nameof(Tag.Id)} = @TagId
+                                    AND {nameof(Tag.EmpresaId)} = @EmpresaIdSolicitante));";
 
             foreach (var tagId in tagIds)
             {
                 await _session.Connection.ExecuteAsync(sqlInsert,
-                    new { ContatoId = contatoId, TagId = tagId, DataCriacao = DateTime.Now },
+                    new
+                    {
+                        ContatoId = contatoId,
+                        TagId = tagId,
+                        DataCriacao = DateTime.Now,
+                        EmpresaIdSolicitante = empresaIdSolicitante
+                    },
                     transaction: _session.Transaction);
             }
         }

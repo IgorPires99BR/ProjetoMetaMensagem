@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -12,11 +14,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
     {
         private readonly IMetaService _whatsappService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<EnviarMensagemTemplateMetaHandler> _logger;
 
-        public EnviarMensagemTemplateMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork)
+        public EnviarMensagemTemplateMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork, ILogger<EnviarMensagemTemplateMetaHandler> logger)
         {
             _whatsappService = whatsappService;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<EnviarMensagemTemplateMetaResult>> Handle(EnviarMensagemTemplateMetaCommand command)
@@ -82,7 +86,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             }
             catch (Exception ex)
             {
-                response.AddErro("Erro ao criar template na Meta:" + ex.Message);
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EnviarMensagemTemplateMetaHandler)));
             }
 
             return response;

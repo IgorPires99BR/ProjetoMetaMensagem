@@ -1,3 +1,4 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook;
@@ -15,7 +16,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
     {
         private readonly IMediator _mediator;
 
-        public WebhookConfigsController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<WebhookConfigsController> _logger;
+
+        public WebhookConfigsController(IMediator mediator, ILogger<WebhookConfigsController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("api/v2/webhook/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaWebhookCommand command)
@@ -27,7 +34,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Incluir") });
             }
         }
 
@@ -41,7 +48,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Obter") });
             }
         }
 
@@ -50,12 +57,17 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Webhook
         {
             try
             {
-                var resultado = await _mediator.Send(new DeletaWebhookCommand { Id = id });
+                // Escopo vem do token, nunca da rota/corpo: senao o proprio atacante o escolheria.
+                var resultado = await _mediator.Send(new DeletaWebhookCommand
+                {
+                    Id = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "WebhookConfigsController.Excluir") });
             }
         }
     }

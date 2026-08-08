@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -17,10 +18,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public AtualizaNumeroMetaHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<AtualizaNumeroMetaHandler> _logger;
+
+        public AtualizaNumeroMetaHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<AtualizaNumeroMetaHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
 
@@ -60,7 +64,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
 
                 foreach (var numeroExcluir in numerosParaRemover)
                 {
-                    await _unitOfWork.Numero.Excluir(numeroExcluir.Id);
+                    // Sincronizacao sempre restrita a empresa do comando, mesmo que a lista de
+                    // numeros ja tenha vindo do usuario dela: assim um id de outra empresa que
+                    // escape pra ca nao chega a ser apagado.
+                    await _unitOfWork.Numero.Excluir(numeroExcluir.Id, command.IdEmpresa);
                 }
                 foreach (var numeroApi in numerosMeta.Numeros)
                 {
@@ -78,7 +85,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
                         numeroExistente.DataAtualizacao = DateTime.Now;
                         numeroExistente.DataUltimaSincronizacao = DateTime.Now;
 
-                        await _unitOfWork.Numero.Alterar(numeroExistente);
+                        await _unitOfWork.Numero.Alterar(numeroExistente, command.IdEmpresa);
                     }
                     else
                     {
@@ -101,7 +108,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AtualizaNumeroMetaHandler)));
             }
 
             return response;

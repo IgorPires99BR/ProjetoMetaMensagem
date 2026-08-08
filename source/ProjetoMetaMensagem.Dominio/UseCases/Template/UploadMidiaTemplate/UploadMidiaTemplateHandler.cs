@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -12,10 +14,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.UploadMidiaTemplate
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public UploadMidiaTemplateHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<UploadMidiaTemplateHandler> _logger;
+
+        public UploadMidiaTemplateHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<UploadMidiaTemplateHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<UploadMidiaTemplateResult>> Handle(UploadMidiaTemplateCommand command)
@@ -39,7 +44,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.UploadMidiaTemplate
             }
             catch (Exception ex)
             {
-                response.AddErro($"Falha ao enviar mídia de exemplo: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(UploadMidiaTemplateHandler)));
             }
 
             return response;

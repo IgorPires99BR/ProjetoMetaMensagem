@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
@@ -15,7 +16,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
     {
         private readonly IMediator _mediator;
 
-        public EmpresasController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<EmpresasController> _logger;
+
+        public EmpresasController(IMediator mediator, ILogger<EmpresasController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("api/v2/empresa/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaEmpresaCommand command)
@@ -27,7 +34,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Incluir") });
             }
         }
 
@@ -41,7 +48,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Alterar") });
             }
         }
 
@@ -55,7 +62,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Excluir") });
             }
         }
 
@@ -71,12 +78,22 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
         {
             try
             {
-                var resultado = await _mediator.Send(new ObtemEmpresaCommand());
+                // Escopo vem do token, nunca do cliente.
+                var claimEmpresa = User.FindFirst("empresaId")?.Value;
+                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+                var comando = new ObtemEmpresaCommand
+                {
+                    SolicitanteEhAdmin = ehAdmin,
+                    EmpresaIdSolicitante = Guid.TryParse(claimEmpresa, out var idEmpresa) ? idEmpresa : null
+                };
+
+                var resultado = await _mediator.Send(comando);
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Obter") });
             }
         }
 
@@ -90,7 +107,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "EmpresasController.AtualizarWabaId") });
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta;
@@ -15,7 +16,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
     public class NumerosController : Controller
     {
         private readonly IMediator _mediator;
-        public NumerosController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<NumerosController> _logger;
+
+        public NumerosController(IMediator mediator, ILogger<NumerosController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("api/numero/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaNumeroCommand command)
@@ -27,7 +34,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.Incluir") });
             }
         }
 
@@ -41,7 +48,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.ListarNumeros") });
             }
         }
 
@@ -55,7 +62,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.AtualizarNumerosMeta") });
             }
         }
 
@@ -69,7 +76,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.EmbeddedSignup") });
             }
         }
 
@@ -83,7 +90,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.AtivaCoexistencia") });
             }
         }
 
@@ -92,12 +99,17 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
         {
             try
             {
-                var resultado = await _mediator.Send(new DeletaNumeroCommand { Id = id });
+                // Escopo vem do token, nunca da rota/corpo: senao o proprio atacante o escolheria.
+                var resultado = await _mediator.Send(new DeletaNumeroCommand
+                {
+                    Id = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "NumerosController.Excluir") });
             }
         }
     }

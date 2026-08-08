@@ -110,16 +110,18 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(flow.Id)}, 
                     {nameof(flow.EmpresaId)}, 
                     {nameof(flow.Nome)}, 
-                    {nameof(flow.Descricao)}, 
-                    {nameof(flow.Ativo)}, 
+                    {nameof(flow.Descricao)},
+                    {nameof(flow.GatilhoInicial)},
+                    {nameof(flow.Ativo)},
                     {nameof(flow.DataCriacao)}
-                ) 
+                )
                 VALUES (
-                    @{nameof(flow.Id)}, 
-                    @{nameof(flow.EmpresaId)}, 
-                    @{nameof(flow.Nome)}, 
-                    @{nameof(flow.Descricao)}, 
-                    @{nameof(flow.Ativo)}, 
+                    @{nameof(flow.Id)},
+                    @{nameof(flow.EmpresaId)},
+                    @{nameof(flow.Nome)},
+                    @{nameof(flow.Descricao)},
+                    @{nameof(flow.GatilhoInicial)},
+                    @{nameof(flow.Ativo)},
                     @{nameof(flow.DataCriacao)}
                 );";
 
@@ -153,31 +155,63 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
         }
 
-        public async Task ExcluirEtapasPorFlowId(Guid flowId)
+        // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
+        // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar fluxo de outra empresa.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+        public async Task<int> ExcluirEtapasPorFlowId(Guid flowId, Guid? empresaIdSolicitante)
         {
-            var sql = $@"DELETE FROM {nameof(FlowEtapa)} WHERE {nameof(FlowEtapa.FlowId)} = @FlowId;";
-            await _session.Connection.ExecuteAsync(sql, new { FlowId = flowId }, transaction: _session.Transaction);
+            // FlowEtapa nao guarda EmpresaId: o vinculo passa pelo Flow. Sem esse recorte,
+            // a exclusao em cascata do DeletaFlow limpava as etapas de um fluxo alheio
+            // mesmo quando o DELETE do proprio Flow era barrado.
+            var sql = $@"
+                DELETE FROM {nameof(FlowEtapa)}
+                WHERE {nameof(FlowEtapa.FlowId)} = @FlowId
+                  AND (@EmpresaIdSolicitante IS NULL
+                       OR {nameof(FlowEtapa.FlowId)} IN (
+                           SELECT {nameof(Flow.Id)} FROM {nameof(Flow)}
+                           WHERE {nameof(Flow.EmpresaId)} = @EmpresaIdSolicitante));";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { FlowId = flowId, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
-        public async Task Alterar(Flow flow)
+        public async Task<int> Alterar(Flow flow, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                UPDATE {nameof(Flow)} SET 
-                    {nameof(flow.Nome)} = @{nameof(flow.Nome)}, 
-                    {nameof(flow.Descricao)} = @{nameof(flow.Descricao)}, 
+                UPDATE {nameof(Flow)} SET
+                    {nameof(flow.Nome)} = @{nameof(flow.Nome)},
+                    {nameof(flow.Descricao)} = @{nameof(flow.Descricao)},
+                    {nameof(flow.GatilhoInicial)} = @{nameof(flow.GatilhoInicial)},
                     {nameof(flow.Ativo)} = @{nameof(flow.Ativo)}
-                WHERE {nameof(flow.Id)} = @{nameof(flow.Id)};";
+                WHERE {nameof(flow.Id)} = @{nameof(flow.Id)}
+                {RecorteDaEmpresa};";
 
-            await _session.Connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new
+                {
+                    flow.Id,
+                    flow.Nome,
+                    flow.Descricao,
+                    flow.GatilhoInicial,
+                    flow.Ativo,
+                    EmpresaIdSolicitante = empresaIdSolicitante
+                },
+                transaction: _session.Transaction);
         }
 
-        public async Task Excluir(Guid id)
+        public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                DELETE FROM {nameof(Flow)} 
-                WHERE {nameof(Flow.Id)} = @Id;";
+                DELETE FROM {nameof(Flow)}
+                WHERE {nameof(Flow.Id)} = @Id
+                {RecorteDaEmpresa};";
 
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         #endregion

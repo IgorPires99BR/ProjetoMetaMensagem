@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Enums;
 using ProjetoMetaMensagem.Dominio.Help.Error;
@@ -14,10 +15,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public AtivaCoexistenciaHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<AtivaCoexistenciaHandler> _logger;
+
+        public AtivaCoexistenciaHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<AtivaCoexistenciaHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<AtivaCoexistenciaResult>> Handle(AtivaCoexistenciaCommand command)
@@ -66,7 +70,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia
                 numero.DataUltimaSincronizacao = DateTime.Now;
                 numero.DataAtualizacao = DateTime.Now;
 
-                await _unitOfWork.Numero.Alterar(numero);
+                var linhasAfetadas = await _unitOfWork.Numero.Alterar(numero, command.IdEmpresa);
+
+                // Zero linhas: numero inexistente ou de outra empresa. O NumeroId chega pela
+                // query string, entao sem esse recorte daria pra ativar coexistencia em numero
+                // alheio. Mesma mensagem do "nao existe", pra nao confirmar o id ao atacante.
+                if (linhasAfetadas == 0)
+                {
+                    response.AddErro("Número não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new AtivaCoexistenciaResult
                 {
@@ -76,7 +89,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao ativar coexistência: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AtivaCoexistenciaHandler)));
             }
 
             return response;

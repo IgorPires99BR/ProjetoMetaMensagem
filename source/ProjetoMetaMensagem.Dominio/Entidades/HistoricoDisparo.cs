@@ -21,7 +21,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public Guid? TemplateId { get; set; } // Nullable, pois o disparo livre não tem template
         public string TipoDisparo { get; set; } // Ex: "Template" ou "Livre"
         public string Conteudo { get; set; }
-        public string WamidMeta { get; set; }
+        // Nulo quando a Meta recusou o envio e nao devolveu id de mensagem. Precisa ser nulo
+        // (e nao string vazia) porque o indice unico da coluna ignora nulos: com "" o segundo
+        // envio falho estourava violacao de chave duplicada.
+        public string? WamidMeta { get; set; }
         public string? StatusEntrega { get; set; }
         public DateTime DataEnvio { get; set; }
         public string? MidiaId { get; set; }

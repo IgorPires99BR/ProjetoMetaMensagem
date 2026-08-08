@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.Enums;
@@ -20,10 +21,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public CriaTemplateHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<CriaTemplateHandler> _logger;
+
+        public CriaTemplateHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<CriaTemplateHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<CriaTemplateResult>> Handle(CriaTemplateCommand command)
@@ -192,7 +196,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
             {
                 _unitOfWork.Rollback();
                 // Captura e formata erros de HttpClient da Meta ou falhas no banco local
-                response.AddErro($"Falha ao criar o template: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaTemplateHandler)));
             }
 
             return response;

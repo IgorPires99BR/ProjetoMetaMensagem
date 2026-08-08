@@ -248,6 +248,49 @@ builder.Services.AddScoped<IRequestHandler<AlteraFlowCommand, Response<AlteraFlo
 builder.Services.AddScoped<IRequestHandler<ListaConversaPorIdCommand, Response<List<ListaConversaPorIdResult>>>, ListaConversaPorIdHandler>();
 builder.Services.AddScoped<IRequestHandler<RecebeMensagemWebhookCommand, Response<RecebeMensagemWebhookResult>>, RecebeMensagemWebhookHandler>();
 
+// Registros de Tag
+// Estes handlers existiam e estavam expostos por controllers, mas nunca foram registrados aqui --
+// como o Mediator resolve por DI, todo endpoint dessas areas respondia 500 em runtime
+// ("No service for type IRequestHandler<...>"), sem nunca falhar no build.
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag.CriaTagCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag.CriaTagResult>>, ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag.CriaTagHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag.DeletaTagCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag.DeletaTagResult>>, ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag.DeletaTagHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag.ListaTagCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag.ListaTagResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag.ListaTagHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato.AssociarTagsContatoCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato.AssociarTagsContatoResult>>, ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato.AssociarTagsContatoHandler>();
+
+// Registros de Produto
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto.CriaProdutoCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto.CriaProdutoResult>>, ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto.CriaProdutoHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto.AlteraProdutoCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto.AlteraProdutoResult>>, ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto.AlteraProdutoHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto.DeletaProdutoCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto.DeletaProdutoResult>>, ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto.DeletaProdutoHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto.ListaProdutoCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto.ListaProdutoResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto.ListaProdutoHandler>();
+
+// Registros de WebhookConfig
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook.CriaWebhookCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook.CriaWebhookResult>>, ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook.CriaWebhookHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook.DeletaWebhookCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook.DeletaWebhookResult>>, ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook.DeletaWebhookHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook.ListaWebhookCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook.ListaWebhookResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook.ListaWebhookHandler>();
+
+// Registros de Campanha
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha.CriaCampanhaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha.CriaCampanhaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha.CriaCampanhaHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha.CancelaCampanhaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha.CancelaCampanhaResult>>, ProjetoMetaMensagem.Dominio.UseCases.Campanha.CancelaCampanha.CancelaCampanhaHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha.ListaCampanhaCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha.ListaCampanhaResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha.ListaCampanhaHandler>();
+
+// Registros de Pipeline (CRM)
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria.CriaPipelineCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria.CriaPipelineResult>>, ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria.CriaPipelineHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera.AlteraPipelineCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera.AlteraPipelineResult>>, ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera.AlteraPipelineHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Deleta.DeletaPipelineCommand, Response<bool>>, ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Deleta.DeletaPipelineHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista.ListaPipelineCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista.ListaPipelineResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista.ListaPipelineHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas.ObtemPipelineComEtapasCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas.ObtemPipelineComEtapasResult>>, ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemComEtapas.ObtemPipelineComEtapasHandler>();
+
+// Registros de Etapa do Pipeline
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria.CriaEtapaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria.CriaEtapaResult>>, ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria.CriaEtapaHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera.AlteraEtapaCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera.AlteraEtapaResult>>, ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera.AlteraEtapaHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta.DeletaEtapaCommand, Response<bool>>, ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta.DeletaEtapaHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista.ListaEtapaCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista.ListaEtapaResult>>>, ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista.ListaEtapaHandler>();
+
+// Registros de Lead do Pipeline
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.AdicionarLeadCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadResult>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.AdicionarLeadHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadResult>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.RemoverLeadCommand, Response<bool>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.RemoverLeadHandler>();
+
 var app = builder.Build();
  
     app.UseSwagger();

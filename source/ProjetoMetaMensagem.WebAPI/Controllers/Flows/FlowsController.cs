@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
+using ProjetoMetaMensagem.WebAPI.Common;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
 {
@@ -13,9 +15,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
     {
         private readonly IMediator _mediator;
 
-        public FlowsController(IMediator mediator)
+        private readonly ILogger<FlowsController> _logger;
+
+        public FlowsController(IMediator mediator, ILogger<FlowsController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -33,7 +38,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Listar") });
             }
         }
 
@@ -51,7 +56,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Incluir") });
             }
         }
 
@@ -60,6 +65,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
         {
             try
             {
+                // Escopo vem do token, nunca do corpo: senao o proprio atacante o escolheria.
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
                 var resultado = await _mediator.Send(command);
 
                 if (resultado != null)
@@ -69,7 +77,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Alterar") });
             }
         }
 
@@ -79,7 +87,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
         {
             try
             {
-                var resultado = await _mediator.Send(new DeletaFlowCommand(id));
+                var resultado = await _mediator.Send(new DeletaFlowCommand(id)
+                {
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
 
                 if (resultado != null)
                     return Ok(resultado);
@@ -88,7 +99,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowsController.Excluir") });
             }
         }
     }

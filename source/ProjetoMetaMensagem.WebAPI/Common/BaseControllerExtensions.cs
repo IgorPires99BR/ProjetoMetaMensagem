@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Common;
+using System.Text.RegularExpressions;
 
 namespace ProjetoMetaMensagem.WebAPI.Common
 {
@@ -52,18 +53,27 @@ namespace ProjetoMetaMensagem.WebAPI.Common
                     if (error.StartsWith("302:"))
                         return controllerBase.Redirect(error.Substring(4));
                     if (error.StartsWith("400:"))
-                        return controllerBase.BadRequest(response.Erros);
+                        return controllerBase.BadRequest(SemPrefixo(response.Erros));
                     if (error.StartsWith("403:"))
                         return controllerBase.Forbid();
                     if (error.StartsWith("404:"))
-                        return controllerBase.NotFound(response.Erros);
+                        return controllerBase.NotFound(SemPrefixo(response.Erros));
                     if (error.StartsWith("500:"))
-                        return controllerBase.StatusCode(StatusCodes.Status500InternalServerError, response.Erros);
+                        return controllerBase.StatusCode(StatusCodes.Status500InternalServerError, SemPrefixo(response.Erros));
                 }
 
                 return controllerBase.BadRequest(response.Erros);
             }
             return null;
+        }
+
+        // O prefixo "NNN:" só serve pra escolher o status HTTP; ele não pode aparecer
+        // na mensagem que o usuário vê.
+        private static List<string> SemPrefixo(IEnumerable<string> erros)
+        {
+            return erros
+                .Select(erro => Regex.IsMatch(erro, @"^\d{3}:") ? erro.Substring(4) : erro)
+                .ToList();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
@@ -17,7 +18,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
     public class TemplatesController : Controller
     {
         private readonly IMediator _mediator;
-        public TemplatesController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<TemplatesController> _logger;
+
+        public TemplatesController(IMediator mediator, ILogger<TemplatesController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("api/template/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaTemplateCommand command)
@@ -29,7 +36,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Incluir") });
             }
         }
 
@@ -59,7 +66,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.UploadMidiaExemplo") });
             }
         }
 
@@ -73,7 +80,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Listar") });
             }
         }
 
@@ -87,7 +94,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Alterar") });
             }
         }
 
@@ -101,7 +108,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.ListarConexoes") });
             }
         }
 
@@ -115,7 +122,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.IncluirConexao") });
             }
         }
 
@@ -124,12 +131,16 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
         {
             try
             {
-                var resultado = await _mediator.Send(new ExcluiTemplateConexaoCommand(id));
+                // Escopo vem do token, nunca da rota/corpo: senao o proprio atacante o escolheria.
+                var resultado = await _mediator.Send(new ExcluiTemplateConexaoCommand(id)
+                {
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TemplatesController.ExcluirConexao") });
             }
         }
     }

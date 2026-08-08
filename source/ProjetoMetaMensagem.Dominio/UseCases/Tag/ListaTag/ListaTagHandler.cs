@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -13,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ListaTagHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaTagHandler> _logger;
+
+        public ListaTagHandler(IUnitOfWork unitOfWork, ILogger<ListaTagHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ListaTagResult>>> Handle(ListaTagCommand command)
@@ -37,7 +42,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaTagHandler)));
             }
 
             return response;

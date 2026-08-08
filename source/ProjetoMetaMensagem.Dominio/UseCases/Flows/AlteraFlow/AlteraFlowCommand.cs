@@ -19,6 +19,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
 
         // Nova estrutura de etapas vinda da edição na tela
         public List<AlteraFlowEtapaDto> Etapas { get; set; } = new List<AlteraFlowEtapaDto>();
+
+        // Preenchido pelo controller a partir do JWT (null = administrador). Nao confundir com
+        // IdEmpresa, que vem do corpo e por isso o atacante escolhe. Sem esse escopo o UPDATE
+        // casava so pelo Id e permitia reescrever o fluxo de outra empresa.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 
     public class AlteraFlowEtapaDto

@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -15,9 +16,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeletaUsuarioHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<DeletaUsuarioHandler> _logger;
+
+        public DeletaUsuarioHandler(IUnitOfWork unitOfWork, ILogger<DeletaUsuarioHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<DeletaUsuarioResult>> Handle(DeletaUsuarioCommand command)
@@ -36,7 +40,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
                     return response;
                 }
 
-                await _unitOfWork.Usuario.Excluir(command.Id.ToString());
+                var linhasAfetadas = await _unitOfWork.Usuario.Excluir(
+                    command.Id.ToString(), command.EmpresaIdSolicitante);
+
+                // Zero linhas significa que o usuario nao existe OU pertence a outra empresa.
+                // As duas situacoes devolvem a mesma mensagem de proposito: dizer "existe, mas
+                // nao e seu" ja entregaria ao atacante que aquele id e valido.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Usuário não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new DeletaUsuarioResult());
                 _unitOfWork.Commit();
@@ -45,7 +60,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaUsuarioHandler)));
             }
 
             return response;

@@ -12,5 +12,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato
     {
         public Guid ContatoId { get; set; }
         public List<Guid> TagIds { get; set; }
+
+        // Preenchido pelo controller a partir do JWT (null = administrador, enxerga tudo).
+        // Sem esse escopo dava pra reescrever as tags de um contato de outra empresa
+        // mandando o ContatoId no corpo.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 }

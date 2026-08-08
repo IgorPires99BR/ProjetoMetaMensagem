@@ -47,7 +47,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return produto.Id;
         }
 
-        public async Task Alterar(Produto produto)
+        // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
+        // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar produto de outra empresa.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+        public async Task<int> Alterar(Produto produto, Guid? empresaIdSolicitante)
         {
             var sql = $@"
                 UPDATE {nameof(Produto)}
@@ -59,18 +64,35 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Produto.LinkUrl)} = @{nameof(Produto.LinkUrl)},
                     {nameof(Produto.Categoria)} = @{nameof(Produto.Categoria)},
                     {nameof(Produto.Ativo)} = @{nameof(Produto.Ativo)}
-                WHERE {nameof(Produto.Id)} = @{nameof(Produto.Id)}";
+                WHERE {nameof(Produto.Id)} = @{nameof(Produto.Id)}
+                {RecorteDaEmpresa}";
 
-            await _session.Connection.ExecuteAsync(sql, produto, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new
+                {
+                    produto.Id,
+                    produto.Nome,
+                    produto.Descricao,
+                    produto.Preco,
+                    produto.ImagemUrl,
+                    produto.LinkUrl,
+                    produto.Categoria,
+                    produto.Ativo,
+                    EmpresaIdSolicitante = empresaIdSolicitante
+                },
+                transaction: _session.Transaction);
         }
 
-        public async Task Excluir(Guid id)
+        public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
             var sql = $@"
                 DELETE FROM {nameof(Produto)}
-                WHERE {nameof(Produto.Id)} = @Id";
+                WHERE {nameof(Produto.Id)} = @Id
+                {RecorteDaEmpresa}";
 
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<Produto?> ObterPorId(Guid id)

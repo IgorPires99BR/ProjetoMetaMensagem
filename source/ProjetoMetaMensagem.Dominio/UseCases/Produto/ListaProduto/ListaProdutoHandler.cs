@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -10,9 +12,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ListaProdutoHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaProdutoHandler> _logger;
+
+        public ListaProdutoHandler(IUnitOfWork unitOfWork, ILogger<ListaProdutoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ListaProdutoResult>>> Handle(ListaProdutoCommand command)
@@ -34,7 +39,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto
             }
             catch (System.Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaProdutoHandler)));
             }
 
             return response;

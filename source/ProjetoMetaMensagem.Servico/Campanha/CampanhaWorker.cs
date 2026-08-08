@@ -42,7 +42,9 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                             {
                                 _logger.LogInformation("Processando campanha {CampanhaId}: {Nome}", campanha.Id, campanha.Nome);
 
-                                await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "PROCESSANDO");
+                                // Escopo null: o worker roda sem usuario logado e precisa
+                                // atualizar campanhas de todas as empresas.
+                                await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "PROCESSANDO", null);
 
                                 var vinculos = (await unitOfWork.Campanha.ObterContatosPorCampanha(campanha.Id)).ToList();
                                 var todosContatos = await unitOfWork.Contato.Obter();
@@ -98,7 +100,7 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                 var total = vinculos.Count;
                                 var processados = vinculos.Count(v => v.Processado);
 
-                                await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "CONCLUIDA");
+                                await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "CONCLUIDA", null);
 
                                 _logger.LogInformation("Campanha {CampanhaId} concluida com {Total}/{Processados} processados",
                                     campanha.Id, total, processados);
@@ -106,7 +108,7 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Erro ao processar campanha {CampanhaId}", campanha.Id);
-                                await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "ERRO");
+                                await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "ERRO", null);
                             }
                         }
                     }

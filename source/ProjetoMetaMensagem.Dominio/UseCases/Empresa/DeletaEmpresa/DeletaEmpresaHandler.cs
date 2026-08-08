@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -15,9 +16,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeletaEmpresaHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<DeletaEmpresaHandler> _logger;
+
+        public DeletaEmpresaHandler(IUnitOfWork unitOfWork, ILogger<DeletaEmpresaHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
 
@@ -45,7 +49,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaEmpresaHandler)));
             }
 
             return response;

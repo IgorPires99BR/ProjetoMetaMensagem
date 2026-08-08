@@ -1,13 +1,13 @@
-﻿using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FluentValidation;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 {
     public class ObtemContatoValidator : AbstractValidator<ObtemContatoCommand>
     {
+        public ObtemContatoValidator()
+        {
+            RuleFor(x => x.IdEmpresa)
+                .NotEmpty().WithMessage("Não foi possível identificar o usuário logado para listar os contatos.");
+        }
     }
 }

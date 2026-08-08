@@ -1,3 +1,4 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas;
@@ -10,7 +11,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Dashboard
     {
         private readonly IMediator _mediator;
 
-        public DashboardController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<DashboardController> _logger;
+
+        public DashboardController(IMediator mediator, ILogger<DashboardController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpGet("metricas/{empresaId}")]
         public async Task<IActionResult> ObterMetricas(Guid empresaId)
@@ -22,7 +29,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Dashboard
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DashboardController.ObterMetricas") });
             }
         }
     }

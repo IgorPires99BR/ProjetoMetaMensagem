@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Help.Error;
@@ -10,9 +11,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public AlteraProdutoHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<AlteraProdutoHandler> _logger;
+
+        public AlteraProdutoHandler(IUnitOfWork unitOfWork, ILogger<AlteraProdutoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<AlteraProdutoResult>> Handle(AlteraProdutoCommand command)
@@ -31,7 +35,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto
                     return response;
                 }
 
-                await _unitOfWork.Produto.Alterar(new Entidades.Produto(command));
+                var linhasAfetadas = await _unitOfWork.Produto.Alterar(
+                    new Entidades.Produto(command), command.EmpresaIdSolicitante);
+
+                // Zero linhas: produto inexistente ou de outra empresa. Mesma mensagem nos dois
+                // casos, pra nao confirmar ao atacante que o id existe.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Produto não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new AlteraProdutoResult());
                 _unitOfWork.Commit();
@@ -40,7 +54,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraProdutoHandler)));
             }
 
             return response;

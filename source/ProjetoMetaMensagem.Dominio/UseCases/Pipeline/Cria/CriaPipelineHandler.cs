@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
@@ -7,7 +9,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria
     public class CriaPipelineHandler : IRequestHandler<CriaPipelineCommand, Response<CriaPipelineResult>>
     {
         private readonly IPipelineRepository _repository;
-        public CriaPipelineHandler(IPipelineRepository repository) => _repository = repository;
+        private readonly ILogger<CriaPipelineHandler> _logger;
+
+        public CriaPipelineHandler(IPipelineRepository repository, ILogger<CriaPipelineHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
         public async Task<Response<CriaPipelineResult>> Handle(CriaPipelineCommand command)
         {
@@ -24,7 +32,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao criar pipeline: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaPipelineHandler)));
             }
             return response;
         }

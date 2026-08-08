@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
@@ -13,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ListaChatsAtivosHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaChatsAtivosHandler> _logger;
+
+        public ListaChatsAtivosHandler(IUnitOfWork unitOfWork, ILogger<ListaChatsAtivosHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<ListaChatsAtivosResult>> Handle(ListaChatsAtivosCommand command)
@@ -100,7 +105,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao listar chats ativos: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaChatsAtivosHandler)));
             }
 
             return response;

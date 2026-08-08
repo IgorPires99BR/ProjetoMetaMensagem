@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
@@ -8,8 +10,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas
     {
         private readonly IDashboardRepository _dashboardRepository;
 
-        public ObterMetricasHandler(IDashboardRepository dashboardRepository)
-            => _dashboardRepository = dashboardRepository;
+        private readonly ILogger<ObterMetricasHandler> _logger;
+
+        public ObterMetricasHandler(IDashboardRepository dashboardRepository, ILogger<ObterMetricasHandler> logger)
+        {
+            _dashboardRepository = dashboardRepository;
+            _logger = logger;
+        }
 
         public async Task<Response<ObterMetricasDashboardResult>> Handle(ObterMetricasCommand command)
         {
@@ -21,7 +28,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Dashboard.ObterMetricas
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao obter métricas: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObterMetricasHandler)));
             }
             return response;
         }

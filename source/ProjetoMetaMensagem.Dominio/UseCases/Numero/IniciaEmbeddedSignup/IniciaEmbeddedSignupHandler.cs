@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Enums;
 using ProjetoMetaMensagem.Dominio.Help.Error;
@@ -15,10 +16,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public IniciaEmbeddedSignupHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<IniciaEmbeddedSignupHandler> _logger;
+
+        public IniciaEmbeddedSignupHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<IniciaEmbeddedSignupHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<IniciaEmbeddedSignupResult>> Handle(IniciaEmbeddedSignupCommand command)
@@ -77,7 +81,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro($"Falha ao concluir o Embedded Signup: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(IniciaEmbeddedSignupHandler)));
             }
 
             return response;

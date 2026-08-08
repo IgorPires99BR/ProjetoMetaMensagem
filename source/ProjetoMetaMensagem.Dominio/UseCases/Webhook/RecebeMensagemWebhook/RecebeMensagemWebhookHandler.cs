@@ -122,7 +122,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                 Lida = false,
                                 ContatoId = contato?.Id, // Mantém null se o contato não existir no banco
                                 FlowId = null,
-                                DataRecebimento = DateTime.UtcNow
+                                // Todo o resto do sistema grava DateTime.Now (hora local). Gravar
+                                // UTC so aqui fazia a mensagem recebida aparecer 3h no futuro no
+                                // chat e no relatorio, bagunçar a ordenação da lista unificada e
+                                // quebrar o "tempo relativo", que calculava diferença negativa.
+                                DataRecebimento = DateTime.Now
                             };
 
                             // Define o conteúdo conforme o tipo de mensagem
@@ -186,7 +190,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
             }
             catch (Exception ex) 
             {
-                response.AddErro($"Erro ao processar e salvar mensagem recebida: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(RecebeMensagemWebhookHandler)));
             }
 
             return response;

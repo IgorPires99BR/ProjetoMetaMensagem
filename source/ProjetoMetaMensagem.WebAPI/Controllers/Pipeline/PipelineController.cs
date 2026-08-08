@@ -1,3 +1,4 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover;
@@ -10,6 +11,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera;
 using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria;
 using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta;
 using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista;
+using ProjetoMetaMensagem.WebAPI.Common;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
 {
@@ -18,7 +20,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
     public class PipelineController : Controller
     {
         private readonly IMediator _mediator;
-        public PipelineController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<PipelineController> _logger;
+
+        public PipelineController(IMediator mediator, ILogger<PipelineController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("criar")]
         public async Task<IActionResult> Criar([FromBody] CriaPipelineCommand cmd)
@@ -30,7 +38,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Criar") });
             }
         }
 
@@ -51,6 +59,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpPut("alterar")]
         public async Task<IActionResult> Alterar([FromBody] AlteraPipelineCommand cmd)
         {
+            // Escopo vem do token, nunca do corpo/rota: senao o proprio atacante o escolheria.
+            cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
             var resultado = await _mediator.Send(cmd);
             return Ok(resultado);
         }
@@ -58,7 +69,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpDelete("excluir/{id}")]
         public async Task<IActionResult> Excluir(Guid id)
         {
-            var resultado = await _mediator.Send(new DeletaPipelineCommand(id));
+            var resultado = await _mediator.Send(new DeletaPipelineCommand(id)
+            {
+                EmpresaIdSolicitante = this.EmpresaDoEscopo()
+            });
             return Ok(resultado);
         }
 
@@ -73,7 +87,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.CriarEtapa") });
             }
         }
 
@@ -87,6 +101,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpPut("etapa/alterar")]
         public async Task<IActionResult> AlterarEtapa([FromBody] AlteraEtapaCommand cmd)
         {
+            cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
             var resultado = await _mediator.Send(cmd);
             return Ok(resultado);
         }
@@ -94,7 +110,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpDelete("etapa/excluir/{id}")]
         public async Task<IActionResult> ExcluirEtapa(Guid id)
         {
-            var resultado = await _mediator.Send(new DeletaEtapaCommand(id));
+            var resultado = await _mediator.Send(new DeletaEtapaCommand(id)
+            {
+                EmpresaIdSolicitante = this.EmpresaDoEscopo()
+            });
             return Ok(resultado);
         }
 
@@ -109,13 +128,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.AdicionarLead") });
             }
         }
 
         [HttpPut("lead/mover")]
         public async Task<IActionResult> MoverLead([FromBody] MoverLeadCommand cmd)
         {
+            cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
             var resultado = await _mediator.Send(cmd);
             return Ok(resultado);
         }
@@ -123,7 +144,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpDelete("lead/remover/{leadId}")]
         public async Task<IActionResult> RemoverLead(Guid leadId)
         {
-            var resultado = await _mediator.Send(new RemoverLeadCommand(leadId));
+            var resultado = await _mediator.Send(new RemoverLeadCommand(leadId)
+            {
+                EmpresaIdSolicitante = this.EmpresaDoEscopo()
+            });
             return Ok(resultado);
         }
     }

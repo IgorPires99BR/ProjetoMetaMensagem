@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -16,10 +17,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
-        public CriaEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<CriaEmpresaHandler> _logger;
+
+        public CriaEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<CriaEmpresaHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<CriaEmpresaResult>> Handle(CriaEmpresaCommand command)
@@ -47,7 +51,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaEmpresaHandler)));
             }
 
             return response;

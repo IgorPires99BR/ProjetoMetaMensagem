@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -12,9 +13,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ListaWebhookHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaWebhookHandler> _logger;
+
+        public ListaWebhookHandler(IUnitOfWork unitOfWork, ILogger<ListaWebhookHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ListaWebhookResult>>> Handle(ListaWebhookCommand command)
@@ -36,7 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.ListaWebhook
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaWebhookHandler)));
             }
 
             return response;

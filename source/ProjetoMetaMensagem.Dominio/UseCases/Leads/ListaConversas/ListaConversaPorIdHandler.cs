@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
@@ -13,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas
     public class ListaConversaPorIdHandler : IRequestHandler<ListaConversaPorIdCommand, Response<List<ListaConversaPorIdResult>>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public ListaConversaPorIdHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaConversaPorIdHandler> _logger;
+
+        public ListaConversaPorIdHandler(IUnitOfWork unitOfWork, ILogger<ListaConversaPorIdHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ListaConversaPorIdResult>>> Handle(ListaConversaPorIdCommand command)
@@ -46,7 +51,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Leads.ListaConversas
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaConversaPorIdHandler)));
             }
 
             return response;

@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -14,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public CriaContatoEmLoteHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<CriaContatoEmLoteHandler> _logger;
+
+        public CriaContatoEmLoteHandler(IUnitOfWork unitOfWork, ILogger<CriaContatoEmLoteHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<CriaContatoEmLoteResult>> Handle(CriaContatoEmLoteCommand command)
@@ -50,7 +54,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
                     UsuarioId = command.UsuarioId,
                     Nome = item.Nome,
                     Telefone = item.Telefone,
-                    DataCriacao = DateTime.UtcNow
+                    // Hora local, igual ao resto do sistema (a criacao de contato individual
+                    // usa DateTime.Now): misturar os dois deixava a data do contato importado
+                    // adiantada em relacao ao cadastrado pela tela.
+                    DataCriacao = DateTime.Now
                 };
 
                 contatosSalvar.Add(novoContato);
@@ -71,7 +78,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
             {
                 _unitOfWork.Rollback();
 
-                response.AddErro($"Falha ao salvar lote de contatos no banco: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaContatoEmLoteHandler)));
             }
 
             return response;

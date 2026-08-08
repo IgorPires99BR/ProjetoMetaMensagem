@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -14,9 +16,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public AlteraFlowHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<AlteraFlowHandler> _logger;
+
+        public AlteraFlowHandler(IUnitOfWork unitOfWork, ILogger<AlteraFlowHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<AlteraFlowResult>> Handle(AlteraFlowCommand command)
@@ -74,10 +79,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                 // 4. Executa as alterações no banco de dados dentro da mesma transação
 
                 // Atualiza o pai
-                await _unitOfWork.Flow.Alterar(flowExistente);
+                var linhasAfetadas = await _unitOfWork.Flow.Alterar(flowExistente, command.EmpresaIdSolicitante);
+
+                // Zero linhas: fluxo inexistente ou de outra empresa. Mesma mensagem nos dois
+                // casos, pra nao confirmar ao atacante que o id existe.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Fluxo não encontrado.");
+                    return response;
+                }
 
                 // Remove todas as etapas antigas do banco para limpar o Grafo anterior
-                await _unitOfWork.Flow.ExcluirEtapasPorFlowId(flowExistente.Id);
+                await _unitOfWork.Flow.ExcluirEtapasPorFlowId(flowExistente.Id, command.EmpresaIdSolicitante);
 
                 // Insere a nova arvore de etapas atualizada -- de tras pra frente, mesmo motivo
                 // do CriaFlowHandler (ProximaEtapaId e uma FK auto-referenciada em FlowEtapa)
@@ -99,7 +113,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
             {
                 _unitOfWork.Rollback();
                 // Qualquer quebra (no banco ou integração) faz o UnitOfWork reverter tudo, mantendo o estado anterior
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraFlowHandler)));
             }
 
             return response;

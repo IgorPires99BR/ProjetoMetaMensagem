@@ -7,7 +7,11 @@ using ProjetoMetaMensagem.WebAPI.Hubs;
 
 namespace ProjetoMetaMensagem.Controllers
 {
-    [ApiController]
+    // Este controller NAO usa [ApiController] de proposito. Com esse atributo, o ModelState
+    // e validado antes do metodo rodar e o ASP.NET devolve 400 sozinho quando a Meta manda
+    // um payload fora do formato esperado -- anulando o "return Ok()" proposital daqui de
+    // baixo e sem registrar nada no log. A Meta reenvia o evento quando recebe erro e chega
+    // a desativar a assinatura do webhook, entao aqui precisa responder 200 sempre.
     [Route("api/webhook/whatsapp")]
     [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public class WhatsappWebhookController : ControllerBase

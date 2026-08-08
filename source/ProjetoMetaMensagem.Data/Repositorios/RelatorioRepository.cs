@@ -56,8 +56,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var parametros = new
             {
                 EmpresaId = empresaId,
-                DataInicio = dataInicio,
-                DataFim = dataFim,
+                DataInicio = dataInicio?.Date,
+                // O <input type="date"> da tela manda a data com hora 00:00, e a comparacao e
+                // "<= @DataFim". Sem empurrar pro fim do dia, filtrar "de hoje ate hoje" (o caso
+                // mais comum) nao trazia NADA, porque toda mensagem do dia e posterior a 00:00.
+                DataFim = dataFim?.Date.AddDays(1).AddTicks(-1),
                 Skip = pagina * tamanhoPagina,
                 Take = tamanhoPagina
             };

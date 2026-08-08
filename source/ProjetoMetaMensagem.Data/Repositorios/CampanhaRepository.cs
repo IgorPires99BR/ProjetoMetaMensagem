@@ -98,15 +98,20 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { Agora = DateTime.Now }, transaction: _session.Transaction);
         }
 
-        public async Task AtualizarStatus(Guid id, string status)
+        public async Task<int> AtualizarStatus(Guid id, string status, Guid? empresaIdSolicitante)
         {
+            // Recorte de empresa no WHERE: antes o UPDATE casava so pelo Id e qualquer usuario
+            // logado cancelava a campanha de outra empresa mandando o id na rota.
             var sql = $@"
                 UPDATE {nameof(Campanha)}
                 SET {nameof(Campanha.Status)} = @Status
-                WHERE {nameof(Campanha.Id)} = @Id;";
+                WHERE {nameof(Campanha.Id)} = @Id
+                  AND (@EmpresaIdSolicitante IS NULL
+                       OR {nameof(Campanha.EmpresaId)} = @EmpresaIdSolicitante);";
 
-            await _session.Connection.ExecuteAsync(sql,
-                new { Id = id, Status = status }, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, Status = status, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<Campanha?> ObterPorId(Guid id)

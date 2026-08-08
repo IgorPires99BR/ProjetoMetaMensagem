@@ -36,25 +36,48 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
         }
 
-        public async Task Alterar(Template template)
+        // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
+        // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar template de outra empresa.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+        public async Task<int> Alterar(Template template, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                UPDATE {nameof(Template)} 
-                SET 
-                    {nameof(Template.NomeTemplate)} = @NomeTemplate, 
-                    {nameof(Template.Conteudo)} = @Conteudo, 
-                    {nameof(Template.Categoria)} = @Categoria, 
-                    {nameof(Template.ComponentesJson)} = @ComponentesJson, 
+                UPDATE {nameof(Template)}
+                SET
+                    {nameof(Template.NomeTemplate)} = @NomeTemplate,
+                    {nameof(Template.Conteudo)} = @Conteudo,
+                    {nameof(Template.Categoria)} = @Categoria,
+                    {nameof(Template.ComponentesJson)} = @ComponentesJson,
                     {nameof(Template.Status)} = @Status
-                WHERE {nameof(Template.Id)} = @Id";
+                WHERE {nameof(Template.Id)} = @Id
+                {RecorteDaEmpresa}";
 
-            await _session.Connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new
+                {
+                    template.Id,
+                    template.NomeTemplate,
+                    template.Conteudo,
+                    template.Categoria,
+                    template.ComponentesJson,
+                    template.Status,
+                    EmpresaIdSolicitante = empresaIdSolicitante
+                },
+                transaction: _session.Transaction);
         }
 
-        public async Task Excluir(Guid id)
+        public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
-            var sql = $"DELETE FROM {nameof(Template)} WHERE {nameof(Template.Id)} = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            var sql = $@"
+                DELETE FROM {nameof(Template)}
+                WHERE {nameof(Template.Id)} = @Id
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<Template?> ObterPorId(int id)

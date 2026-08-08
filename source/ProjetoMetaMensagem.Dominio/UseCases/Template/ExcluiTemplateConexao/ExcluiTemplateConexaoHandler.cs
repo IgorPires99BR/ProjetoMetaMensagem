@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -11,9 +12,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao
     {
         private readonly ITemplateConexaoRepository _templateConexaoRepository;
 
-        public ExcluiTemplateConexaoHandler(ITemplateConexaoRepository templateConexaoRepository)
+        private readonly ILogger<ExcluiTemplateConexaoHandler> _logger;
+
+        public ExcluiTemplateConexaoHandler(ITemplateConexaoRepository templateConexaoRepository, ILogger<ExcluiTemplateConexaoHandler> logger)
         {
             _templateConexaoRepository = templateConexaoRepository;
+            _logger = logger;
         }
 
         public async Task<Response<ExcluiTemplateConexaoResult>> Handle(ExcluiTemplateConexaoCommand command)
@@ -31,13 +35,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao
                     return response;
                 }
 
-                await _templateConexaoRepository.Excluir(command.Id);
+                var linhasAfetadas = await _templateConexaoRepository.Excluir(command.Id, command.EmpresaIdSolicitante);
+
+                // Zero linhas significa que a conexao nao existe OU pertence a outra empresa.
+                // As duas situacoes devolvem a mesma mensagem de proposito: dizer "existe, mas
+                // nao e sua" ja entregaria ao atacante que aquele id e valido.
+                if (linhasAfetadas == 0)
+                {
+                    response.AddErro("Conexão de template não encontrada.");
+                    return response;
+                }
 
                 response.AddValue(new ExcluiTemplateConexaoResult());
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ExcluiTemplateConexaoHandler)));
             }
 
             return response;

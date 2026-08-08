@@ -1,3 +1,4 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 
@@ -9,9 +10,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public FlowConversationController(IUnitOfWork unitOfWork)
+        private readonly ILogger<FlowConversationController> _logger;
+
+        public FlowConversationController(IUnitOfWork unitOfWork, ILogger<FlowConversationController> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         // GET api/config/flow/{flowId}/conversations
@@ -26,7 +30,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "FlowConversationController.ListarConversations") });
             }
         }
     }

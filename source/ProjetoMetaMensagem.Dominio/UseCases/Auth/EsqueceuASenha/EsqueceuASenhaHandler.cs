@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
@@ -15,10 +17,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha
         private readonly IEmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly int tamanhoSenha = 8;
-        public EsqueceuASenhaHandler(IEmailService whatsappService, IUnitOfWork unitOfWork)
+        private readonly ILogger<EsqueceuASenhaHandler> _logger;
+
+        public EsqueceuASenhaHandler(IEmailService whatsappService, IUnitOfWork unitOfWork, ILogger<EsqueceuASenhaHandler> logger)
         {
             _emailService = whatsappService;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<EsqueceuASenhaResult>> Handle(EsqueceuASenhaCommand command)
@@ -36,22 +41,41 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha
                 }
 
                 const string caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-                var random = new Random();
-                var senha = new string(Enumerable.Repeat(caracteres, tamanhoSenha)
-                        .Select(s => s[random.Next(s.Length)]).ToArray());
+                // Gerador criptografico em vez de System.Random: essa string vira a senha de
+                // acesso do usuario, e o Random comum e previsivel a partir da semente.
+                var senha = new string(Enumerable.Range(0, tamanhoSenha)
+                    .Select(_ => caracteres[System.Security.Cryptography.RandomNumberGenerator.GetInt32(caracteres.Length)])
+                    .ToArray());
 
-                // Antes a senha era gerada e enviada por email, mas nunca era salva no banco --
-                // o usuario recebia uma senha nova que nunca funcionava pra logar.
+                // A troca da senha e o envio do email andam juntos dentro da mesma transacao.
+                // Antes a senha era gravada e comitada ANTES do envio, e o envio falhando so
+                // devolvia false (o EmailService engole a excecao) -- resultado: a senha antiga
+                // parava de funcionar, a nova nunca chegava por email e o usuario ficava
+                // trancado fora da conta, com a tela dizendo que o email tinha sido enviado.
+                _unitOfWork.BeginTransaction();
+
                 usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(senha);
-                await _unitOfWork.Usuario.Alterar(usuario);
+                // null = sem recorte por empresa: a recuperacao de senha roda sem usuario
+                // logado, e o usuario alvo ja foi resolvido pelo proprio email informado.
+                await _unitOfWork.Usuario.Alterar(usuario, null);
 
-                await _emailService.EnviarEmailAsync(command.Email, senha);
+                var emailEnviado = await _emailService.EnviarEmailAsync(command.Email, senha);
+                if (!emailEnviado)
+                {
+                    _unitOfWork.Rollback();
+                    _logger.LogError("Falha ao enviar o e-mail de recuperacao de senha para {Email}", command.Email);
+                    response.AddErro("Não foi possível enviar o e-mail de recuperação agora. Tente novamente em alguns minutos.");
+                    return response;
+                }
+
+                _unitOfWork.Commit();
 
                 response.AddValue(new EsqueceuASenhaResult());
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                _unitOfWork.Rollback();
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EsqueceuASenhaHandler)));
             }
 
             return response;

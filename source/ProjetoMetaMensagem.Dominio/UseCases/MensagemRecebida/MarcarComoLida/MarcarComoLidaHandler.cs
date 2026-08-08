@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -10,9 +12,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public MarcarComoLidaHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<MarcarComoLidaHandler> _logger;
+
+        public MarcarComoLidaHandler(IUnitOfWork unitOfWork, ILogger<MarcarComoLidaHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<MarcarComoLidaResult>> Handle(MarcarComoLidaCommand command)
@@ -28,7 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao marcar mensagens como lidas: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(MarcarComoLidaHandler)));
             }
 
             return response;

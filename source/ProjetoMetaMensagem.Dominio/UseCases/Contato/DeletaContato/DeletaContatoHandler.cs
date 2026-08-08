@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
@@ -14,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeletaContatoHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<DeletaContatoHandler> _logger;
+
+        public DeletaContatoHandler(IUnitOfWork unitOfWork, ILogger<DeletaContatoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<DeletaContatoResult>> Handle(DeletaContatoCommand command)
@@ -35,8 +39,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
                     return response;
                 }
 
-                // Lógica para remover o contato via UnitOfWork aqui
-                await _unitOfWork.Contato.Excluir(command.Id);
+                var linhasAfetadas = await _unitOfWork.Contato.Excluir(command.Id, command.EmpresaIdSolicitante);
+
+                // Zero linhas significa que o contato nao existe OU pertence a outra empresa.
+                // As duas situacoes devolvem a mesma mensagem de proposito: dizer "existe, mas
+                // nao e seu" ja entregaria ao atacante que aquele id e valido.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Contato não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new DeletaContatoResult());
                 _unitOfWork.Commit();
@@ -45,7 +58,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaContatoHandler)));
             }
 
             return response;

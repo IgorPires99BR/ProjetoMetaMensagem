@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
@@ -14,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public AlteraNumeroHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<AlteraNumeroHandler> _logger;
+
+        public AlteraNumeroHandler(IUnitOfWork unitOfWork, ILogger<AlteraNumeroHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<AlteraNumeroResult>> Handle(AlteraNumeroCommand command)
@@ -35,8 +39,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
                     return response;
                 }
 
-                // Lógica de alteração (Exemplo)
-                await _unitOfWork.Numero.Alterar(new Entidades.Numero(command));
+                var linhasAfetadas = await _unitOfWork.Numero.Alterar(
+                    new Entidades.Numero(command), command.EmpresaIdSolicitante);
+
+                // Zero linhas: numero inexistente ou de outra empresa. Mesma mensagem nos dois
+                // casos, pra nao confirmar ao atacante que o id existe.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Número não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new AlteraNumeroResult());
                 _unitOfWork.Commit();
@@ -45,7 +58,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraNumeroHandler)));
             }
 
             return response;

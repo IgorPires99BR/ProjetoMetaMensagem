@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplateLote;
@@ -21,10 +22,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         private readonly IUnitOfWork _unitOfWork;
 
 
-        public EnviarMensagemTemplateMetaLoteHandler(IMetaService metaService, IUnitOfWork unitOfWork)
+        private readonly ILogger<EnviarMensagemTemplateMetaLoteHandler> _logger;
+
+        public EnviarMensagemTemplateMetaLoteHandler(IMetaService metaService, IUnitOfWork unitOfWork, ILogger<EnviarMensagemTemplateMetaLoteHandler> logger)
         {
             _metaService = metaService;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<EnviarMensagemTemplateMetaLoteResult>> Handle(EnviarMensagemTemplateMetaLoteCommand command)
@@ -94,7 +98,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             }
             catch (Exception ex) 
             {
-                response.AddErro($"Falha crítica ao processar disparo em lote: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EnviarMensagemTemplateMetaLoteHandler)));
             }
 
 

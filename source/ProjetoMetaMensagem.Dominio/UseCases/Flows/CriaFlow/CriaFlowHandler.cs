@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -8,9 +10,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
     public class CriaFlowHandler : IRequestHandler<CriaFlowCommand, Response<CriaFlowResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public CriaFlowHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<CriaFlowHandler> _logger;
+
+        public CriaFlowHandler(IUnitOfWork unitOfWork, ILogger<CriaFlowHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<CriaFlowResult>> Handle(CriaFlowCommand command)
@@ -77,7 +82,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
                 _unitOfWork.Rollback();
                 // Caso ocorra qualquer erro no processo do banco ou da Meta, a transação sofre rollback
                 // e o banco não fica com dados fragmentados.
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaFlowHandler)));
             }
 
             return response;

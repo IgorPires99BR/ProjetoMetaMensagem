@@ -1,13 +1,13 @@
-﻿using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FluentValidation;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros
 {
     public class ListarNumerosValidator : AbstractValidator<ListarNumerosCommand>
     {
+        public ListarNumerosValidator()
+        {
+            RuleFor(x => x.IdUsuario)
+                .NotEmpty().WithMessage("Não foi possível identificar o usuário logado para listar os números.");
+        }
     }
 }

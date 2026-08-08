@@ -1,3 +1,4 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Produto.CriaProduto;
@@ -16,7 +17,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
     {
         private readonly IMediator _mediator;
 
-        public ProdutosController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<ProdutosController> _logger;
+
+        public ProdutosController(IMediator mediator, ILogger<ProdutosController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("api/v2/produto/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaProdutoCommand command)
@@ -28,7 +35,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Incluir") });
             }
         }
 
@@ -37,12 +44,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
         {
             try
             {
+                // Escopo vem do token, nunca do corpo: senao o proprio atacante o escolheria.
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
                 var resultado = await _mediator.Send(command);
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Alterar") });
             }
         }
 
@@ -51,12 +61,16 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
         {
             try
             {
-                var resultado = await _mediator.Send(new DeletaProdutoCommand { Id = id });
+                var resultado = await _mediator.Send(new DeletaProdutoCommand
+                {
+                    Id = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.Excluir") });
             }
         }
 
@@ -70,7 +84,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Produto
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ProdutosController.ListarPorEmpresa") });
             }
         }
     }

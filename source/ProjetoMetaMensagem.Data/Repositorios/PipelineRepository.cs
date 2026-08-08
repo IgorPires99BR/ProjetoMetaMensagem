@@ -16,19 +16,49 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, pipeline, transaction: _session.Transaction);
         }
 
-        public async Task Alterar(Pipeline pipeline)
+        // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
+        // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar pipeline de outra empresa.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+        // PipelineEtapa nao guarda EmpresaId: o vinculo passa pelo Pipeline.
+        private const string RecorteDaEmpresaPelaEtapa = @"
+              AND (@EmpresaIdSolicitante IS NULL
+                   OR PipelineId IN (SELECT Id FROM Pipeline WHERE EmpresaId = @EmpresaIdSolicitante))";
+
+        public async Task<int> Alterar(Pipeline pipeline, Guid? empresaIdSolicitante)
         {
-            var sql = "UPDATE Pipeline SET Nome = @Nome WHERE Id = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { pipeline.Nome, pipeline.Id }, transaction: _session.Transaction);
+            var sql = $@"
+                UPDATE Pipeline SET Nome = @Nome
+                WHERE Id = @Id
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { pipeline.Nome, pipeline.Id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
-        public async Task Excluir(Guid id)
+        public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
-            var sqlEtapas = "DELETE FROM PipelineEtapa WHERE PipelineId = @Id";
-            await _session.Connection.ExecuteAsync(sqlEtapas, new { Id = id }, transaction: _session.Transaction);
+            // O mesmo escopo vai na cascata, senao as etapas de um pipeline alheio seriam
+            // apagadas antes do DELETE do proprio Pipeline ser barrado.
+            var sqlEtapas = $@"
+                DELETE FROM PipelineEtapa
+                WHERE PipelineId = @Id
+                {RecorteDaEmpresaPelaEtapa}";
 
-            var sql = "DELETE FROM Pipeline WHERE Id = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sqlEtapas,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
+
+            var sql = $@"
+                DELETE FROM Pipeline
+                WHERE Id = @Id
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<Pipeline?> ObterPorId(Guid id)
@@ -58,21 +88,47 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
         }
 
-        public async Task AlterarEtapa(PipelineEtapa etapa)
+        public async Task<int> AlterarEtapa(PipelineEtapa etapa, Guid? empresaIdSolicitante)
         {
-            var sql = @"UPDATE PipelineEtapa SET Nome = @Nome, Ordem = @Ordem, Cor = @Cor,
+            var sql = $@"UPDATE PipelineEtapa SET Nome = @Nome, Ordem = @Ordem, Cor = @Cor,
                         DispararAoEntrar = @DispararAoEntrar, TemplateIdAoEntrar = @TemplateIdAoEntrar
-                        WHERE Id = @Id";
-            await _session.Connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
+                        WHERE Id = @Id
+                        {RecorteDaEmpresaPelaEtapa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new
+                {
+                    etapa.Id,
+                    etapa.Nome,
+                    etapa.Ordem,
+                    etapa.Cor,
+                    etapa.DispararAoEntrar,
+                    etapa.TemplateIdAoEntrar,
+                    EmpresaIdSolicitante = empresaIdSolicitante
+                },
+                transaction: _session.Transaction);
         }
 
-        public async Task ExcluirEtapa(Guid id)
+        public async Task<int> ExcluirEtapa(Guid id, Guid? empresaIdSolicitante)
         {
-            var sqlLeads = "DELETE FROM LeadPipeline WHERE PipelineEtapaId = @Id";
-            await _session.Connection.ExecuteAsync(sqlLeads, new { Id = id }, transaction: _session.Transaction);
+            // LeadPipeline tem EmpresaId proprio, entao a cascata usa o recorte direto.
+            var sqlLeads = @"
+                DELETE FROM LeadPipeline
+                WHERE PipelineEtapaId = @Id
+                  AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
 
-            var sql = "DELETE FROM PipelineEtapa WHERE Id = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            await _session.Connection.ExecuteAsync(sqlLeads,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
+
+            var sql = $@"
+                DELETE FROM PipelineEtapa
+                WHERE Id = @Id
+                {RecorteDaEmpresaPelaEtapa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<PipelineEtapa?> ObterEtapaPorId(Guid id)
@@ -99,16 +155,37 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, lead, transaction: _session.Transaction);
         }
 
-        public async Task MoverLead(Guid leadId, Guid novaEtapaId)
+        public async Task<int> MoverLead(Guid leadId, Guid novaEtapaId, Guid? empresaIdSolicitante)
         {
-            var sql = "UPDATE LeadPipeline SET PipelineEtapaId = @NovaEtapaId, DataUltimaAlteracao = GETDATE() WHERE Id = @LeadId";
-            await _session.Connection.ExecuteAsync(sql, new { LeadId = leadId, NovaEtapaId = novaEtapaId }, transaction: _session.Transaction);
+            // Alem de exigir que o lead seja da empresa, a etapa de destino tambem precisa ser:
+            // caso contrario daria pra empurrar um lead proprio pra dentro do funil de outra
+            // empresa, que passaria a ve-lo.
+            var sql = @"
+                UPDATE LeadPipeline
+                SET PipelineEtapaId = @NovaEtapaId, DataUltimaAlteracao = GETDATE()
+                WHERE Id = @LeadId
+                  AND (@EmpresaIdSolicitante IS NULL
+                       OR (EmpresaId = @EmpresaIdSolicitante
+                           AND @NovaEtapaId IN (
+                               SELECT pe.Id FROM PipelineEtapa pe
+                               INNER JOIN Pipeline p ON p.Id = pe.PipelineId
+                               WHERE p.EmpresaId = @EmpresaIdSolicitante)))";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { LeadId = leadId, NovaEtapaId = novaEtapaId, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
-        public async Task RemoverLead(Guid leadId)
+        public async Task<int> RemoverLead(Guid leadId, Guid? empresaIdSolicitante)
         {
-            var sql = "DELETE FROM LeadPipeline WHERE Id = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = leadId }, transaction: _session.Transaction);
+            var sql = @"
+                DELETE FROM LeadPipeline
+                WHERE Id = @Id
+                  AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = leadId, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<LeadPipeline?> ObterLead(Guid id)
@@ -124,10 +201,20 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return count > 0;
         }
 
-        public async Task<int> ContarLeadsPorEtapa(Guid etapaId)
+        public async Task<int> ContarLeadsPorEtapa(Guid etapaId, Guid? empresaIdSolicitante)
         {
-            var sql = "SELECT COUNT(1) FROM LeadPipeline WHERE PipelineEtapaId = @EtapaId";
-            return await _session.Connection.ExecuteScalarAsync<int>(sql, new { EtapaId = etapaId }, transaction: _session.Transaction);
+            // Recorte aqui tambem: sem ele, uma etapa de outra empresa devolveria a contagem
+            // real e o handler responderia "etapa com leads" -- confirmando ao atacante que
+            // aquele id existe. Com o recorte a contagem da 0 e o fluxo cai na mensagem
+            // generica de "nao encontrada" do proprio DELETE.
+            var sql = @"
+                SELECT COUNT(1) FROM LeadPipeline
+                WHERE PipelineEtapaId = @EtapaId
+                  AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+            return await _session.Connection.ExecuteScalarAsync<int>(sql,
+                new { EtapaId = etapaId, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
@@ -14,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public AlteraContatoHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<AlteraContatoHandler> _logger;
+
+        public AlteraContatoHandler(IUnitOfWork unitOfWork, ILogger<AlteraContatoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<AlteraContatoResult>> Handle(AlteraContatoCommand command)
@@ -35,8 +39,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
                     return response;
                 }
 
-                // Lógica para atualizar o contato via UnitOfWork aqui
-                await _unitOfWork.Contato.Alterar(new Entidades.Contato(command));
+                var linhasAfetadas = await _unitOfWork.Contato.Alterar(
+                    new Entidades.Contato(command), command.EmpresaIdSolicitante);
+
+                // Zero linhas: contato inexistente ou de outra empresa. Mesma mensagem nos dois
+                // casos, pra nao confirmar ao atacante que o id existe.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Contato não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new AlteraContatoResult());
                 _unitOfWork.Commit();
@@ -45,7 +58,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraContatoHandler)));
             }
 
             return response;

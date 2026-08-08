@@ -1,3 +1,4 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens;
@@ -12,7 +13,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
     public class RelatorioController : Controller
     {
         private readonly IMediator _mediator;
-        public RelatorioController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<RelatorioController> _logger;
+
+        public RelatorioController(IMediator mediator, ILogger<RelatorioController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         // GET /api/relatorio/mensagens/{empresaId}?dataInicio=&dataFim=&pagina=&tamanho=
         [HttpGet("api/relatorio/mensagens/{empresaId}")]
@@ -34,7 +41,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "RelatorioController.Mensagens") });
             }
         }
     }

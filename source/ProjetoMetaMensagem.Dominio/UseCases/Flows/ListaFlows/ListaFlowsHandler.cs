@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
@@ -12,9 +14,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
     public class ListaFlowsHandler : IRequestHandler<ListaFlowsCommand, Response<List<ListaFlowsResult>>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public ListaFlowsHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaFlowsHandler> _logger;
+
+        public ListaFlowsHandler(IUnitOfWork unitOfWork, ILogger<ListaFlowsHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ListaFlowsResult>>> Handle(ListaFlowsCommand command)
@@ -45,7 +50,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaFlowsHandler)));
             }
 
             return response;

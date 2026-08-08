@@ -83,10 +83,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return empresa.Id;
         }
 
-        public async Task Excluir(string id)
+        public async Task<int> Excluir(string id)
         {
             var sql = $"DELETE FROM {nameof(Empresa)} WHERE {nameof(Empresa.Id)} = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
         public async Task<string?> ObterMetaAccessToken(Guid id)

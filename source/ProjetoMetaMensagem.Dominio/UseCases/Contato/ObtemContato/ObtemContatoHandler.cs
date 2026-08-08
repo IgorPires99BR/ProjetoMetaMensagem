@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
@@ -14,9 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ObtemContatoHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ObtemContatoHandler> _logger;
+
+        public ObtemContatoHandler(IUnitOfWork unitOfWork, ILogger<ObtemContatoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ObtemContatoResult>>> Handle(ObtemContatoCommand command)
@@ -47,7 +51,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemContatoHandler)));
             }
 
             return response;

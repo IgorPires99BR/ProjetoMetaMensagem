@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
@@ -7,7 +9,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista
     public class ListaPipelineHandler : IRequestHandler<ListaPipelineCommand, Response<List<ListaPipelineResult>>>
     {
         private readonly IPipelineRepository _repository;
-        public ListaPipelineHandler(IPipelineRepository repository) => _repository = repository;
+        private readonly ILogger<ListaPipelineHandler> _logger;
+
+        public ListaPipelineHandler(IPipelineRepository repository, ILogger<ListaPipelineHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
         public async Task<Response<List<ListaPipelineResult>>> Handle(ListaPipelineCommand command)
         {
@@ -21,7 +29,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista
                     var etapas = await _repository.ListarEtapas(p.Id);
                     var totalLeads = 0;
                     foreach (var e in etapas)
-                        totalLeads += await _repository.ContarLeadsPorEtapa(e.Id);
+                        totalLeads += await _repository.ContarLeadsPorEtapa(e.Id, command.EmpresaId);
 
                     results.Add(new ListaPipelineResult
                     {
@@ -37,7 +45,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Lista
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao listar pipelines: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaPipelineHandler)));
             }
             return response;
         }

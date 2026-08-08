@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
@@ -7,7 +9,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria
     public class CriaEtapaHandler : IRequestHandler<CriaEtapaCommand, Response<CriaEtapaResult>>
     {
         private readonly IPipelineRepository _repository;
-        public CriaEtapaHandler(IPipelineRepository repository) => _repository = repository;
+        private readonly ILogger<CriaEtapaHandler> _logger;
+
+        public CriaEtapaHandler(IPipelineRepository repository, ILogger<CriaEtapaHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
         public async Task<Response<CriaEtapaResult>> Handle(CriaEtapaCommand command)
         {
@@ -34,7 +42,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao criar etapa: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaEtapaHandler)));
             }
             return response;
         }

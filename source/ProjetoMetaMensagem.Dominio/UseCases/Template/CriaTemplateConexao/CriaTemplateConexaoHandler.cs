@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -12,9 +13,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao
     {
         private readonly ITemplateConexaoRepository _templateConexaoRepository;
 
-        public CriaTemplateConexaoHandler(ITemplateConexaoRepository templateConexaoRepository)
+        private readonly ILogger<CriaTemplateConexaoHandler> _logger;
+
+        public CriaTemplateConexaoHandler(ITemplateConexaoRepository templateConexaoRepository, ILogger<CriaTemplateConexaoHandler> logger)
         {
             _templateConexaoRepository = templateConexaoRepository;
+            _logger = logger;
         }
 
         public async Task<Response<CriaTemplateConexaoResult>> Handle(CriaTemplateConexaoCommand command)
@@ -56,7 +60,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaTemplateConexaoHandler)));
             }
 
             return response;

@@ -1,4 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 
@@ -8,9 +10,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public CriaCampanhaHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<CriaCampanhaHandler> _logger;
+
+        public CriaCampanhaHandler(IUnitOfWork unitOfWork, ILogger<CriaCampanhaHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<CriaCampanhaResult>> Handle(CriaCampanhaCommand command)
@@ -51,7 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro ao criar campanha: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaCampanhaHandler)));
             }
 
             return response;

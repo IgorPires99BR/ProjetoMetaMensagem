@@ -42,17 +42,34 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
         }
 
-        public async Task Alterar(Usuario usuario)
+        // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
+        // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar usuario de outra empresa.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+        // empresaIdSolicitante e opcional porque a redefinicao de senha (EsqueceuASenha) roda
+        // sem usuario logado -- ali nao existe escopo a aplicar e o recorte fica desligado.
+        public async Task<int> Alterar(Usuario usuario, Guid? empresaIdSolicitante = null)
         {
             var sql = $@"
-                UPDATE {nameof(Usuario)} 
-                SET 
-                    {nameof(Usuario.Nome)} = @Nome, 
-                    {nameof(Usuario.Email)} = @Email, 
+                UPDATE {nameof(Usuario)}
+                SET
+                    {nameof(Usuario.Nome)} = @Nome,
+                    {nameof(Usuario.Email)} = @Email,
                     {nameof(Usuario.SenhaHash)} = @SenhaHash
-                WHERE {nameof(Usuario.Id)} = @Id";
+                WHERE {nameof(Usuario.Id)} = @Id
+                {RecorteDaEmpresa}";
 
-            await _session.Connection.ExecuteAsync(sql, usuario, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new
+                {
+                    usuario.Id,
+                    usuario.Nome,
+                    usuario.Email,
+                    usuario.SenhaHash,
+                    EmpresaIdSolicitante = empresaIdSolicitante
+                },
+                transaction: _session.Transaction);
         }
 
         public async Task<Usuario?> ObterPorEmail(string email)
@@ -82,10 +99,16 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             );
         }
 
-        public async Task Excluir(string id)
+        public async Task<int> Excluir(string id, Guid? empresaIdSolicitante)
         {
-            var sql = $"DELETE FROM {nameof(Usuario)} WHERE {nameof(Usuario.Id)} = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            var sql = $@"
+                DELETE FROM {nameof(Usuario)}
+                WHERE {nameof(Usuario.Id)} = @Id
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Usuario>> ObterPorEmpresa(Guid id)

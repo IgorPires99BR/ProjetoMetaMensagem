@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -12,9 +13,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public CriaWebhookHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<CriaWebhookHandler> _logger;
+
+        public CriaWebhookHandler(IUnitOfWork unitOfWork, ILogger<CriaWebhookHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<CriaWebhookResult>> Handle(CriaWebhookCommand command)
@@ -49,7 +53,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaWebhookHandler)));
             }
 
             return response;

@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -10,9 +12,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ListaRelatorioMensagensHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaRelatorioMensagensHandler> _logger;
+
+        public ListaRelatorioMensagensHandler(IUnitOfWork unitOfWork, ILogger<ListaRelatorioMensagensHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<ListaRelatorioMensagensResult>> Handle(ListaRelatorioMensagensCommand command)
@@ -28,7 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao gerar relatório de mensagens: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaRelatorioMensagensHandler)));
             }
 
             return response;

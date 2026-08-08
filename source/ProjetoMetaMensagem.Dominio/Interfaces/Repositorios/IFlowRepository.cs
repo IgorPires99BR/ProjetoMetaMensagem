@@ -19,8 +19,11 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task Incluir(Flow flow);
         Task IncluirEtapa(FlowEtapa etapa);
 
-        Task ExcluirEtapasPorFlowId(Guid flowId);
-        Task Alterar(Flow flow);
-        Task Excluir(Guid id);
+        // empresaIdSolicitante restringe a operacao aos fluxos da empresa informada.
+        // null = administrador (sem restricao). Flow tem EmpresaId proprio; FlowEtapa nao,
+        // e chega na empresa pelo Flow.
+        Task<int> ExcluirEtapasPorFlowId(Guid flowId, Guid? empresaIdSolicitante);
+        Task<int> Alterar(Flow flow, Guid? empresaIdSolicitante);
+        Task<int> Excluir(Guid id, Guid? empresaIdSolicitante);
     }
 }

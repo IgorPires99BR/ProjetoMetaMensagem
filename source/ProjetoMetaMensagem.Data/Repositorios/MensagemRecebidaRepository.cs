@@ -33,12 +33,24 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return result.ToList();
         }
 
+        // Mensagem sem ContatoId (numero que escreveu antes de virar cadastro) so pode entrar
+        // nesta conversa se o telefone do remetente for o mesmo do contato. O criterio antigo
+        // era "ContatoId = @ContatoId OR ContatoId IS NULL", o que jogava toda mensagem de
+        // numero desconhecido dentro de TODAS as conversas da empresa.
+        private const string FiltroDaConversa = @"
+                WHERE m.EmpresaId = @EmpresaId
+                  AND ( m.ContatoId = @ContatoId
+                        OR ( m.ContatoId IS NULL
+                             AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(m.TelefoneRemetente, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '')
+                                 = (SELECT REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '')
+                                    FROM Contato c WHERE c.Id = @ContatoId) ) )";
+
         public async Task<List<MensagemRecebida>> ListarPorContato(Guid empresaId, Guid contatoId)
         {
-            var sql = @"
-                SELECT * FROM MensagemRecebida
-                WHERE EmpresaId = @EmpresaId AND (ContatoId = @ContatoId OR ContatoId IS NULL)
-                ORDER BY DataRecebimento ASC";
+            var sql = $@"
+                SELECT m.* FROM MensagemRecebida m
+                {FiltroDaConversa}
+                ORDER BY m.DataRecebimento ASC";
 
             var result = await _session.Connection.QueryAsync<MensagemRecebida>(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
             return result.ToList();
@@ -46,10 +58,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<List<MensagemRecebida>> ListarPorContatoPaginado(Guid empresaId, Guid contatoId, int pagina, int tamanhoPagina)
         {
-            var sql = @"
-                SELECT * FROM MensagemRecebida
-                WHERE EmpresaId = @EmpresaId AND (ContatoId = @ContatoId OR ContatoId IS NULL)
-                ORDER BY DataRecebimento DESC
+            var sql = $@"
+                SELECT m.* FROM MensagemRecebida m
+                {FiltroDaConversa}
+                ORDER BY m.DataRecebimento DESC
                 OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY";
 
             var result = await _session.Connection.QueryAsync<MensagemRecebida>(sql,

@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
@@ -7,7 +9,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera
     public class AlteraEtapaHandler : IRequestHandler<AlteraEtapaCommand, Response<AlteraEtapaResult>>
     {
         private readonly IPipelineRepository _repository;
-        public AlteraEtapaHandler(IPipelineRepository repository) => _repository = repository;
+        private readonly ILogger<AlteraEtapaHandler> _logger;
+
+        public AlteraEtapaHandler(IPipelineRepository repository, ILogger<AlteraEtapaHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
         public async Task<Response<AlteraEtapaResult>> Handle(AlteraEtapaCommand command)
         {
@@ -25,12 +33,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Altera
                 etapa.Cor = command.Cor;
                 etapa.DispararAoEntrar = command.DispararAoEntrar;
                 etapa.TemplateIdAoEntrar = command.TemplateIdAoEntrar;
-                await _repository.AlterarEtapa(etapa);
+                var linhasAfetadas = await _repository.AlterarEtapa(etapa, command.EmpresaIdSolicitante);
+
+                // Zero linhas: etapa inexistente ou de outra empresa. Mesma mensagem nos dois
+                // casos, pra nao confirmar ao atacante que o id existe.
+                if (linhasAfetadas == 0)
+                {
+                    response.AddErro("Etapa não encontrada.");
+                    return response;
+                }
+
                 response.AddValue(new AlteraEtapaResult { Id = etapa.Id, Nome = etapa.Nome });
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao alterar etapa: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraEtapaHandler)));
             }
             return response;
         }

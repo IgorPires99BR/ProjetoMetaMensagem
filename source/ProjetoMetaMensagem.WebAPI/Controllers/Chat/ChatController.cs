@@ -1,3 +1,4 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -16,9 +17,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
     {
         private readonly IMediator _mediator;
         
-        public ChatController(IMediator mediator)
+        private readonly ILogger<ChatController> _logger;
+
+        public ChatController(IMediator mediator, ILogger<ChatController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         // GET /api/chat/conversas/{empresaId}
@@ -41,7 +45,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.ListarConversas") });
             }
         }
 
@@ -73,7 +77,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.ListarMensagens") });
             }
         }
 
@@ -99,7 +103,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.MarcarComoLida") });
             }
         }
         // GET /api/chat/midia/{midiaId}?empresaId=...
@@ -126,7 +130,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ChatController.ObtemMidia") });
             }
         }
     }

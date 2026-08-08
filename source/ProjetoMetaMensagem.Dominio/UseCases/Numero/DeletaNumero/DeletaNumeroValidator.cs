@@ -1,13 +1,13 @@
-﻿using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FluentValidation;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero
 {
     public class DeletaNumeroValidator : AbstractValidator<DeletaNumeroCommand>
     {
+        public DeletaNumeroValidator()
+        {
+            RuleFor(x => x.Id)
+                .NotEmpty().WithMessage("Informe o número que será excluído.");
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
@@ -17,10 +18,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public CriaNumeroHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<CriaNumeroHandler> _logger;
+
+        public CriaNumeroHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<CriaNumeroHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<CriaNumeroResult>> Handle(CriaNumeroCommand command)
@@ -78,7 +82,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
             {
                 _unitOfWork.Rollback();
                 // Captura falhas de comunicação com a API ou erros internos do banco
-                response.AddErro($"Falha ao cadastrar número: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(CriaNumeroHandler)));
             }
 
             return response;

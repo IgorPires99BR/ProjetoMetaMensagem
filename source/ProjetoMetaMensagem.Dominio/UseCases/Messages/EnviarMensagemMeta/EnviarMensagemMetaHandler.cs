@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -17,10 +19,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
         private readonly IMetaService _whatsappService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public EnviarMensagemMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork)
+        private readonly ILogger<EnviarMensagemMetaHandler> _logger;
+
+        public EnviarMensagemMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork, ILogger<EnviarMensagemMetaHandler> logger)
         {
             _whatsappService = whatsappService;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<EnviarMensagemMetaResult>> Handle(EnviarMensagemMetaCommand command)
@@ -43,7 +48,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                     ContatoId = command.ContatoId,
                     TipoDisparo = "Livre",
                     Conteudo = command.textoMensagem,
-                    WamidMeta = wamid ?? "",
+                    WamidMeta = wamid,
                     DataEnvio = DateTime.Now
                 };
 
@@ -61,7 +66,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EnviarMensagemMetaHandler)));
             }
 
             return response;

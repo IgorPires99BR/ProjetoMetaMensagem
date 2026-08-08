@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -12,10 +14,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia
         private readonly IMetaService _metaService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ObtemMidiaHandler(IMetaService metaService, IUnitOfWork unitOfWork)
+        private readonly ILogger<ObtemMidiaHandler> _logger;
+
+        public ObtemMidiaHandler(IMetaService metaService, IUnitOfWork unitOfWork, ILogger<ObtemMidiaHandler> logger)
         {
             _metaService = metaService;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<ObtemMidiaResult>> Handle(ObtemMidiaCommand command)
@@ -48,7 +53,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao obter mídia: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemMidiaHandler)));
             }
 
             return response;

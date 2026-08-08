@@ -19,5 +19,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraNumero
 
         public string? InstanciaId { get; set; }
 
+        // Preenchido pelo controller a partir do JWT (null = administrador). Sem isso o UPDATE
+        // casava so pelo Id e permitia alterar numero de outra empresa.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 }

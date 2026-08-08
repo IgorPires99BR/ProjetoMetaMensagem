@@ -45,23 +45,46 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
         }
 
-        public async Task Alterar(Contato contato)
+        // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
+        // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar contato de outra empresa.
+        // Contato nao guarda EmpresaId: o vinculo passa por Usuario.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL
+                   OR UsuarioId IN (SELECT Id FROM Usuario WHERE EmpresaId = @EmpresaIdSolicitante))";
+
+        public async Task<int> Alterar(Contato contato, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                UPDATE {nameof(Contato)} 
-                SET 
-                    {nameof(Contato.Telefone)} = @Telefone, 
-                    {nameof(Contato.Nome)} = @Nome, 
+                UPDATE {nameof(Contato)}
+                SET
+                    {nameof(Contato.Telefone)} = @Telefone,
+                    {nameof(Contato.Nome)} = @Nome,
                     {nameof(Contato.Email)} = @Email
-                WHERE {nameof(Contato.Id)} = @Id";
+                WHERE {nameof(Contato.Id)} = @Id
+                {RecorteDaEmpresa}";
 
-            await _session.Connection.ExecuteAsync(sql, contato, transaction: _session.Transaction);
+            return await _session.Connection.ExecuteAsync(sql,
+                new
+                {
+                    contato.Id,
+                    contato.Telefone,
+                    contato.Nome,
+                    contato.Email,
+                    EmpresaIdSolicitante = empresaIdSolicitante
+                },
+                transaction: _session.Transaction);
         }
 
-        public async Task Excluir(string id)
+        public async Task<int> Excluir(string id, Guid? empresaIdSolicitante)
         {
-            var sql = $"DELETE FROM {nameof(Contato)} WHERE {nameof(Contato.Id)} = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            var sql = $@"
+                DELETE FROM {nameof(Contato)}
+                WHERE {nameof(Contato.Id)} = @Id
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<Contato?> ObterPorId(int id)

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato;
@@ -14,7 +15,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
     public class ContatosController : Controller
     {
         private readonly IMediator _mediator;
-        public ContatosController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<ContatosController> _logger;
+
+        public ContatosController(IMediator mediator, ILogger<ContatosController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("api/contato/incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaContatoCommand command)
@@ -26,7 +33,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.Incluir") });
             }
         }
 
@@ -40,7 +47,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.IncluirEmLote") });
             }
         }
 
@@ -49,12 +56,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
         {
             try
             {
+                // Escopo vem do token, nunca do corpo: senao o proprio atacante o escolheria.
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
                 var resultado = await _mediator.Send(command);
                 return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.Alterar") });
             }
         }
 
@@ -68,7 +78,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.ObterPorUsuario") });
             }
         }
 
@@ -77,12 +87,16 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
         {
             try
             {
-                var resultado = await _mediator.Send(new DeletaContatoCommand { Id = id });
+                var resultado = await _mediator.Send(new DeletaContatoCommand
+                {
+                    Id = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "ContatosController.Excluir") });
             }
         }
     }

@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -13,10 +15,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta
         private readonly IMetaService _whatsappService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public EnviarMidiaMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork)
+        private readonly ILogger<EnviarMidiaMetaHandler> _logger;
+
+        public EnviarMidiaMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork, ILogger<EnviarMidiaMetaHandler> logger)
         {
             _whatsappService = whatsappService;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<EnviarMidiaMetaResult>> Handle(EnviarMidiaMetaCommand command)
@@ -39,7 +44,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta
                     ContatoId = command.ContatoId,
                     TipoDisparo = "Livre",
                     Conteudo = $"[{command.TipoMidia}]",
-                    WamidMeta = wamid ?? "",
+                    WamidMeta = wamid,
                     TipoMidia = command.TipoMidia,
                     MidiaId = mediaId,
                     DataEnvio = DateTime.Now
@@ -58,7 +63,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(EnviarMidiaMetaHandler)));
             }
 
             return response;

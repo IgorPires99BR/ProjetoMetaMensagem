@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
@@ -15,9 +16,12 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
     {
         private readonly IMediator _mediator;
 
-        public DisparadorController(IMediator mediator)
+        private readonly ILogger<DisparadorController> _logger;
+
+        public DisparadorController(IMediator mediator, ILogger<DisparadorController> logger)
         {
-            _mediator = mediator; 
+            _mediator = mediator;
+            _logger = logger;
         }
 
         [HttpPost("enviar-mensagem-meta")]
@@ -34,7 +38,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.Enviar") });
             }
         }
 
@@ -52,7 +56,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.CriaTemplate") });
             }
         }
 
@@ -70,7 +74,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMensagemTemplate") });
             }
         }
 
@@ -88,7 +92,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMensagemTemplateLote") });
             }
         }
 
@@ -143,7 +147,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMidia") });
             }
         }
     }

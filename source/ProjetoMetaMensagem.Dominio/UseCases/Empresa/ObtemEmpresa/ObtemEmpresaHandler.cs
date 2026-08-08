@@ -40,6 +40,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
 
                 var empresaBanco = await _unitOfWork.Empresa.Obter();
 
+                // Quem nao e admin so pode enxergar a propria empresa. Antes a lista inteira
+                // era devolvida pra qualquer autenticado, expondo inclusive o MetaAccessToken
+                // das outras empresas.
+                if (!command.SolicitanteEhAdmin)
+                {
+                    if (command.EmpresaIdSolicitante == null)
+                    {
+                        response.AddErro("Não foi possível identificar a empresa do usuário logado.");
+                        return response;
+                    }
+
+                    empresaBanco = empresaBanco.Where(e => e.Id == command.EmpresaIdSolicitante.Value).ToList();
+                }
+
                 foreach (var empresa in empresaBanco)
                 {
                     listaEmpresa.Add(new ObtemEmpresaResult(empresa));

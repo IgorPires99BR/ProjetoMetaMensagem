@@ -14,9 +14,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
             EmpresaId = usuario.EmpresaId;
             Nome = usuario.Nome;
             Email = usuario.Email;
-            SenhaHash = usuario.SenhaHash;
             DataCriacao = usuario.DataCriacao;
-            
+
         }
 
         public Guid Id { get; set; }
@@ -24,7 +23,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
         public string Nome { get; set; }
         public string? Email { get; set; }
 
-        public string? SenhaHash { get; set; }
+        // O hash da senha NAO e exposto aqui de proposito: ele vazava no JSON de
+        // listagem de usuarios, entregando o hash BCrypt de todo mundo pra qualquer
+        // um que chamasse o endpoint. O frontend nunca usou esse campo (a tela de
+        // usuarios sempre zera a senha ao editar), entao remover nao quebra nada.
 
         public DateTime DataCriacao { get; set; }
     }

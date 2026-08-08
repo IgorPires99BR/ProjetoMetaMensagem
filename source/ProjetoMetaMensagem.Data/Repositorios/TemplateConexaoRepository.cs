@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using System;
@@ -38,10 +38,19 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryAsync<TemplateConexao>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
-        public async Task Excluir(Guid id)
+        public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
-            var sql = $"DELETE FROM {nameof(TemplateConexao)} WHERE {nameof(TemplateConexao.Id)} = @Id";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            // Recorte de empresa no WHERE: antes o DELETE casava so pelo Id e qualquer usuario
+            // logado apagava a conexao de outra empresa mandando o id na rota.
+            var sql = $@"
+                DELETE FROM {nameof(TemplateConexao)}
+                WHERE {nameof(TemplateConexao.Id)} = @Id
+                  AND (@EmpresaIdSolicitante IS NULL
+                       OR {nameof(TemplateConexao.EmpresaId)} = @EmpresaIdSolicitante)";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
     }
 }

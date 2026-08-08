@@ -35,6 +35,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario
                     return response;
                 }
 
+                // Email precisa ser unico: o login busca por email com QueryFirstOrDefault, entao
+                // dois usuarios com o mesmo email tornam o login nao-deterministico (e trocar a
+                // senha de um nao afeta o outro).
+                if (!string.IsNullOrWhiteSpace(command.Email))
+                {
+                    var jaExiste = await _unitOfWork.Usuario.ObterPorEmail(command.Email);
+                    if (jaExiste != null)
+                    {
+                        response.AddErro("Já existe um usuário cadastrado com esse e-mail.");
+                        _unitOfWork.Rollback();
+                        return response;
+                    }
+                }
+
                 // Aplica BCrypt na senha antes de salvar
                 if (!string.IsNullOrEmpty(command.SenhaHash))
                 {

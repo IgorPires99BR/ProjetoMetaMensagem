@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -15,9 +16,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ObtemUsuarioHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ObtemUsuarioHandler> _logger;
+
+        public ObtemUsuarioHandler(IUnitOfWork unitOfWork, ILogger<ObtemUsuarioHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ObtemUsuarioResult>>> Handle(ObtemUsuarioCommand command)
@@ -48,7 +52,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ObtemUsuarioHandler)));
             }
 
             return response;

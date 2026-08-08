@@ -10,8 +10,11 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
     public interface IContatoRepository
     {
         Task Incluir(Contato contato);
-        Task Alterar(Contato contato);
-        Task Excluir(string id);
+        // empresaIdSolicitante restringe a operacao aos contatos da empresa informada.
+        // null = administrador (sem restricao). Contato nao tem EmpresaId proprio: o vinculo
+        // com a empresa passa por Usuario.
+        Task<int> Alterar(Contato contato, Guid? empresaIdSolicitante);
+        Task<int> Excluir(string id, Guid? empresaIdSolicitante);
         Task<Contato?> ObterPorId(int id);
         Task<IEnumerable<Contato>> Obter();
         Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone);

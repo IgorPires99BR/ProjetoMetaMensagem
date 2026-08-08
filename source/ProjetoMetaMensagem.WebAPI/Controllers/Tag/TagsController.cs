@@ -1,9 +1,11 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Tag.AssociarTagsContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag;
 using ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag;
 using ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag;
+using ProjetoMetaMensagem.WebAPI.Common;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
 {
@@ -12,7 +14,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
     public class TagsController : Controller
     {
         private readonly IMediator _mediator;
-        public TagsController(IMediator mediator) => _mediator = mediator;
+        private readonly ILogger<TagsController> _logger;
+
+        public TagsController(IMediator mediator, ILogger<TagsController> logger)
+        {
+            _mediator = mediator;
+            _logger = logger;
+        }
 
         [HttpPost("incluir")]
         public async Task<IActionResult> Incluir([FromBody] CriaTagCommand cmd)
@@ -24,7 +32,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.Incluir") });
             }
         }
 
@@ -38,7 +46,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.Listar") });
             }
         }
 
@@ -47,12 +55,17 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
         {
             try
             {
-                var resultado = await _mediator.Send(new DeletaTagCommand { Id = id });
+                // Escopo vem do token, nunca da rota/corpo: senao o proprio atacante o escolheria.
+                var resultado = await _mediator.Send(new DeletaTagCommand
+                {
+                    Id = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
                 return Ok(resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.Excluir") });
             }
         }
 
@@ -61,12 +74,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
         {
             try
             {
+                // Escopo vem do token, nunca do corpo: senao o proprio atacante o escolheria.
+                cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
                 var resultado = await _mediator.Send(cmd);
                 return Ok(resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { erro = ex.Message, detalhe = ex.InnerException?.Message });
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "TagsController.AssociarContato") });
             }
         }
     }

@@ -7,6 +7,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera
     {
         public Guid Id { get; set; }
         public string Nome { get; set; } = string.Empty;
+
+        // Preenchido pelo controller a partir do JWT (null = administrador). Sem esse escopo o
+        // UPDATE casava so pelo Id e permitia renomear pipeline de outra empresa.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 
     public class AlteraPipelineResult

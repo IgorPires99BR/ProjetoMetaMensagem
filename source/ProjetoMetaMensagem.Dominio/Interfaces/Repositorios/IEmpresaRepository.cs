@@ -11,7 +11,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
     {
         Task<Guid> Incluir(Empresa empresa);
         Task<Guid> Alterar(Empresa empresa);
-        Task Excluir(string id);
+        Task<int> Excluir(string id);
         Task<Empresa?> ObterPorId(Guid id);
         Task<string?> ObterMetaAccessToken(Guid id);
 

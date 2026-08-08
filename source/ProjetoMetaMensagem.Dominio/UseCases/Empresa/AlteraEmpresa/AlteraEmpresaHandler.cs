@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -16,10 +17,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public AlteraEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<AlteraEmpresaHandler> _logger;
+
+        public AlteraEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<AlteraEmpresaHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<AlteraEmpresaResult>> Handle(AlteraEmpresaCommand command)
@@ -52,7 +56,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
                 existente.Email = command.Email;
                 existente.Telefone = command.Telefone;
                 existente.Cnpj = command.Cnpj;
-                existente.MetaAccessToken = command.AccessToken;
+
+                // A listagem devolve o token da Meta mascarado (ex: "••••bC7d"), entao a tela
+                // reenvia a mascara quando o usuario nao troca o token. Gravar isso apagaria a
+                // credencial da empresa e derrubaria todos os envios dela. So sobrescreve
+                // quando chega um valor de verdade.
+                var tokenNovo = command.AccessToken;
+                var ehMascara = !string.IsNullOrWhiteSpace(tokenNovo)
+                    && tokenNovo.StartsWith(ObtemEmpresa.ObtemEmpresaResult.PrefixoMascara, StringComparison.Ordinal);
+
+                if (!string.IsNullOrWhiteSpace(tokenNovo) && !ehMascara)
+                {
+                    existente.MetaAccessToken = tokenNovo;
+                }
                 existente.WabaId = command.WabaId;
                 existente.PhoneNumberId = command.PhoneNumberId;
                 existente.AppIdMeta = command.AppIdMeta;
@@ -65,7 +81,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraEmpresaHandler)));
             }
 
             return response;

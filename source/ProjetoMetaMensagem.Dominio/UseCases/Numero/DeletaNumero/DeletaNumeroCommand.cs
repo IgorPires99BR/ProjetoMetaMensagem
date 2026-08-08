@@ -11,5 +11,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero
     public class DeletaNumeroCommand : IRequest<Response<DeletaNumeroResult>>
     {
         public Guid Id{ get; set; }
+
+        // Preenchido pelo controller a partir do JWT (null = administrador, enxerga tudo).
+        // Sem esse escopo o DELETE era feito so por Id, e um usuario de outra empresa
+        // conseguia apagar numero alheio mandando o id na rota.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 }

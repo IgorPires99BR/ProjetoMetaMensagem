@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -16,10 +17,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
 
-        public AtualizaTemplateMetaHandler(IUnitOfWork unitOfWork, IMetaService metaService)
+        private readonly ILogger<AtualizaTemplateMetaHandler> _logger;
+
+        public AtualizaTemplateMetaHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<AtualizaTemplateMetaHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
         public async Task<Response<AtualizaTemplateMetaResult>> Handle(AtualizaTemplateMetaCommand command)
@@ -64,7 +68,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
 
                 foreach (var templateExcluir in templatesParaRemover)
                 {
-                    await _unitOfWork.Template.Excluir(templateExcluir.Id);
+                    // Sincronizacao sempre restrita a empresa do comando, mesmo que a lista
+                    // de templates ja tenha vindo dela: assim um id de outra empresa que
+                    // escape pra ca nao chega a ser apagado.
+                    await _unitOfWork.Template.Excluir(templateExcluir.Id, command.IdEmpresa);
                 }
 
                 var listaResultados = new List<AtualizaTemplateMetaResult>();
@@ -87,7 +94,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                         // Atualiza a árvore simplificada de componentes (O setter cuida da serialização JSON)
                         templateExistente.Componentes = templateApi.Componentes;
 
-                        await _unitOfWork.Template.Alterar(templateExistente);
+                        await _unitOfWork.Template.Alterar(templateExistente, command.IdEmpresa);
                     }
                     else
                     {
@@ -112,7 +119,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AtualizaTemplateMetaHandler)));
             }
 
             return response;

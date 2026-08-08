@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -11,9 +12,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public DeletaWebhookHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<DeletaWebhookHandler> _logger;
+
+        public DeletaWebhookHandler(IUnitOfWork unitOfWork, ILogger<DeletaWebhookHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<DeletaWebhookResult>> Handle(DeletaWebhookCommand command)
@@ -32,7 +36,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook
                     return response;
                 }
 
-                await _unitOfWork.WebhookConfig.Excluir(command.Id);
+                var linhasAfetadas = await _unitOfWork.WebhookConfig.Excluir(
+                    command.Id, command.EmpresaIdSolicitante);
+
+                // Zero linhas significa que o webhook nao existe OU pertence a outra empresa.
+                // As duas situacoes devolvem a mesma mensagem de proposito: dizer "existe, mas
+                // nao e seu" ja entregaria ao atacante que aquele id e valido.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Webhook não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new DeletaWebhookResult());
                 _unitOfWork.Commit();
@@ -41,7 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.DeletaWebhook
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(DeletaWebhookHandler)));
             }
 
             return response;

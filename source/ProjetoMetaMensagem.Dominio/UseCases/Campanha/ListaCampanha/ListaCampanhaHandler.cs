@@ -1,3 +1,5 @@
+﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -8,9 +10,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public ListaCampanhaHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<ListaCampanhaHandler> _logger;
+
+        public ListaCampanhaHandler(IUnitOfWork unitOfWork, ILogger<ListaCampanhaHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<Response<List<ListaCampanhaResult>>> Handle(ListaCampanhaCommand command)
@@ -35,7 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.ListaCampanha
             }
             catch (Exception ex)
             {
-                response.AddErro($"Erro ao listar campanhas: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(ListaCampanhaHandler)));
             }
 
             return response;

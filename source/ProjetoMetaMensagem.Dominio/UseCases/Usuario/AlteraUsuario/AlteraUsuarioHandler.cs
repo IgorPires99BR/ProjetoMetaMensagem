@@ -1,4 +1,5 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+﻿using Microsoft.Extensions.Logging;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -15,9 +16,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public AlteraUsuarioHandler(IUnitOfWork unitOfWork)
+        private readonly ILogger<AlteraUsuarioHandler> _logger;
+
+        public AlteraUsuarioHandler(IUnitOfWork unitOfWork, ILogger<AlteraUsuarioHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
         public async Task<Response<AlteraUsuarioResult>> Handle(AlteraUsuarioCommand command)
         {
@@ -52,7 +56,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
                         : usuarioExistente.SenhaHash
                 };
 
-                await _unitOfWork.Usuario.Alterar(usuario);
+                var linhasAfetadas = await _unitOfWork.Usuario.Alterar(usuario, command.EmpresaIdSolicitante);
+
+                // Zero linhas: usuario inexistente ou de outra empresa. Mesma mensagem nos dois
+                // casos, pra nao confirmar ao atacante que o id existe.
+                if (linhasAfetadas == 0)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Usuário não encontrado.");
+                    return response;
+                }
 
                 response.AddValue(new AlteraUsuarioResult());
                 _unitOfWork.Commit();
@@ -61,7 +74,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
             {
                     _unitOfWork.Rollback();
                 
-                response.AddErro($"Erro: {ex.Message}");
+                response.AddErro(TratamentoErro.Tratar(ex, _logger, nameof(AlteraUsuarioHandler)));
             }
 
             return response;

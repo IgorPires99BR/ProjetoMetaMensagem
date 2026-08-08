@@ -17,5 +17,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
         public string? Email { get; set; }
 
         public DateTimeOffset DataCriacao { get; set; }
+
+        // Preenchido pelo controller a partir do JWT (null = administrador). Sem isso o UPDATE
+        // casava so pelo Id e permitia alterar contato de outra empresa.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 }

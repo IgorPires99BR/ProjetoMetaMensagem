@@ -44,7 +44,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return webhookConfig.Id;
         }
 
-        public async Task<Guid> Alterar(WebhookConfig webhookConfig)
+        // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
+        // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar webhook de outra empresa
+        // -- e o webhook carrega o TokenSegredo da integracao.
+        private const string RecorteDaEmpresa = @"
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+        public async Task<int> Alterar(WebhookConfig webhookConfig, Guid? empresaIdSolicitante)
         {
             var sql = $@"
                 UPDATE {nameof(WebhookConfig)} SET
@@ -53,16 +59,33 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(WebhookConfig.Evento)} = @{nameof(WebhookConfig.Evento)},
                     {nameof(WebhookConfig.TokenSegredo)} = @{nameof(WebhookConfig.TokenSegredo)},
                     {nameof(WebhookConfig.Ativo)} = @{nameof(WebhookConfig.Ativo)}
-                WHERE {nameof(WebhookConfig.Id)} = @{nameof(WebhookConfig.Id)};";
+                WHERE {nameof(WebhookConfig.Id)} = @{nameof(WebhookConfig.Id)}
+                {RecorteDaEmpresa};";
 
-            await _session.Connection.ExecuteAsync(sql, webhookConfig, transaction: _session.Transaction);
-            return webhookConfig.Id;
+            return await _session.Connection.ExecuteAsync(sql,
+                new
+                {
+                    webhookConfig.Id,
+                    webhookConfig.Nome,
+                    webhookConfig.Url,
+                    webhookConfig.Evento,
+                    webhookConfig.TokenSegredo,
+                    webhookConfig.Ativo,
+                    EmpresaIdSolicitante = empresaIdSolicitante
+                },
+                transaction: _session.Transaction);
         }
 
-        public async Task Excluir(Guid id)
+        public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
-            var sql = $@"DELETE FROM {nameof(WebhookConfig)} WHERE {nameof(WebhookConfig.Id)} = @Id;";
-            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+            var sql = $@"
+                DELETE FROM {nameof(WebhookConfig)}
+                WHERE {nameof(WebhookConfig.Id)} = @Id
+                {RecorteDaEmpresa};";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<WebhookConfig?> ObterPorId(Guid id)
