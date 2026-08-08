@@ -6,6 +6,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Tag.CriaTag;
 using ProjetoMetaMensagem.Dominio.UseCases.Tag.DeletaTag;
 using ProjetoMetaMensagem.Dominio.UseCases.Tag.ListaTag;
 using ProjetoMetaMensagem.WebAPI.Common;
+using System.Net;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
 {
@@ -28,7 +29,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
             try
             {
                 var resultado = await _mediator.Send(cmd);
-                return StatusCode(201, resultado);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
             }
             catch (Exception ex)
             {
@@ -61,7 +62,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
                     Id = id,
                     EmpresaIdSolicitante = this.EmpresaDoEscopo()
                 });
-                return Ok(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
@@ -78,7 +79,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Tag
                 cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
 
                 var resultado = await _mediator.Send(cmd);
-                return Ok(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {

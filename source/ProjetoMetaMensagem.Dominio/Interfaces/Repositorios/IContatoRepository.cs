@@ -19,5 +19,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<IEnumerable<Contato>> Obter();
         Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone);
         Task<IEnumerable<Contato>> ObterPorUsuario(Guid usuarioId);
+        // Busca em lote pra lista de chats: evita 1 consulta por contato ao montar a tela.
+        // Escopado por empresa pelo mesmo motivo do ObterPorTelefone -- Contato so tem o vinculo
+        // com a empresa via Usuario.
+        Task<IEnumerable<Contato>> ObterPorIds(Guid empresaId, IEnumerable<Guid> ids);
     }
 }

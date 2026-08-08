@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -11,14 +12,16 @@ namespace ProjetoMetaMensagem.Servico.Flow
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
+        private readonly ILogger<FlowOrchestratorService> _logger;
 
-        public FlowOrchestratorService(IUnitOfWork unitOfWork, IMetaService metaService)
+        public FlowOrchestratorService(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<FlowOrchestratorService> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _logger = logger;
         }
 
-        public async Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string mensagem)
+        public async Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem)
         {
             var resultado = new FlowOrchestrationResult();
 
@@ -71,7 +74,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     await _unitOfWork.ConversationState.Incluir(estadoAtual);
 
                     // 5. Executa a etapa inicial (deve ser uma mensagem de boas-vindas)
-                    await ExecutarEtapa(etapaInicial, null, estadoAtual);
+                    await ExecutarEtapa(etapaInicial, null, estadoAtual, empresaId, celular);
 
                     resultado.Sucesso = true;
                     resultado.FlowId = flowAtivado.Id;
@@ -130,7 +133,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     }
 
                     // 9. Executa a nova etapa
-                    await ExecutarEtapa(proximaEtapa, estadoAtual.Variaveis, estadoAtual);
+                    await ExecutarEtapa(proximaEtapa, estadoAtual.Variaveis, estadoAtual, empresaId, celular);
 
                     // 10. Atualiza o estado da conversa
                     estadoAtual.EtapaAtualId = proximaEtapa.Id;
@@ -153,7 +156,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
             return resultado;
         }
 
-        private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual)
+        private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual, Guid empresaId, string celular)
         {
             if (etapa.NomeEtapa == "Mensagem" && !string.IsNullOrEmpty(etapa.ConteudoLivre))
             {
@@ -172,11 +175,30 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     }
                 }
 
-                // Nota: O numero do contato precisa ser resolvido externamente.
-                // O FlowOrchestrator e chamado apos a resolucao do Contato,
-                // entao aqui apenas marcamos que uma mensagem deveria ser enviada.
-                // O envio efetivo e feito pelo WebhookController apos obter o telefone.
-                estadoAtual?.Variaveis?.ToString();
+                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaId);
+                var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
+                var wamid = await _metaService.EnviarTextoLivreAsync(celular, mensagem, token, phoneNumberId);
+
+                await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
+                {
+                    EmpresaId = empresaId,
+                    ContatoId = estadoAtual?.ContatoId ?? Guid.Empty,
+                    TipoDisparo = "Flow",
+                    Conteudo = mensagem,
+                    WamidMeta = wamid,
+                    DataEnvio = DateTime.Now
+                });
+            }
+            else if (etapa.TemplateId.HasValue)
+            {
+                // Etapas de Template (envio de HSM aprovado pela Meta) ainda nao sao executadas:
+                // precisam montar EnviarMensagemTemplateRequisicao com os componentes/variaveis
+                // do template, o que este orquestrador ainda nao resolve. So loga pra nao falhar
+                // silenciosamente -- sem isso, um flow com etapa de Template parece avancar
+                // normalmente mas nunca manda nada ao cliente.
+                _logger.LogWarning(
+                    "Flow: etapa {EtapaId} usa Template ({TemplateId}) mas o envio de Template ainda nao esta implementado no orquestrador.",
+                    etapa.Id, etapa.TemplateId);
             }
         }
 

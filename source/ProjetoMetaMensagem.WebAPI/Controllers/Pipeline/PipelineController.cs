@@ -1,4 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover;
@@ -12,6 +12,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Cria;
 using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Deleta;
 using ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista;
 using ProjetoMetaMensagem.WebAPI.Common;
+using System.Net;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
 {
@@ -34,7 +35,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             try
             {
                 var resultado = await _mediator.Send(cmd);
-                return StatusCode(201, resultado);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
             }
             catch (Exception ex)
             {
@@ -45,35 +46,63 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpGet("listar/{empresaId}")]
         public async Task<IActionResult> Listar(Guid empresaId)
         {
-            var resultado = await _mediator.Send(new ListaPipelineCommand(empresaId));
-            return Ok(resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new ListaPipelineCommand(empresaId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Listar") });
+            }
         }
 
         [HttpGet("obter/{pipelineId}/{empresaId}")]
         public async Task<IActionResult> ObterComEtapas(Guid pipelineId, Guid empresaId)
         {
-            var resultado = await _mediator.Send(new ObtemPipelineComEtapasCommand(pipelineId, empresaId));
-            return Ok(resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new ObtemPipelineComEtapasCommand(pipelineId, empresaId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.ObterComEtapas") });
+            }
         }
 
         [HttpPut("alterar")]
         public async Task<IActionResult> Alterar([FromBody] AlteraPipelineCommand cmd)
         {
-            // Escopo vem do token, nunca do corpo/rota: senao o proprio atacante o escolheria.
-            cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+            try
+            {
+                // Escopo vem do token, nunca do corpo/rota: senao o proprio atacante o escolheria.
+                cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
 
-            var resultado = await _mediator.Send(cmd);
-            return Ok(resultado);
+                var resultado = await _mediator.Send(cmd);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Alterar") });
+            }
         }
 
         [HttpDelete("excluir/{id}")]
         public async Task<IActionResult> Excluir(Guid id)
         {
-            var resultado = await _mediator.Send(new DeletaPipelineCommand(id)
+            try
             {
-                EmpresaIdSolicitante = this.EmpresaDoEscopo()
-            });
-            return Ok(resultado);
+                var resultado = await _mediator.Send(new DeletaPipelineCommand(id)
+                {
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.Excluir") });
+            }
         }
 
         // Etapas
@@ -83,7 +112,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             try
             {
                 var resultado = await _mediator.Send(cmd);
-                return StatusCode(201, resultado);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
             }
             catch (Exception ex)
             {
@@ -94,27 +123,48 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpGet("etapa/listar/{pipelineId}")]
         public async Task<IActionResult> ListarEtapas(Guid pipelineId)
         {
-            var resultado = await _mediator.Send(new ListaEtapaCommand(pipelineId));
-            return Ok(resultado);
+            try
+            {
+                var resultado = await _mediator.Send(new ListaEtapaCommand(pipelineId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.ListarEtapas") });
+            }
         }
 
         [HttpPut("etapa/alterar")]
         public async Task<IActionResult> AlterarEtapa([FromBody] AlteraEtapaCommand cmd)
         {
-            cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+            try
+            {
+                cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
 
-            var resultado = await _mediator.Send(cmd);
-            return Ok(resultado);
+                var resultado = await _mediator.Send(cmd);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.AlterarEtapa") });
+            }
         }
 
         [HttpDelete("etapa/excluir/{id}")]
         public async Task<IActionResult> ExcluirEtapa(Guid id)
         {
-            var resultado = await _mediator.Send(new DeletaEtapaCommand(id)
+            try
             {
-                EmpresaIdSolicitante = this.EmpresaDoEscopo()
-            });
-            return Ok(resultado);
+                var resultado = await _mediator.Send(new DeletaEtapaCommand(id)
+                {
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.ExcluirEtapa") });
+            }
         }
 
         // Leads
@@ -124,7 +174,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
             try
             {
                 var resultado = await _mediator.Send(cmd);
-                return StatusCode(201, resultado);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
             }
             catch (Exception ex)
             {
@@ -135,20 +185,34 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         [HttpPut("lead/mover")]
         public async Task<IActionResult> MoverLead([FromBody] MoverLeadCommand cmd)
         {
-            cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+            try
+            {
+                cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
 
-            var resultado = await _mediator.Send(cmd);
-            return Ok(resultado);
+                var resultado = await _mediator.Send(cmd);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.MoverLead") });
+            }
         }
 
         [HttpDelete("lead/remover/{leadId}")]
         public async Task<IActionResult> RemoverLead(Guid leadId)
         {
-            var resultado = await _mediator.Send(new RemoverLeadCommand(leadId)
+            try
             {
-                EmpresaIdSolicitante = this.EmpresaDoEscopo()
-            });
-            return Ok(resultado);
+                var resultado = await _mediator.Send(new RemoverLeadCommand(leadId)
+                {
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { erro = TratamentoErro.Tratar(ex, _logger, "PipelineController.RemoverLead") });
+            }
         }
     }
 }

@@ -11,6 +11,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
     public interface IFlowOrchestratorService
     {
-        Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string mensagem);
+        Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem);
     }
 }

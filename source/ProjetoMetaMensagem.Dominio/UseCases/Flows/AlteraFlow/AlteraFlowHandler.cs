@@ -36,6 +36,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                 return response;
             }
 
+            // Editar recria TODAS as etapas com Guids novos (passo 3 abaixo). Uma conversa em
+            // andamento guarda o Guid da etapa ANTIGA em EtapaAtualId -- se deixar editar, ela
+            // fica apontando pra uma etapa que nao existe mais assim que o cliente responder.
+            var conversasDoFlow = await _unitOfWork.ConversationState.ObterPorFlow(flowExistente.Id);
+            if (conversasDoFlow.Any(c => !c.Finalizado))
+            {
+                response.AddErro("Este fluxo tem conversas em andamento e não pode ser editado. Aguarde finalizarem antes de alterar as etapas.");
+                return response;
+            }
+
             // 2. Atualiza os dados do cabeçalho
             flowExistente.Nome = command.Nome;
             flowExistente.Descricao = command.Descricao;
@@ -88,6 +98,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                     _unitOfWork.Rollback();
                     response.AddErro("Fluxo não encontrado.");
                     return response;
+                }
+
+                // Conversas ja finalizadas nao bloqueiam a edicao (checado acima), mas a LINHA
+                // continua no banco apontando (FK) pra uma FlowEtapa que esta prestes a ser
+                // apagada. Sem limpar isso, todo flow que ja rodou uma conversa - mesmo ja
+                // encerrada - fica travado pra sempre: o DELETE das etapas abaixo comecava a
+                // falhar com violacao de FK assim que o primeiro cliente terminava o fluxo.
+                foreach (var conversaFinalizada in conversasDoFlow)
+                {
+                    await _unitOfWork.ConversationState.Excluir(conversaFinalizada.Id);
                 }
 
                 // Remove todas as etapas antigas do banco para limpar o Grafo anterior

@@ -129,6 +129,22 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.UsuarioId)} = @UsuarioId";
             return await _session.Connection.QueryAsync<Contato>(sql, new { UsuarioId = usuarioId }, transaction: _session.Transaction);
         }
+
+        public async Task<IEnumerable<Contato>> ObterPorIds(Guid empresaId, IEnumerable<Guid> ids)
+        {
+            var idsLista = ids.Distinct().ToList();
+            if (idsLista.Count == 0) return Enumerable.Empty<Contato>();
+
+            var sql = @"
+                SELECT c.* FROM Contato c
+                INNER JOIN Usuario u ON u.Id = c.UsuarioId
+                WHERE u.EmpresaId = @EmpresaId AND c.Id IN @Ids";
+
+            return await _session.Connection.QueryAsync<Contato>(
+                sql,
+                new { EmpresaId = empresaId, Ids = idsLista },
+                transaction: _session.Transaction);
+        }
     }
 }
 

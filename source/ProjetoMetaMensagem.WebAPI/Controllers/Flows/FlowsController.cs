@@ -6,6 +6,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.DeletaFlow;
 using ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows;
 using ProjetoMetaMensagem.WebAPI.Common;
+using System.Net;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
 {
@@ -31,10 +32,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             {
                 var resultado = await _mediator.Send(new ListaFlowsCommand(IdEmpresa));
 
-                if (resultado != null)
-                    return Ok(resultado);
-
-                return BadRequest(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
@@ -49,10 +47,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
             {
                 var resultado = await _mediator.Send(command);
 
-                if (resultado != null)
-                    return Ok(resultado);
-
-                return BadRequest(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
             }
             catch (Exception ex)
             {
@@ -70,10 +65,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
 
                 var resultado = await _mediator.Send(command);
 
-                if (resultado != null)
-                    return Ok(resultado);
-
-                return BadRequest(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
@@ -92,10 +84,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
                     EmpresaIdSolicitante = this.EmpresaDoEscopo()
                 });
 
-                if (resultado != null)
-                    return Ok(resultado);
-
-                return BadRequest(resultado);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {

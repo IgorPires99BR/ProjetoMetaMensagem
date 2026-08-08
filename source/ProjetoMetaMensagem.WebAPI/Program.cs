@@ -308,6 +308,8 @@ app.UseCors("AllowReactApp");
 
 //app.UseHttpsRedirection();
 
+app.UseMiddleware<ProjetoMetaMensagem.WebAPI.Common.ValidacaoAssinaturaMetaMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

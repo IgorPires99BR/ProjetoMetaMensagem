@@ -72,6 +72,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                     NaoLida = false
                 });
 
+                // Sem esse JOIN o nome do contato nunca aparecia no chat -- a tela sempre
+                // mostrava "Contato <telefone>", mesmo pra quem tinha nome cadastrado, e a
+                // busca por nome na lista de conversas ficava inutil. Busca em lote (nao um
+                // ObterPorId por grupo) pra nao virar N+1 na tela mais acessada do sistema.
+                var idsContatos = itensRecebidos.Select(i => i.ContatoId)
+                    .Concat(itensEnviados.Select(i => i.ContatoId))
+                    .Where(id => id != Guid.Empty)
+                    .Distinct()
+                    .ToList();
+
+                var contatos = await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, idsContatos);
+                var nomePorContato = contatos
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Nome))
+                    .ToDictionary(c => c.Id, c => c.Nome!);
+
                 var resultFinal = new ListaChatsAtivosResult();
 
                 // Alimenta a lista do Result diretamente
@@ -89,7 +104,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                      return new ChatAtivoObjeto
                      {
                          ContatoId = grupo.Key,
-                         NomeContato = "Contato " + maisRecente.Telefone,
+                         NomeContato = nomePorContato.TryGetValue(grupo.Key, out var nome) ? nome : "Contato " + maisRecente.Telefone,
                          Telefone = maisRecente.Telefone,
                          UltimaMensagem = maisRecente.Conteudo,
                          DataUltimaMensagem = maisRecente.Data,

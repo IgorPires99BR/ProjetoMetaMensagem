@@ -49,7 +49,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             {
                 var resultado = await _mediator.Send(command);
 
-                if (resultado != null)
+                if (resultado != null && resultado.Erros.Count == 0)
                     return Ok(resultado);
 
                 return BadRequest(resultado);
@@ -67,7 +67,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             {
                 var resultado = await _mediator.Send(command);
 
-                if (resultado != null)
+                if (resultado != null && resultado.Erros.Count == 0)
                     return Ok(resultado);
 
                 return BadRequest(resultado);
@@ -85,7 +85,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             {
                 var resultado = await _mediator.Send(command);
 
-                if (resultado != null)
+                if (resultado != null && resultado.Erros.Count == 0)
                     return Ok(resultado);
 
                 return BadRequest(resultado);

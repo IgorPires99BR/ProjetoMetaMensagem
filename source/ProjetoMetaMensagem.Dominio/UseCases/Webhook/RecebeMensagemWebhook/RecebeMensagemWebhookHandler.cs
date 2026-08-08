@@ -4,6 +4,7 @@ using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Helpers.HTMLHelper;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook;
 using Microsoft.Extensions.Logging;
 using System;
@@ -17,11 +18,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
     public class RecebeMensagemWebhookHandler : IRequestHandler<RecebeMensagemWebhookCommand, Response<RecebeMensagemWebhookResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IFlowOrchestratorService _flowOrchestratorService;
         private readonly ILogger<RecebeMensagemWebhookHandler> _logger;
 
-        public RecebeMensagemWebhookHandler(IUnitOfWork unitOfWork, ILogger<RecebeMensagemWebhookHandler> logger)
+        public RecebeMensagemWebhookHandler(IUnitOfWork unitOfWork, IFlowOrchestratorService flowOrchestratorService, ILogger<RecebeMensagemWebhookHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _flowOrchestratorService = flowOrchestratorService;
             _logger = logger;
         }
 
@@ -158,6 +161,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             }
 
                             mensagensParaSalvar.Add(novaMensagem);
+
+                            // Dispara o Flow so pra contato ja cadastrado (sem isso nao ha
+                            // ConversationState.ContatoId pra gravar) e so pra texto livre --
+                            // e o unico tipo de gatilho/resposta que o orquestrador hoje casa.
+                            // Isolado num try/catch proprio: uma falha no Flow (banco, Meta,
+                            // JSON de variaveis malformado) nao pode derrubar o salvamento da
+                            // mensagem recebida, que e o efeito principal deste webhook.
+                            if (contato != null && msgMeta.Type == "text" && !string.IsNullOrWhiteSpace(novaMensagem.Conteudo))
+                            {
+                                try
+                                {
+                                    await _flowOrchestratorService.ProcessarMensagem(empresaId.Value, contato.Id, msgMeta.From, novaMensagem.Conteudo);
+                                }
+                                catch (Exception exFlow)
+                                {
+                                    _logger.LogError(exFlow, "Falha ao processar Flow para mensagem recebida de {Telefone}", msgMeta.From);
+                                }
+                            }
                         }
                     }
                 }
