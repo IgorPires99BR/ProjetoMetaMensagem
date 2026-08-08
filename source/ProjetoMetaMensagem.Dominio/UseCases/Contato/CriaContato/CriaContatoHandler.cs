@@ -39,10 +39,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
                     return response;
                 }
 
+                var usuario = await _unitOfWork.Usuario.ObterPorId(command.UsuarioId);
+
+                // Contato nao tem EmpresaId proprio: pertence a empresa do UsuarioId informado.
+                // Se quem chama nao e admin, esse usuario precisa ser da mesma empresa de quem
+                // esta autenticado -- senao o UsuarioId do corpo deixa qualquer um escolher em
+                // que empresa o contato cai.
+                if (command.EmpresaIdSolicitante.HasValue
+                    && (usuario == null || usuario.EmpresaId != command.EmpresaIdSolicitante.Value))
+                {
+                    response.AddErro("Usuário não encontrado.");
+                    return response;
+                }
+
                 // Evita duplicar contato com o mesmo telefone na mesma empresa (ja aconteceu
                 // com dados de teste e quebrava o agrupamento de mensagens no chat, deixando
                 // conversas do mesmo lead espalhadas em duas linhas diferentes).
-                var usuario = await _unitOfWork.Usuario.ObterPorId(command.UsuarioId);
                 if (usuario != null)
                 {
                     var existente = await _unitOfWork.Contato.ObterPorTelefone(usuario.EmpresaId, command.Telefone);

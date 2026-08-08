@@ -40,6 +40,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
                 return response;
             }
 
+            // Contato nao tem EmpresaId proprio: pertence a empresa do UsuarioId gravado nele.
+            // O EmpresaAccessFilter ja garante que IdEmpresa bate com o token de quem chama (ou
+            // libera admin), mas nao tem como saber que UsuarioId aqui precisa ser da MESMA
+            // empresa -- sem essa checagem, o lote inteiro cai na empresa dona do UsuarioId
+            // informado, nao necessariamente a IdEmpresa declarada.
+            var usuarioDoLote = await _unitOfWork.Usuario.ObterPorId(command.UsuarioId);
+            if (usuarioDoLote == null || usuarioDoLote.EmpresaId != command.IdEmpresa)
+            {
+                response.AddErro("Usuário não encontrado.");
+                return response;
+            }
+
             var contatosSalvar = new List<Entidades.Contato>();
 
             // 2. Mapeia e valida individualmente as strings se necessário

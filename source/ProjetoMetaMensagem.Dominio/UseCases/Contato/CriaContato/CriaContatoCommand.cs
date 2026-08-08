@@ -18,5 +18,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
         public string? Email { get; set; }
 
         public DateTimeOffset DataCriacao { get; set; }
+
+        // Preenchido pelo controller a partir do JWT (null = administrador). Sem isso, o
+        // UsuarioId do corpo definia sozinho a empresa do contato (via Usuario.EmpresaId) e o
+        // EmpresaAccessFilter nao tem como saber que "UsuarioId" e um id de empresa por tabela:
+        // um usuario comum de outra empresa injetava contato na empresa alheia mandando o id de
+        // um usuario de la.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 }

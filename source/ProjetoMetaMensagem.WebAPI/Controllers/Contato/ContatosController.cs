@@ -28,6 +28,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
         {
             try
             {
+                // Escopo vem do token, nunca do corpo: senao o proprio atacante o escolheria.
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
                 var resultado = await _mediator.Send(command);
                 return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
             }

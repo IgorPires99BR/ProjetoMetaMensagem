@@ -43,6 +43,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
             try
             {
                 _unitOfWork.BeginTransaction();
+
+                // Numero nao tem EmpresaId proprio: pertence a empresa do UsuarioId gravado nele.
+                // O EmpresaAccessFilter ja garante que IdEmpresa bate com o token de quem chama
+                // (ou libera admin), mas nao tem como saber que UsuarioId aqui precisa ser da
+                // MESMA empresa -- sem essa checagem, o numero cai na empresa dona do UsuarioId
+                // informado, nao necessariamente a IdEmpresa declarada.
+                var usuarioDoNumero = await _unitOfWork.Usuario.ObterPorId(command.UsuarioId);
+                if (usuarioDoNumero == null || usuarioDoNumero.EmpresaId != command.IdEmpresa)
+                {
+                    _unitOfWork.Rollback();
+                    response.AddErro("Usuário não encontrado.");
+                    return response;
+                }
+
                 // 2. Monta a requisição de domínio e envia para a Meta
                 var requisicaoMeta = new CriaNumeroMetaRequisicao
                 {
