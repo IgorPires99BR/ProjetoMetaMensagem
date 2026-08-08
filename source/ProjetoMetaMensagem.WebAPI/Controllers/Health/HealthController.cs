@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System.Diagnostics;
 
@@ -17,12 +18,17 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
     [AllowAnonymous]
     public class HealthController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
+        // IUnitOfWork NAO pode ser injetado no construtor: DbSession abre a conexao SQL de
+        // forma sincrona no proprio construtor, entao a excecao estouraria na resolucao de DI
+        // do controller, antes do try/catch abaixo rodar (era exatamente o que este endpoint
+        // deveria diagnosticar). Resolvendo pelo IServiceProvider dentro do try, o catch consegue
+        // capturar a falha de conexao normalmente.
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<HealthController> _logger;
 
-        public HealthController(IUnitOfWork unitOfWork, ILogger<HealthController> logger)
+        public HealthController(IServiceProvider serviceProvider, ILogger<HealthController> logger)
         {
-            _unitOfWork = unitOfWork;
+            _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
@@ -36,7 +42,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             try
             {
                 // Consulta trivial: so confirma que a conexao abre e responde.
-                await _unitOfWork.Usuario.ObterPorEmail("health-check@contactsolution.local");
+                var unitOfWork = _serviceProvider.GetRequiredService<IUnitOfWork>();
+                await unitOfWork.Usuario.ObterPorEmail("health-check@contactsolution.local");
                 estadoBanco = "ok";
             }
             catch (Exception ex)
