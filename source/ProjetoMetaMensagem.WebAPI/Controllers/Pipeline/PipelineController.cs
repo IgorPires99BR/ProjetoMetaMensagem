@@ -1,7 +1,9 @@
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
-using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover;
+using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.AdicionarLead;
+using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.MoverLead;
+using ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.RemoverLead;
 using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Altera;
 using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Cria;
 using ProjetoMetaMensagem.Dominio.UseCases.Pipeline.Deleta;

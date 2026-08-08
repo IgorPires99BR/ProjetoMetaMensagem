@@ -287,9 +287,9 @@ builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista.ListaEtapaCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista.ListaEtapaResult>>>, ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.Lista.ListaEtapaHandler>();
 
 // Registros de Lead do Pipeline
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.AdicionarLeadCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadResult>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.AdicionarLeadHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadResult>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.MoverLeadHandler>();
-builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.RemoverLeadCommand, Response<bool>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.Mover.RemoverLeadHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.AdicionarLead.AdicionarLeadCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.AdicionarLead.AdicionarLeadResult>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.AdicionarLead.AdicionarLeadHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.MoverLead.MoverLeadCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.MoverLead.MoverLeadResult>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.MoverLead.MoverLeadHandler>();
+builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.RemoverLead.RemoverLeadCommand, Response<bool>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.RemoverLead.RemoverLeadHandler>();
 
 var app = builder.Build();
  
