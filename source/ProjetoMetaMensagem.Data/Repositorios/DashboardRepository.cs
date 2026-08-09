@@ -79,12 +79,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
             // Flows ativos
             result.FlowsAtivos = await conn.ExecuteScalarAsync<int>(
-                "SELECT COUNT(1) FROM Flow WHERE EmpresaId = @EmpresaId AND Ativo = 1",
+                "SELECT COUNT(1) FROM Fluxo WHERE EmpresaId = @EmpresaId AND Ativo = 1",
                 new { EmpresaId = empresaId },
                 transaction: _session.Transaction);
 
             result.FlowsComExecucoes = (await conn.QueryAsync<FlowAtivo>(
-                @"SELECT Nome, Ativo, 0 AS DisparosHoje FROM Flow WHERE EmpresaId = @EmpresaId ORDER BY DataCriacao DESC",
+                @"SELECT Nome, Ativo, 0 AS DisparosHoje FROM Fluxo WHERE EmpresaId = @EmpresaId ORDER BY DataCriacao DESC",
                 new { EmpresaId = empresaId },
                 transaction: _session.Transaction)).ToList();
 

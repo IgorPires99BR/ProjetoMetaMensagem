@@ -46,7 +46,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? MetaAccessToken { get; set; }
         public string? PhoneNumberId { get; set; }
         public string? AppIdMeta { get; set; }
-        public string? StatusAccount { get; set; }
+        public string? StatusConta { get; set; }
         public Guid? TokenWebhookLocal { get; set; }
         public string? PlanoId { get; set; }
 

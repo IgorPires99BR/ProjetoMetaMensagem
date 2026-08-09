@@ -12,6 +12,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
     {
         private readonly DbSession _session;
 
+        // A tabela no banco ja foi traduzida para portugues (ConfiguracaoWebhook); o tipo C#
+        // WebhookConfig continua com o nome atual ate a renomeacao de UseCases ser decidida.
+        private const string Tabela = "ConfiguracaoWebhook";
+
         public WebhookConfigRepository(DbSession session)
         {
             _session = session;
@@ -20,7 +24,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<Guid> Incluir(WebhookConfig webhookConfig)
         {
             var sql = $@"
-                INSERT INTO {nameof(WebhookConfig)} (
+                INSERT INTO {Tabela} (
                     {nameof(WebhookConfig.Id)},
                     {nameof(WebhookConfig.EmpresaId)},
                     {nameof(WebhookConfig.Nome)},
@@ -53,7 +57,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<int> Alterar(WebhookConfig webhookConfig, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                UPDATE {nameof(WebhookConfig)} SET
+                UPDATE {Tabela} SET
                     {nameof(WebhookConfig.Nome)} = @{nameof(WebhookConfig.Nome)},
                     {nameof(WebhookConfig.Url)} = @{nameof(WebhookConfig.Url)},
                     {nameof(WebhookConfig.Evento)} = @{nameof(WebhookConfig.Evento)},
@@ -79,7 +83,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                DELETE FROM {nameof(WebhookConfig)}
+                DELETE FROM {Tabela}
                 WHERE {nameof(WebhookConfig.Id)} = @Id
                 {RecorteDaEmpresa};";
 
@@ -90,7 +94,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<WebhookConfig?> ObterPorId(Guid id)
         {
-            var sql = $@"SELECT * FROM {nameof(WebhookConfig)} WHERE {nameof(WebhookConfig.Id)} = @Id;";
+            var sql = $@"SELECT * FROM {Tabela} WHERE {nameof(WebhookConfig.Id)} = @Id;";
             return await _session.Connection.QueryFirstOrDefaultAsync<WebhookConfig>(
                 sql, new { Id = id }, transaction: _session.Transaction);
         }
@@ -98,7 +102,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<List<WebhookConfig>> ObterPorEmpresa(Guid empresaId)
         {
             var sql = $@"
-                SELECT * FROM {nameof(WebhookConfig)}
+                SELECT * FROM {Tabela}
                 WHERE {nameof(WebhookConfig.EmpresaId)} = @EmpresaId
                 ORDER BY {nameof(WebhookConfig.Nome)};";
 
@@ -109,7 +113,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<List<WebhookConfig>> ObterAtivosPorEvento(string evento, Guid empresaId)
         {
             var sql = $@"
-                SELECT * FROM {nameof(WebhookConfig)}
+                SELECT * FROM {Tabela}
                 WHERE {nameof(WebhookConfig.Evento)} = @Evento
                   AND {nameof(WebhookConfig.EmpresaId)} = @EmpresaId
                   AND {nameof(WebhookConfig.Ativo)} = 1;";
@@ -120,7 +124,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<List<WebhookConfig>> Obter()
         {
-            var sql = $@"SELECT * FROM {nameof(WebhookConfig)} ORDER BY {nameof(WebhookConfig.Nome)};";
+            var sql = $@"SELECT * FROM {Tabela} ORDER BY {nameof(WebhookConfig.Nome)};";
             return (await _session.Connection.QueryAsync<WebhookConfig>(sql, transaction: _session.Transaction)).ToList();
         }
     }

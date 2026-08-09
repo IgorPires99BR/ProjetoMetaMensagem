@@ -13,6 +13,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
     {
         private readonly DbSession _session;
 
+        // As tabelas no banco ja foram traduzidas para portugues (Fluxo/FluxoEtapa); os tipos
+        // C# Flow/FlowEtapa continuam com o nome atual ate a renomeacao de UseCases ser decidida.
+        private const string TabelaFluxo = "Fluxo";
+        private const string TabelaFluxoEtapa = "FluxoEtapa";
+
         public FlowRepository(DbSession session)
         {
             _session = session;
@@ -23,7 +28,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<FlowEtapa?> ObterEtapaPorId(Guid etapaId)
         {
             var sql = $@"
-                SELECT * FROM {nameof(FlowEtapa)}
+                SELECT * FROM {TabelaFluxoEtapa}
                 WHERE {nameof(FlowEtapa.Id)} = @Id;";
 
             return await _session.Connection.QueryFirstOrDefaultAsync<FlowEtapa>(
@@ -33,8 +38,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<FlowEtapa?> ObterEtapaInicial(Guid flowId)
         {
             var sql = $@"
-                SELECT * FROM {nameof(FlowEtapa)} 
-                WHERE {nameof(FlowEtapa.FlowId)} = @{nameof(FlowEtapa.FlowId)} 
+                SELECT * FROM {TabelaFluxoEtapa}
+                WHERE {nameof(FlowEtapa.FlowId)} = @{nameof(FlowEtapa.FlowId)}
                   AND {nameof(FlowEtapa.EhEtapaInicial)} = 1;";
 
             return await _session.Connection.QueryFirstOrDefaultAsync<FlowEtapa>(
@@ -44,8 +49,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<FlowEtapa?> ObterProximaEtapa(Guid etapaAtualId, string respostaCliente)
         {
             var sql = $@"
-                SELECT proxima.* FROM {nameof(FlowEtapa)} atual
-                INNER JOIN {nameof(FlowEtapa)} proxima ON atual.{nameof(FlowEtapa.ProximaEtapaId)} = proxima.{nameof(FlowEtapa.Id)}
+                SELECT proxima.* FROM {TabelaFluxoEtapa} atual
+                INNER JOIN {TabelaFluxoEtapa} proxima ON atual.{nameof(FlowEtapa.ProximaEtapaId)} = proxima.{nameof(FlowEtapa.Id)}
                 WHERE atual.{nameof(FlowEtapa.Id)} = @EtapaAtualId 
                   AND (atual.{nameof(FlowEtapa.GatilhoResposta)} = @RespostaCliente OR atual.{nameof(FlowEtapa.GatilhoResposta)} = 'Qualquer_Resposta');";
 
@@ -60,7 +65,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<Flow?> ObterPorId(Guid id)
         {
             var sql = $@"
-                SELECT * FROM {nameof(Flow)} 
+                SELECT * FROM {TabelaFluxo}
                 WHERE {nameof(Flow.Id)} = @{nameof(Flow.Id)};";
 
             return await _session.Connection.QueryFirstOrDefaultAsync<Flow>(
@@ -69,10 +74,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<IEnumerable<Flow>> ObterTodosPorEmpresa(Guid empresaId)
         {
-            var sql = @"
+            var sql = $@"
                 SELECT f.*, fe.*
-                FROM Flow f
-                LEFT JOIN FlowEtapa fe ON f.Id = fe.FlowId
+                FROM {TabelaFluxo} f
+                LEFT JOIN {TabelaFluxoEtapa} fe ON f.Id = fe.FlowId
                 WHERE f.EmpresaId = @IdEmpresa;";
 
             var lookup = new Dictionary<Guid, Flow>();
@@ -106,7 +111,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task Incluir(Flow flow)
         {
             var sql = $@"
-                INSERT INTO {nameof(Flow)} (
+                INSERT INTO {TabelaFluxo} (
                     {nameof(flow.Id)}, 
                     {nameof(flow.EmpresaId)}, 
                     {nameof(flow.Nome)}, 
@@ -131,7 +136,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task IncluirEtapa(FlowEtapa etapa)
         {
             var sql = $@"
-        INSERT INTO {nameof(FlowEtapa)} (
+        INSERT INTO {TabelaFluxoEtapa} (
             {nameof(etapa.Id)}, 
             {nameof(etapa.FlowId)}, 
             {nameof(etapa.TemplateId)}, 
@@ -166,11 +171,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             // a exclusao em cascata do DeletaFlow limpava as etapas de um fluxo alheio
             // mesmo quando o DELETE do proprio Flow era barrado.
             var sql = $@"
-                DELETE FROM {nameof(FlowEtapa)}
+                DELETE FROM {TabelaFluxoEtapa}
                 WHERE {nameof(FlowEtapa.FlowId)} = @FlowId
                   AND (@EmpresaIdSolicitante IS NULL
                        OR {nameof(FlowEtapa.FlowId)} IN (
-                           SELECT {nameof(Flow.Id)} FROM {nameof(Flow)}
+                           SELECT {nameof(Flow.Id)} FROM {TabelaFluxo}
                            WHERE {nameof(Flow.EmpresaId)} = @EmpresaIdSolicitante));";
 
             return await _session.Connection.ExecuteAsync(sql,
@@ -181,7 +186,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<int> Alterar(Flow flow, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                UPDATE {nameof(Flow)} SET
+                UPDATE {TabelaFluxo} SET
                     {nameof(flow.Nome)} = @{nameof(flow.Nome)},
                     {nameof(flow.Descricao)} = @{nameof(flow.Descricao)},
                     {nameof(flow.GatilhoInicial)} = @{nameof(flow.GatilhoInicial)},
@@ -205,7 +210,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                DELETE FROM {nameof(Flow)}
+                DELETE FROM {TabelaFluxo}
                 WHERE {nameof(Flow.Id)} = @Id
                 {RecorteDaEmpresa};";
 
