@@ -38,7 +38,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Usuario.DeletaUsuario;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario;
 using ProjetoMetaMensagem.Servico.Configuration;
 using ProjetoMetaMensagem.Servico.Email;
-using ProjetoMetaMensagem.Servico.Meta;
+using MetaServiceImpl = ProjetoMetaMensagem.Servico.MetaService.MetaService;
 using ProjetoMetaMensagem.Servico.Twilio;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
@@ -55,7 +55,6 @@ using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote;
 using ProjetoMetaMensagem.Servico.Flow;
 using ProjetoMetaMensagem.Servico.Auth;
-using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
@@ -136,7 +135,7 @@ builder.Services.AddScoped<DbSession>();
 
 //servicos
 builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
-builder.Services.AddHttpClient<IMetaService, MetaService>();
+builder.Services.AddHttpClient<IMetaService, MetaServiceImpl>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 //Configura��es

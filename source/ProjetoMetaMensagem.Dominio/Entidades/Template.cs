@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

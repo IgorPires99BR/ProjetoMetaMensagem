@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading.Tasks;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Numeros.CriaNumeroMeta;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
 {
@@ -57,20 +56,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
                     return response;
                 }
 
-                // 2. Monta a requisição de domínio e envia para a Meta
-                var requisicaoMeta = new CriaNumeroMetaRequisicao
-                {
-                    Telefone = command.NumeroTelefone,
-                    NomeVerificado = command.NomeEmpresa,
-                    CodigoPais = "55"
-                };
-
+                // 2. Envia a criação/vinculação do número para a Meta
                 var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-                var respostaMeta = await _metaService.CriarNumeroMetaAsync(requisicaoMeta,wabaId,token);
+                var phoneNumberId = await _metaService.CriarNumeroMetaAsync(command.NumeroTelefone, command.NomeEmpresa, "55", wabaId, token);
 
-                if (respostaMeta == null || string.IsNullOrEmpty(respostaMeta.Id))
+                if (string.IsNullOrEmpty(phoneNumberId))
                 {
                     response.AddErro("A Meta aceitou a requisição, mas não retornou um identificador válido.");
                     return response;
@@ -82,7 +74,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero
                     UsuarioId = command.UsuarioId,
                     Telefone = command.NumeroTelefone,
                     Descricao = command.NomeEmpresa, // Usando o nome verificado como descrição inicial
-                    InstanciaId = respostaMeta.Id,       // O Phone Number ID retornado pela Meta
+                    InstanciaId = phoneNumberId,          // O Phone Number ID retornado pela Meta
                     StatusMeta = "PENDING",             // Status inicial padrão de onboarding
                     QualidadeMeta = "UNKNOWN",          // Qualidade inicial até a Meta analisar o chip
                     DataCriacao = DateTime.Now

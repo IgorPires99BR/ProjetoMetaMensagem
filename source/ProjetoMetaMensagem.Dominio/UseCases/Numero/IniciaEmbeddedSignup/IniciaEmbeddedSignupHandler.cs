@@ -56,9 +56,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
                 }
 
                 // Troca o "code" do Embedded Signup pelo token de sistema
-                var trocaCode = await _metaService.TrocarCodeEmbeddedSignupAsync(command.Code);
+                var systemUserToken = await _metaService.TrocarCodeEmbeddedSignupAsync(command.Code);
 
-                if (trocaCode == null || string.IsNullOrEmpty(trocaCode.SystemUserToken))
+                if (string.IsNullOrEmpty(systemUserToken))
                 {
                     response.AddErro("A Meta aceitou a requisição, mas não retornou um token de sistema válido.");
                     _unitOfWork.Rollback();
@@ -74,7 +74,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
                     Telefone = command.NumeroTelefone,
                     Descricao = command.NomeEmpresa,
                     WabaId = wabaId,
-                    SystemUserToken = trocaCode.SystemUserToken,
+                    SystemUserToken = systemUserToken,
                     TipoConexao = TipoConexaoNumero.ApiOficial,
                     StatusConexao = "Conectado",
                     StatusMeta = "PENDING",

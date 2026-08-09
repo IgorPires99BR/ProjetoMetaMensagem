@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.EnviarMensagemTemplateLote;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -50,10 +49,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-                EnviarMensagemTemplateLoteRequisicao requisicao = new EnviarMensagemTemplateLoteRequisicao(command);
-
-                // O serviço retorna o Dictionary<string, bool> contendo [Telefone -> Sucesso]
-                var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(requisicao, phoneNumberId,token);
+                // O serviço retorna o Dictionary<string, ResultadoEnvioTemplate> contendo [Telefone -> Resultado]
+                var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(command, phoneNumberId, token);
 
                 foreach (var disparo in resultadoDisparos)
                 {

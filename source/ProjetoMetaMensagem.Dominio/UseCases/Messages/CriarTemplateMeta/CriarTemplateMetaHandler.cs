@@ -4,6 +4,7 @@ using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta;
 using System;
 using System.Collections.Generic;
@@ -45,7 +46,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
                 // 2. Chamada ao serviço de integração com a Meta
-                var sucesso = await _whatsappService.CriarTemplateMetaAsync(new Entidades.Servico.Meta.Template.CreateTemplateRequisicao(command),wabaId,token);
+                var componentesMeta = command.Componentes?.Select(c => new ComponenteTemplateEnvio
+                {
+                    Tipo = c.Tipo,
+                    Formato = c.Formato,
+                    Texto = c.Texto,
+                    Botoes = c.Botoes?.Select(b => new BotaoTemplateEnvio
+                    {
+                        Tipo = b.Tipo,
+                        Texto = b.Texto,
+                        Url = b.Url,
+                        NumeroTelefone = b.NumeroTelefone
+                    }).ToList()
+                }).ToList();
+
+                var sucesso = await _whatsappService.CriarTemplateMetaAsync(command.Nome, command.Idioma ?? "pt_BR", command.Categoria ?? "MARKETING", componentesMeta, wabaId, token);
 
                 if (sucesso == null)
                 {

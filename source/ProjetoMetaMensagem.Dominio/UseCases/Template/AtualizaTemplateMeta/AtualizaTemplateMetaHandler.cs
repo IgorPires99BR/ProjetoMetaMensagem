@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +50,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                 // 2. Busca os templates atualizados diretamente da API da Meta
                 var templatesMeta = await _metaService.ObterTemplatesMetaAsync(wabaId, token);
 
-                if (templatesMeta == null || !templatesMeta.Templates.Any())
+                if (templatesMeta == null || !templatesMeta.Any())
                 {
                     response.AddErro("Nenhum template encontrado na API da Meta para esta conta.");
                     return response;
@@ -61,7 +63,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                 // --- LÓGICA DE EXCLUSÃO (Sincronização de órfãos) ---
                 // Identifica templates que estão no banco, mas foram deletados no painel da Meta
                 // Nota: Se você não usar o Id da Meta como PK física, adapte o NomeTemplate ou crie um campo 'MetaTemplateId'
-                var nomesVindosDaMeta = templatesMeta.Templates.Select(t => t.Nome).ToList();
+                var nomesVindosDaMeta = templatesMeta.Select(t => t.Nome).ToList();
                 var templatesParaRemover = templatesNoBanco
                     .Where(b => !nomesVindosDaMeta.Contains(b.NomeTemplate))
                     .ToList();
@@ -77,10 +79,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                 var listaResultados = new List<AtualizaTemplateMetaResult>();
 
                 // --- LÓGICA DE UPSERT (Update ou Insert) ---
-                foreach (var templateApi in templatesMeta.Templates)
+                foreach (var templateApi in templatesMeta)
                 {
                     // Confronta usando o Nome único do Template dentro do WABA
                     var templateExistente = templatesNoBanco.FirstOrDefault(x => x.NomeTemplate == templateApi.Nome);
+
+                    // Converte do formato de leitura da Meta para o formato persistido localmente
+                    var componentesPersistidos = MapearParaPersistencia(templateApi.Componentes);
 
                     if (templateExistente != null)
                     {
@@ -92,7 +97,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                         templateExistente.DataAtualizacao = DateTime.Now;
 
                         // Atualiza a árvore simplificada de componentes (O setter cuida da serialização JSON)
-                        templateExistente.Componentes = templateApi.Componentes;
+                        templateExistente.Componentes = componentesPersistidos;
 
                         await _unitOfWork.Template.Alterar(templateExistente, command.IdEmpresa);
                     }
@@ -108,7 +113,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                             Categoria = templateApi.Categoria,
                             Idioma = templateApi.Idioma,
                             Status = templateApi.Status,
-                            Componentes = templateApi.Componentes,
+                            Componentes = componentesPersistidos,
                             DataCriacao = DateTime.Now,
                             DataAtualizacao = DateTime.Now
                         };
@@ -123,6 +128,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
             }
 
             return response;
+        }
+
+        // Converte o formato de leitura da Meta (ComponenteTemplateMetaDto) para o formato
+        // persistido localmente (TemplateComponenteDto) -- são tipos deliberadamente distintos.
+        private static List<TemplateComponenteDto> MapearParaPersistencia(List<ComponenteTemplateMetaDto> componentesMeta)
+        {
+            if (componentesMeta == null) return new List<TemplateComponenteDto>();
+
+            return componentesMeta.Select(c => new TemplateComponenteDto
+            {
+                Tipo = c.Tipo,
+                FormatMidia = c.FormatMidia,
+                Texto = c.Texto,
+                Botoes = c.Botoes?.Select(b => new TemplateBotaoDto
+                {
+                    Tipo = b.Tipo,
+                    Texto = b.Texto,
+                    Url = b.Url
+                }).ToList()
+            }).ToList();
         }
     }
 }

@@ -48,7 +48,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
 
                 var numerosMeta = await _metaService.ObterNumerosMetaAsync(wabaId, token);
 
-                if (numerosMeta == null || !numerosMeta.Numeros.Any())
+                if (numerosMeta == null || !numerosMeta.Any())
                 {
                     response.AddErro("Nenhum número encontrado na API da Meta.");
                     return response;
@@ -57,7 +57,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
                 var numerosNoBanco = await _unitOfWork.Numero
                     .ObterPorUsuario(command.IdUsuario);
 
-                var idsVindosDaMeta = numerosMeta.Numeros.Select(n => n.Id).ToList();
+                var idsVindosDaMeta = numerosMeta.Select(n => n.Id).ToList();
                 var numerosParaRemover = numerosNoBanco
                     .Where(b => !idsVindosDaMeta.Contains(b.InstanciaId))
                     .ToList();
@@ -69,7 +69,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
                     // escape pra ca nao chega a ser apagado.
                     await _unitOfWork.Numero.Excluir(numeroExcluir.Id, command.IdEmpresa);
                 }
-                foreach (var numeroApi in numerosMeta.Numeros)
+                foreach (var numeroApi in numerosMeta)
                 {
                     var numeroExistente = numerosNoBanco.FirstOrDefault(x => x.InstanciaId == numeroApi.Id);
 

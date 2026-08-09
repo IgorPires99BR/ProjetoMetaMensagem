@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template;
-using ProjetoMetaMensagem.Dominio.Entidades.Servico.Meta.Template.ObtemTemplateMeta;
+using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Enums;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,11 +51,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                 var temHeader = !string.IsNullOrEmpty(command.HeaderTipo) && command.HeaderTipo != "NONE";
                 var quantidadeVariaveis = Regex.Matches(command.Conteudo ?? string.Empty, @"\{\{\d+\}\}").Count;
 
-                var componentesMeta = new List<ComponenteTemplate>();
+                var componentesMeta = new List<ComponenteTemplateEnvio>();
 
                 if (temHeader)
                 {
-                    var headerMeta = new ComponenteTemplate
+                    var headerMeta = new ComponenteTemplateEnvio
                     {
                         Tipo = "HEADER",
                         Formato = command.HeaderTipo
@@ -68,13 +68,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     else
                     {
                         // IMAGE/VIDEO/DOCUMENT: a Meta exige o handle do upload prévio (Resumable Upload API), não aceita URL direta
-                        headerMeta.Example = new TemplateExample { HeaderHandle = new List<string> { command.HeaderExemploHandle } };
+                        headerMeta.HeaderHandle = new List<string> { command.HeaderExemploHandle };
                     }
 
                     componentesMeta.Add(headerMeta);
                 }
 
-                var bodyMeta = new ComponenteTemplate
+                var bodyMeta = new ComponenteTemplateEnvio
                 {
                     Tipo = "BODY",
                     Texto = command.Conteudo
@@ -83,7 +83,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                 if (quantidadeVariaveis > 0)
                 {
                     // A Meta exige um valor de exemplo por variável do corpo
-                    bodyMeta.Example = new TemplateExample { BodyText = new List<List<string>> { command.ExemplosBody } };
+                    bodyMeta.BodyTextExemplos = new List<List<string>> { command.ExemplosBody };
                 }
 
                 componentesMeta.Add(bodyMeta);
@@ -92,10 +92,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
 
                 if (temBotoes)
                 {
-                    componentesMeta.Add(new ComponenteTemplate
+                    componentesMeta.Add(new ComponenteTemplateEnvio
                     {
                         Tipo = "BUTTONS",
-                        Botoes = command.Botoes.Select(b => new BotaoTemplate
+                        Botoes = command.Botoes.Select(b => new BotaoTemplateEnvio
                         {
                             Tipo = b.Tipo,
                             Texto = b.Texto,
@@ -105,22 +105,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     });
                 }
 
-                var requisicaoMeta = new CreateTemplateRequisicao
-                {
-                    Nome = command.NomeTemplate,
-                    Categoria = command.Categoria,
-                    Idioma = command.Idioma ?? "pt_BR",
-                    // A Meta exige os componentes separados (HEADER, BODY, BUTTONS).
-                    Componentes = componentesMeta
-                };
-
                 var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-
                 // 3. Dispara a criação para a API da Meta
                 // Esse método retorna a string JSON de resposta contendo o ID gerado pela Meta
-                var respostaMetaJson = await _metaService.CriarTemplateMetaAsync(requisicaoMeta, wabaId, token);
+                var respostaMetaJson = await _metaService.CriarTemplateMetaAsync(command.NomeTemplate, command.Idioma ?? "pt_BR", command.Categoria, componentesMeta, wabaId, token);
 
                 if (string.IsNullOrEmpty(respostaMetaJson))
                 {
