@@ -33,6 +33,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         [MaxLength(50)]
         public string? Status { get; set; }
 
+        [MaxLength(100)]
+        public string? MetaTemplateId { get; set; }
+
         public string? ComponentesJson { get; set; }
 
         [NotMapped]

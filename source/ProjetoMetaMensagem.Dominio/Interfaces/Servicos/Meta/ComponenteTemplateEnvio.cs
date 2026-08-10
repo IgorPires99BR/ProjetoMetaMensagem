@@ -20,9 +20,12 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta
 
     public class BotaoTemplateEnvio
     {
-        public string Tipo { get; set; } // QUICK_REPLY, PHONE_NUMBER, URL
+        public string Tipo { get; set; } // QUICK_REPLY, PHONE_NUMBER, URL, COPY_CODE
         public string Texto { get; set; }
         public string? Url { get; set; }
         public string? NumeroTelefone { get; set; }
+
+        // Cupom de exemplo exigido pela Meta quando Tipo == COPY_CODE
+        public string? CodigoExemplo { get; set; }
     }
 }

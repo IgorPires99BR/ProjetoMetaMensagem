@@ -81,8 +81,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                 // --- LÓGICA DE UPSERT (Update ou Insert) ---
                 foreach (var templateApi in templatesMeta)
                 {
-                    // Confronta usando o Nome único do Template dentro do WABA
-                    var templateExistente = templatesNoBanco.FirstOrDefault(x => x.NomeTemplate == templateApi.Nome);
+                    // Confronta preferencialmente pelo MetaTemplateId (estavel mesmo se o nome mudar
+                    // de outra forma); templates legados sincronizados antes desse campo existir caem
+                    // no fallback por NomeTemplate.
+                    var templateExistente = templatesNoBanco.FirstOrDefault(x => x.MetaTemplateId == templateApi.Id)
+                        ?? templatesNoBanco.FirstOrDefault(x => x.NomeTemplate == templateApi.Nome);
 
                     // Converte do formato de leitura da Meta para o formato persistido localmente
                     var componentesPersistidos = MapearParaPersistencia(templateApi.Componentes);
@@ -94,6 +97,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                         templateExistente.Categoria = templateApi.Categoria;
                         templateExistente.Idioma = templateApi.Idioma;
                         templateExistente.Status = templateApi.Status;
+                        templateExistente.MetaTemplateId = templateApi.Id;
                         templateExistente.DataAtualizacao = DateTime.Now;
 
                         // Atualiza a árvore simplificada de componentes (O setter cuida da serialização JSON)
@@ -113,6 +117,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                             Categoria = templateApi.Categoria,
                             Idioma = templateApi.Idioma,
                             Status = templateApi.Status,
+                            MetaTemplateId = templateApi.Id,
                             Componentes = componentesPersistidos,
                             DataCriacao = DateTime.Now,
                             DataAtualizacao = DateTime.Now
@@ -145,7 +150,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                 {
                     Tipo = b.Tipo,
                     Texto = b.Texto,
-                    Url = b.Url
+                    Url = b.Url,
+                    NumeroTelefone = b.NumeroTelefone,
+                    CodigoExemplo = b.CodigoExemplo
                 }).ToList()
             }).ToList();
         }

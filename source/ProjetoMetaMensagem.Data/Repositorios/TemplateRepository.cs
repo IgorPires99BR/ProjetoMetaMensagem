@@ -22,15 +22,16 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = $@"
                 INSERT INTO {nameof(Template)} (
-                    {nameof(Template.EmpresaId)}, 
-                    {nameof(Template.NomeTemplate)}, 
-                    {nameof(Template.Conteudo)}, 
-                    {nameof(Template.Categoria)}, 
-                    {nameof(Template.ComponentesJson)}, 
-                    {nameof(Template.Idioma)}, 
-                    {nameof(Template.Status)}
-                ) 
-                VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria,@ComponentesJson, @Idioma, @Status);
+                    {nameof(Template.EmpresaId)},
+                    {nameof(Template.NomeTemplate)},
+                    {nameof(Template.Conteudo)},
+                    {nameof(Template.Categoria)},
+                    {nameof(Template.ComponentesJson)},
+                    {nameof(Template.Idioma)},
+                    {nameof(Template.Status)},
+                    {nameof(Template.MetaTemplateId)}
+                )
+                VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria,@ComponentesJson, @Idioma, @Status, @MetaTemplateId);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             await _session.Connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
@@ -50,7 +51,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Template.Conteudo)} = @Conteudo,
                     {nameof(Template.Categoria)} = @Categoria,
                     {nameof(Template.ComponentesJson)} = @ComponentesJson,
-                    {nameof(Template.Status)} = @Status
+                    {nameof(Template.Status)} = @Status,
+                    {nameof(Template.MetaTemplateId)} = @MetaTemplateId
                 WHERE {nameof(Template.Id)} = @Id
                 {RecorteDaEmpresa}";
 
@@ -63,6 +65,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     template.Categoria,
                     template.ComponentesJson,
                     template.Status,
+                    template.MetaTemplateId,
                     EmpresaIdSolicitante = empresaIdSolicitante
                 },
                 transaction: _session.Transaction);
@@ -84,6 +87,18 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = $"SELECT * FROM {nameof(Template)} WHERE {nameof(Template.Id)} = @Id";
             return await _session.Connection.QueryFirstOrDefaultAsync<Template>(sql, new { Id = id }, transaction: _session.Transaction);
+        }
+
+        public async Task<Template?> ObterPorIdEEmpresa(Guid id, Guid? empresaIdSolicitante)
+        {
+            var sql = $@"
+                SELECT * FROM {nameof(Template)}
+                WHERE {nameof(Template.Id)} = @Id
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.QueryFirstOrDefaultAsync<Template>(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Template>> Obter()

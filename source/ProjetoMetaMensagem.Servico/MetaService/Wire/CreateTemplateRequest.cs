@@ -25,7 +25,8 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
                         Type = b.Tipo,
                         Text = b.Texto,
                         Url = b.Url,
-                        PhoneNumber = b.NumeroTelefone
+                        PhoneNumber = b.NumeroTelefone,
+                        Example = b.CodigoExemplo
                     }).ToList(),
                     Example = (c.HeaderHandle != null || c.BodyTextExemplos != null)
                         ? new TemplateExampleRequest { HeaderHandle = c.HeaderHandle, BodyText = c.BodyTextExemplos }
@@ -83,7 +84,10 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
         [JsonProperty("type")]
         public string Type { get; set; }
 
-        [JsonProperty("text")]
+        // Sem NullValueHandling.Ignore de propósito: obrigatório nos outros tipos, mas o botão
+        // COPY_CODE não tem texto livre (a Meta define o rótulo sozinha) -- fica null e some do
+        // JSON graças ao NullValueHandling.Ignore configurado na serialização do request inteiro.
+        [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
         public string Text { get; set; }
 
         [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
@@ -91,5 +95,9 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
 
         [JsonProperty("phone_number", NullValueHandling = NullValueHandling.Ignore)]
         public string PhoneNumber { get; set; }
+
+        // Cupom de exemplo exigido pela Meta quando Type == COPY_CODE
+        [JsonProperty("example", NullValueHandling = NullValueHandling.Ignore)]
+        public string Example { get; set; }
     }
 }

@@ -7,6 +7,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,62 +49,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
             {
                 _unitOfWork.BeginTransaction();
                 // 2. Monta o payload estruturado que o 'CriarTemplateMetaAsync' do seu MetaService espera
-                var temHeader = !string.IsNullOrEmpty(command.HeaderTipo) && command.HeaderTipo != "NONE";
-                var quantidadeVariaveis = Regex.Matches(command.Conteudo ?? string.Empty, @"\{\{\d+\}\}").Count;
-
-                var componentesMeta = new List<ComponenteTemplateEnvio>();
-
-                if (temHeader)
-                {
-                    var headerMeta = new ComponenteTemplateEnvio
-                    {
-                        Tipo = "HEADER",
-                        Formato = command.HeaderTipo
-                    };
-
-                    if (command.HeaderTipo == "TEXT")
-                    {
-                        headerMeta.Texto = command.HeaderTexto;
-                    }
-                    else
-                    {
-                        // IMAGE/VIDEO/DOCUMENT: a Meta exige o handle do upload prévio (Resumable Upload API), não aceita URL direta
-                        headerMeta.HeaderHandle = new List<string> { command.HeaderExemploHandle };
-                    }
-
-                    componentesMeta.Add(headerMeta);
-                }
-
-                var bodyMeta = new ComponenteTemplateEnvio
-                {
-                    Tipo = "BODY",
-                    Texto = command.Conteudo
-                };
-
-                if (quantidadeVariaveis > 0)
-                {
-                    // A Meta exige um valor de exemplo por variável do corpo
-                    bodyMeta.BodyTextExemplos = new List<List<string>> { command.ExemplosBody };
-                }
-
-                componentesMeta.Add(bodyMeta);
-
-                var temBotoes = command.Botoes != null && command.Botoes.Any();
-
-                if (temBotoes)
-                {
-                    componentesMeta.Add(new ComponenteTemplateEnvio
-                    {
-                        Tipo = "BUTTONS",
-                        Botoes = command.Botoes.Select(b => new BotaoTemplateEnvio
-                        {
-                            Tipo = b.Tipo,
-                            Texto = b.Texto,
-                            Url = b.Url,
-                            NumeroTelefone = b.NumeroTelefone
-                        }).ToList()
-                    });
-                }
+                var componentesMeta = TemplateComponentesBuilder.MontarComponentesEnvio(command);
 
                 var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
@@ -118,6 +64,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     return response;
                 }
 
+                // A Meta devolve o id numerico gerado pro template recem-criado -- precisa ser
+                // guardado porque a edicao (POST /{template-id}) e a exclusao mais precisa exigem
+                // esse id, nao o nome.
+                var metaTemplateId = Newtonsoft.Json.Linq.JObject.Parse(respostaMetaJson)["id"]?.ToString();
+
                 // 4. Cria a entidade de Domínio para salvar no banco local
                 // Nota: Por padrão, todo template recém-criado entra em análise na Meta com o status "PENDING"
                 var novoTemplate = new Entidades.Template
@@ -129,46 +80,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     Categoria = command.Categoria,
                     Idioma = command.Idioma ?? "pt_BR",
                     Status = "PENDING",
+                    MetaTemplateId = metaTemplateId,
                     DataCriacao = DateTime.Now
                 };
 
-                var componentesLocais = new List<TemplateComponenteDto>();
-
-                if (temHeader)
-                {
-                    componentesLocais.Add(new TemplateComponenteDto
-                    {
-                        Tipo = TipoComponenteTemplate.Header,
-                        Texto = command.HeaderTipo == "TEXT" ? command.HeaderTexto : null,
-                        FormatMidia = command.HeaderTipo switch
-                        {
-                            "TEXT" => TipoMidiaTemplate.Text,
-                            "IMAGE" => TipoMidiaTemplate.Image,
-                            "VIDEO" => TipoMidiaTemplate.Video,
-                            "DOCUMENT" => TipoMidiaTemplate.Document,
-                            _ => TipoMidiaTemplate.None
-                        }
-                    });
-                }
-
-                if (temBotoes)
-                {
-                    componentesLocais.Add(new TemplateComponenteDto
-                    {
-                        Tipo = TipoComponenteTemplate.Buttons,
-                        Botoes = command.Botoes.Select(b => new TemplateBotaoDto
-                        {
-                            Tipo = b.Tipo switch
-                            {
-                                "URL" => TipoBotaoTemplate.Url,
-                                "PHONE_NUMBER" => TipoBotaoTemplate.PhoneNumber,
-                                _ => TipoBotaoTemplate.QuickReply
-                            },
-                            Texto = b.Texto,
-                            Url = b.Url
-                        }).ToList()
-                    });
-                }
+                var componentesLocais = TemplateComponentesBuilder.MontarComponentesLocais(command);
 
                 if (componentesLocais.Any())
                 {

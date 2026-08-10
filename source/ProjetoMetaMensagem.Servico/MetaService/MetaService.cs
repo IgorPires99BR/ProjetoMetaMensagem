@@ -224,8 +224,9 @@ namespace ProjetoMetaMensagem.Servico.MetaService
         {
             try
             {
-                // 1. Inicia a sessão de upload
-                var initUrl = $"https://graph.facebook.com/v20.0/{appId}/uploads" +
+                // 1. Inicia a sessão de upload (endpoint normal, versionado -- usa a mesma BaseUrl
+                // configurada dos demais métodos, evitando ficar preso numa versão hardcoded)
+                var initUrl = $"{_configuration.BaseUrl}{appId}/uploads" +
                     $"?file_length={arquivo.Length}&file_type={Uri.EscapeDataString(mimeType)}&access_token={Uri.EscapeDataString(accessToken)}";
 
                 var initRequest = new HttpRequestMessage(HttpMethod.Post, initUrl);
@@ -243,8 +244,9 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                     throw new Exception("A Meta não retornou o ID da sessão de upload.");
                 }
 
-                // 2. Envia os bytes do arquivo pra sessão aberta
-                var uploadUrl = $"https://graph.facebook.com/v20.0/{sessionId}";
+                // 2. Envia os bytes do arquivo pra sessão aberta -- o session-id já vem totalmente
+                // qualificado pela Meta, essa chamada específica NÃO leva prefixo de versão.
+                var uploadUrl = $"https://graph.facebook.com/{sessionId}";
                 var uploadRequest = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
                 uploadRequest.Headers.TryAddWithoutValidation("Authorization", $"OAuth {accessToken}");
                 uploadRequest.Headers.TryAddWithoutValidation("file_offset", "0");
@@ -352,7 +354,9 @@ namespace ProjetoMetaMensagem.Servico.MetaService
 
         public async Task<string> CriarTemplateMetaAsync(string nome, string idioma, string categoria, List<ComponenteTemplateEnvio> componentes, string wabaId, string accessToken)
         {
-            var endpoint = $"https://graph.facebook.com/v20.0/{wabaId}/message_templates";
+            // Endpoint relativo a _httpClient.BaseAddress (config ApiWhatsappConnectionConfiguration.BaseUrl)
+            // -- antes tinha a versao da Graph API hardcoded aqui, dessincronizada da BaseUrl configurada.
+            var endpoint = $"{wabaId}/message_templates";
 
             var requestMeta = new CreateTemplateRequest(nome, idioma, categoria, componentes);
 
@@ -374,6 +378,65 @@ namespace ProjetoMetaMensagem.Servico.MetaService
             }
 
             return responseContent;
+        }
+
+        public async Task<string> AtualizarTemplateMetaAsync(string metaTemplateId, string categoria, List<ComponenteTemplateEnvio> componentes, string accessToken)
+        {
+            // A Meta edita um template existente via POST sobre o proprio id do template (nao sobre
+            // o wabaId), e so aceita category + components no corpo -- name/language sao imutaveis
+            // aqui (mudar idioma exige criar um template novo).
+            var endpoint = $"{metaTemplateId}";
+
+            var requestMeta = new EditTemplateRequest(categoria, componentes);
+
+            var json = JsonConvert.SerializeObject(requestMeta, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Erro ao editar template na Meta: {responseContent}");
+            }
+
+            return responseContent;
+        }
+
+        public async Task<bool> ExcluirTemplateMetaAsync(string nomeTemplate, string? metaTemplateId, string wabaId, string accessToken)
+        {
+            var endpoint = $"{wabaId}/message_templates?name={Uri.EscapeDataString(nomeTemplate)}";
+            if (!string.IsNullOrEmpty(metaTemplateId))
+            {
+                endpoint += $"&hsm_id={Uri.EscapeDataString(metaTemplateId)}";
+            }
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, endpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            // 404/"template nao encontrado" e tratado como sucesso idempotente -- o template pode
+            // ja ter sido apagado direto no Business Manager, e isso nao deve travar a exclusao local.
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                    responseContent.Contains("does not exist", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                throw new Exception($"Erro ao excluir template na Meta: {responseContent}");
+            }
+
+            return true;
         }
 
         public async Task<Dictionary<string, ResultadoEnvioTemplate>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateMetaLoteCommand comandoLote, string phoneNumberId, string accessToken)
@@ -445,7 +508,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
             try
             {
                 // 1. Consulta o metadado da mídia pra obter a URL temporária e o mime_type
-                var metaRequest = new HttpRequestMessage(HttpMethod.Get, $"https://graph.facebook.com/v20.0/{mediaId}");
+                var metaRequest = new HttpRequestMessage(HttpMethod.Get, $"{_configuration.BaseUrl}{mediaId}");
                 metaRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
                 var metaResponse = await _httpClient.SendAsync(metaRequest);
@@ -725,11 +788,14 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                     {
                         Texto = b.Text,
                         Url = b.Url,
+                        NumeroTelefone = b.PhoneNumber,
+                        CodigoExemplo = b.Example,
                         Tipo = b.Type?.ToUpper() switch
                         {
                             "QUICK_REPLY" => TipoBotaoTemplate.QuickReply,
                             "URL" => TipoBotaoTemplate.Url,
                             "PHONE_NUMBER" => TipoBotaoTemplate.PhoneNumber,
+                            "COPY_CODE" => TipoBotaoTemplate.CopyCode,
                             _ => TipoBotaoTemplate.QuickReply
                         }
                     }).ToList();

@@ -10,6 +10,10 @@ namespace ProjetoMetaMensagem.Dominio.Enums
     {
         QuickReply = 0,
         Url = 1,
-        PhoneNumber = 2
+        PhoneNumber = 2,
+
+        // Adicionado no final de propósito: os 3 valores acima já estão persistidos como número
+        // em produção (ComponentesJson) -- nunca reordenar os existentes.
+        CopyCode = 3
     }
 }

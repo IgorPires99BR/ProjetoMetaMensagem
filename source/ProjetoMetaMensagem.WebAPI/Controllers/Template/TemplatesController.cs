@@ -1,8 +1,10 @@
 ﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplateConexoes;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao;
@@ -95,6 +97,41 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Alterar"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPut("api/template/{id}")]
+        public async Task<IActionResult> Editar(Guid id, [FromBody] AtualizaTemplateCommand command)
+        {
+            try
+            {
+                command.TemplateId = id;
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Editar"), tipo = "Servico" });
+            }
+        }
+
+        [HttpDelete("api/template/{id}")]
+        public async Task<IActionResult> Excluir(Guid id)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new DeletaTemplateCommand
+                {
+                    TemplateId = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Excluir"), tipo = "Servico" });
             }
         }
 

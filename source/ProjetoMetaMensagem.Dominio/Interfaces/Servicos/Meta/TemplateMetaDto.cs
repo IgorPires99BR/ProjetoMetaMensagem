@@ -33,5 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta
         public TipoBotaoTemplate Tipo { get; set; }
         public string Texto { get; set; }
         public string? Url { get; set; }
+        public string? NumeroTelefone { get; set; }
+        public string? CodigoExemplo { get; set; }
     }
 }

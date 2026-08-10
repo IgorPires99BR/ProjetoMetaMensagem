@@ -2,13 +2,13 @@ using FluentValidation;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.Common;
 using System.Linq;
 
-namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
+namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
 {
-    public class CriaTemplateValidator : AbstractValidator<CriaTemplateCommand>
+    public class AtualizaTemplateValidator : AbstractValidator<AtualizaTemplateCommand>
     {
-        public CriaTemplateValidator()
+        public AtualizaTemplateValidator()
         {
-            RuleFor(x => x.NomeTemplate).NotEmpty().WithMessage("Informe o nome do template.");
+            RuleFor(x => x.TemplateId).NotEmpty().WithMessage("Informe o template a ser editado.");
             RuleFor(x => x.Conteudo).NotEmpty().WithMessage("Informe o conteúdo do corpo do template.");
 
             RuleFor(x => x.Categoria)

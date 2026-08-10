@@ -41,6 +41,7 @@ using ProjetoMetaMensagem.Servico.Email;
 using MetaServiceImpl = ProjetoMetaMensagem.Servico.MetaService.MetaService;
 using ProjetoMetaMensagem.Servico.Twilio;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
@@ -207,6 +208,7 @@ builder.Services.AddScoped<IRequestHandler<AtivaCoexistenciaCommand, Response<At
 
 //Registros de Template
 builder.Services.AddScoped<IRequestHandler<CriaTemplateCommand, Response<CriaTemplateResult>>, CriaTemplateHandler>();
+builder.Services.AddScoped<IRequestHandler<AtualizaTemplateCommand, Response<AtualizaTemplateResult>>, AtualizaTemplateHandler>();
 builder.Services.AddScoped<IRequestHandler<DeletaTemplateCommand, Response<DeletaTemplateResult>>, DeletaTemplateHandler>();
 builder.Services.AddScoped<IRequestHandler<ListaTemplateCommand, Response<List<ListaTemplateResult>>>, ListaTemplateHandler>();
 builder.Services.AddScoped<IRequestHandler<AtualizaTemplateMetaCommand, Response<AtualizaTemplateMetaResult>>, AtualizaTemplateMetaHandler>();

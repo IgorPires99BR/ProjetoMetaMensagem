@@ -69,13 +69,19 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
     public class ButtonResponse
     {
         [JsonProperty("type")]
-        public string Type { get; set; } // QUICK_REPLY, URL, PHONE_NUMBER
+        public string Type { get; set; } // QUICK_REPLY, URL, PHONE_NUMBER, COPY_CODE
 
-        [JsonProperty("text")]
-        public string Text { get; set; } // Texto escrito dentro do botão
+        [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
+        public string Text { get; set; } // Texto escrito dentro do botão (COPY_CODE não tem)
 
         [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
         public string Url { get; set; } // Link base do botão se o tipo for URL
+
+        [JsonProperty("phone_number", NullValueHandling = NullValueHandling.Ignore)]
+        public string PhoneNumber { get; set; } // Número do botão se o tipo for PHONE_NUMBER
+
+        [JsonProperty("example", NullValueHandling = NullValueHandling.Ignore)]
+        public string Example { get; set; } // Cupom de exemplo se o tipo for COPY_CODE
     }
 
     public class PagingResponse

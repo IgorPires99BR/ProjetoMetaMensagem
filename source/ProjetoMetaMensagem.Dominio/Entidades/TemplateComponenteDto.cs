@@ -47,5 +47,16 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         /// O link/URL base cadastrado no botão. Aplicável quando Tipo == TipoBotaoTemplate.Url
         /// </summary>
         public string? Url { get; set; }
+
+        /// <summary>
+        /// O número de telefone cadastrado no botão. Aplicável quando Tipo == TipoBotaoTemplate.PhoneNumber
+        /// </summary>
+        public string? NumeroTelefone { get; set; }
+
+        /// <summary>
+        /// O código de cupom de exemplo exigido pela Meta. Aplicável quando Tipo == TipoBotaoTemplate.CopyCode
+        /// (esse tipo não tem Texto livre -- a Meta define o rótulo do botão sozinha)
+        /// </summary>
+        public string? CodigoExemplo { get; set; }
     }
 }

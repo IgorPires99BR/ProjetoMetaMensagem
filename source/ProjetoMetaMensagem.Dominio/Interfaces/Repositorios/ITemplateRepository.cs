@@ -15,6 +15,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<int> Alterar(Template template, Guid? empresaIdSolicitante);
         Task<int> Excluir(Guid id, Guid? empresaIdSolicitante);
         Task<Template?> ObterPorId(int id);
+        // empresaIdSolicitante restringe a busca aos templates da empresa informada (null = admin, sem restricao)
+        Task<Template?> ObterPorIdEEmpresa(Guid id, Guid? empresaIdSolicitante);
         Task<IEnumerable<Template>> Obter();
         Task<IEnumerable<Template>> ObterPorEmpresa(Guid empresaId);
     }

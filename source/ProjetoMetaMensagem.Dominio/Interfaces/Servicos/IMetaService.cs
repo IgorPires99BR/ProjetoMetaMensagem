@@ -28,6 +28,15 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
         Task<string> CriarTemplateMetaAsync(string nome, string idioma, string categoria, List<ComponenteTemplateEnvio> componentes, string wabaId, string accessToken);
 
+        // Edita um template PENDING/REJECTED (a Meta so aceita edicao nesses status), via POST /{template-id}.
+        // Nao aceita alterar nome nem idioma -- so category e components.
+        Task<string> AtualizarTemplateMetaAsync(string metaTemplateId, string categoria, List<ComponenteTemplateEnvio> componentes, string accessToken);
+
+        // DELETE /{waba_id}/message_templates?name=...&hsm_id=... -- remove o template (todas as
+        // variantes de idioma daquele nome, a menos que hsm_id restrinja a uma variante especifica).
+        // 404 da Meta (template ja nao existe la) e tratado como sucesso idempotente.
+        Task<bool> ExcluirTemplateMetaAsync(string nomeTemplate, string? metaTemplateId, string wabaId, string accessToken);
+
         // Resumable Upload API da Meta: sobe um arquivo de exemplo (imagem/vídeo/documento) e devolve
         // o "handle" exigido no campo example.header_handle da criação de template com HEADER de mídia
         Task<string> UploadMidiaExemploAsync(string appId, string accessToken, byte[] arquivo, string mimeType);
