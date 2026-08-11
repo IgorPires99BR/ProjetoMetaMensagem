@@ -74,6 +74,46 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var sql = $"DELETE FROM {Tabela} WHERE {nameof(ConversationState.Id)} = @Id;";
             await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
         }
+
+        public async Task<List<ConversationState>> ObterAtivasPorEmpresaEContatos(Guid empresaId, List<Guid> contatoIds)
+        {
+            var idsLista = contatoIds.Distinct().ToList();
+            if (idsLista.Count == 0) return new List<ConversationState>();
+
+            var sql = $@"
+                SELECT * FROM {Tabela}
+                WHERE {nameof(ConversationState.EmpresaId)} = @EmpresaId
+                  AND {nameof(ConversationState.ContatoId)} IN @ContatoIds
+                  AND {nameof(ConversationState.Finalizado)} = 0;";
+
+            var result = await _session.Connection.QueryAsync<ConversationState>(
+                sql, new { EmpresaId = empresaId, ContatoIds = idsLista }, transaction: _session.Transaction);
+
+            return result.ToList();
+        }
+
+        public async Task AssumirManualmente(Guid id, Guid usuarioId)
+        {
+            var sql = $@"
+                UPDATE {Tabela} SET
+                    {nameof(ConversationState.AssumidoPorUsuarioId)} = @UsuarioId,
+                    {nameof(ConversationState.DataAssumido)} = @DataAssumido
+                WHERE {nameof(ConversationState.Id)} = @Id;";
+
+            await _session.Connection.ExecuteAsync(
+                sql, new { Id = id, UsuarioId = usuarioId, DataAssumido = DateTime.Now }, transaction: _session.Transaction);
+        }
+
+        public async Task DevolverAoBot(Guid id)
+        {
+            var sql = $@"
+                UPDATE {Tabela} SET
+                    {nameof(ConversationState.AssumidoPorUsuarioId)} = NULL,
+                    {nameof(ConversationState.DataAssumido)} = NULL
+                WHERE {nameof(ConversationState.Id)} = @Id;";
+
+            await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);
+        }
     }
 }
 

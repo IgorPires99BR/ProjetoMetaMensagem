@@ -4,6 +4,7 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.DevolverAoBot;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
@@ -106,6 +107,34 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.MarcarComoLida"), tipo = "Servico" });
             }
         }
+        // POST /api/chat/devolver-ao-bot
+        // Reativa o flow automatico numa conversa que um vendedor tinha assumido manualmente
+        [HttpPost("devolver-ao-bot")]
+        public async Task<IActionResult> DevolverAoBot([FromBody] DevolverAoBotRequest request)
+        {
+            if (request == null || request.EmpresaId == Guid.Empty || request.ContatoId == Guid.Empty)
+            {
+                return BadRequest(new { mensagem = "EmpresaId e ContatoId inválidos.", tipo = "Negocio" });
+            }
+
+            try
+            {
+                var command = new DevolverAoBotCommand { EmpresaId = request.EmpresaId, ContatoId = request.ContatoId };
+                var resultado = await _mediator.Send(command);
+
+                if (resultado == null || resultado.Erros.Count > 0)
+                {
+                    return BadRequest(new { mensagem = "Não foi possível devolver a conversa ao flow.", tipo = "Negocio" });
+                }
+
+                return Ok(new { sucesso = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.DevolverAoBot"), tipo = "Servico" });
+            }
+        }
+
         // GET /api/chat/midia/{midiaId}?empresaId=...
         // Proxy pra baixar a mídia da Meta sem expor o access token pro front
         [HttpGet("midia/{midiaId}")]
@@ -136,6 +165,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
     }
 
     public class MarcarComoLidaRequest
+    {
+        public Guid EmpresaId { get; set; }
+        public Guid ContatoId { get; set; }
+    }
+
+    public class DevolverAoBotRequest
     {
         public Guid EmpresaId { get; set; }
         public Guid ContatoId { get; set; }

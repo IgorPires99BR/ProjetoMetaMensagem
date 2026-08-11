@@ -32,6 +32,16 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 // 1. Verifica se ja existe uma conversa ativa para este contato
                 var estadoAtual = await _unitOfWork.ConversationState.ObterPorEmpresaEContato(empresaId, contatoId);
 
+                // Vendedor assumiu essa conversa manualmente pelo chat -- o flow fica pausado
+                // (etapa/variaveis preservadas) ate ser devolvido ao bot.
+                if (estadoAtual != null && estadoAtual.AssumidoPorUsuarioId != null)
+                {
+                    _unitOfWork.Commit();
+                    resultado.Sucesso = false;
+                    resultado.Mensagem = "Conversa assumida manualmente por um vendedor; flow nao processado.";
+                    return resultado;
+                }
+
                 if (estadoAtual == null)
                 {
                     // 2. Nao ha conversa ativa -> busca um flow cujo gatilho corresponda a mensagem

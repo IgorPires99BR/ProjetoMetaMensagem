@@ -87,6 +87,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                     .Where(c => !string.IsNullOrWhiteSpace(c.Nome))
                     .ToDictionary(c => c.Id, c => c.Nome!);
 
+                // Estado de flow ativo por contato (bot vs vendedor), buscado em lote pelo mesmo
+                // motivo do ObterPorIds acima: evitar N+1 na tela mais acessada do sistema.
+                var estadosAtivos = await _unitOfWork.ConversationState.ObterAtivasPorEmpresaEContatos(command.IdEmpresa, idsContatos);
+                var estadoPorContato = estadosAtivos.ToDictionary(e => e.ContatoId, e => e);
+
                 var resultFinal = new ListaChatsAtivosResult();
 
                 // Alimenta a lista do Result diretamente
@@ -101,6 +106,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                      // Conta quantas mensagens deste contato específico estão não lidas
                      var naoLidas = grupo.Count(m => m.NaoLida);
 
+                     estadoPorContato.TryGetValue(grupo.Key, out var estado);
+
                      return new ChatAtivoObjeto
                      {
                          ContatoId = grupo.Key,
@@ -108,7 +115,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                          Telefone = maisRecente.Telefone,
                          UltimaMensagem = maisRecente.Conteudo,
                          DataUltimaMensagem = maisRecente.Data,
-                         QuantidadeNaoLidas = naoLidas
+                         QuantidadeNaoLidas = naoLidas,
+                         RespondendoPorFlow = estado != null && estado.AssumidoPorUsuarioId == null,
+                         FlowAssumido = estado != null && estado.AssumidoPorUsuarioId != null
                      };
                  })
                  // Sem isso a lista saia na ordem "de agrupamento" (basicamente aleatoria),

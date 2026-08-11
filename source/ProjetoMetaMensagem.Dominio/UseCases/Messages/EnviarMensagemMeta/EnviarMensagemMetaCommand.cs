@@ -15,5 +15,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
         public string textoMensagem { get; set; }
         public Guid EmpresaId { get; set; }
         public Guid ContatoId { get; set; }
+
+        // Preenchido pelo controller a partir do JWT (nunca do corpo). Usado para marcar a
+        // conversa como assumida manualmente quando ha um flow ativo tocando pra esse contato.
+        public Guid? UsuarioIdSolicitante { get; set; }
     }
 }

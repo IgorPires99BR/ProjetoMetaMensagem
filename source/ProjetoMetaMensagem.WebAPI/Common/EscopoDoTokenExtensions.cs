@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ProjetoMetaMensagem.WebAPI.Common
 {
@@ -22,6 +23,13 @@ namespace ProjetoMetaMensagem.WebAPI.Common
 
             var claim = controller.User.FindFirst("empresaId")?.Value;
             return Guid.TryParse(claim, out var id) ? id : Guid.Empty; // Guid.Empty nao casa com nada: nega por padrao
+        }
+
+        // Id do usuario (vendedor) logado, usado para registrar quem assumiu manualmente uma conversa.
+        public static Guid? UsuarioIdDoEscopo(this ControllerBase controller)
+        {
+            var claim = controller.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(claim, out var id) ? id : null;
         }
     }
 }

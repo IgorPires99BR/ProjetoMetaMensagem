@@ -7,6 +7,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta;
+using ProjetoMetaMensagem.WebAPI.Common;
 
 namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
 {
@@ -29,6 +30,8 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
         {
             try
             {
+                command.UsuarioIdSolicitante = this.UsuarioIdDoEscopo();
+
                 var resultado = await _mediator.Send(command);
 
                 if (resultado != null && resultado.Erros.Count == 0)

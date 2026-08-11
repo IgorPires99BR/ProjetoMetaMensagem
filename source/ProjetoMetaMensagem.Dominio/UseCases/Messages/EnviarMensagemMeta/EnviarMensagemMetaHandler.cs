@@ -63,6 +63,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
 
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);
 
+                // Vendedor respondendo manualmente pelo chat: se ha um flow ativo (e ainda nao
+                // assumido) pra esse contato, pausa a automacao pra nao competir com a resposta
+                // humana. Sem UsuarioIdSolicitante (token sem essa claim) nao ha o que registrar.
+                if (command.UsuarioIdSolicitante.HasValue)
+                {
+                    var estadoAtivo = await _unitOfWork.ConversationState.ObterPorEmpresaEContato(command.EmpresaId, command.ContatoId);
+                    if (estadoAtivo != null && estadoAtivo.AssumidoPorUsuarioId == null)
+                    {
+                        await _unitOfWork.ConversationState.AssumirManualmente(estadoAtivo.Id, command.UsuarioIdSolicitante.Value);
+                    }
+                }
+
                 _unitOfWork.Commit();
 
                 response.AddValue(new EnviarMensagemMetaResult

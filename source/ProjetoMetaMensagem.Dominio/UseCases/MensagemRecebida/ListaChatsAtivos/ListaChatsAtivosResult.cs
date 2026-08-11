@@ -20,5 +20,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
         public string UltimaMensagem { get; set; }
         public DateTime DataUltimaMensagem { get; set; }
         public int QuantidadeNaoLidas { get; set; }
+
+        // true = ha um flow ativo tocando essa conversa (nenhum vendedor assumiu ainda)
+        public bool RespondendoPorFlow { get; set; }
+        // true = havia um flow ativo mas um vendedor assumiu manualmente (pode "devolver ao flow")
+        public bool FlowAssumido { get; set; }
     }
 }

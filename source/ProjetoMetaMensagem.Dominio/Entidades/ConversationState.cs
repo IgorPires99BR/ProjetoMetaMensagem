@@ -17,5 +17,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public DateTime DataInicio { get; set; }
         public DateTime? DataAtualizacao { get; set; }
         public bool Finalizado { get; set; }
+
+        // Null = flow tocando normalmente; preenchido = vendedor assumiu a conversa manualmente
+        // e o FlowOrchestratorService para de avancar etapa ate ser devolvida ao bot.
+        public Guid? AssumidoPorUsuarioId { get; set; }
+        public DateTime? DataAssumido { get; set; }
     }
 }
