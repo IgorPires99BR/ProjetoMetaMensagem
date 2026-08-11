@@ -16,6 +16,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
         public string? Descricao { get; set; }
         public string? GatilhoPalavraChave { get; set; }
         public bool Ativo { get; set; }
+        // NULL = flow vale para todos os numeros da empresa (comportamento padrao/legado).
+        public Guid? NumeroId { get; set; }
 
         // Nova estrutura de etapas vinda da edição na tela
         public List<AlteraFlowEtapaDto> Etapas { get; set; } = new List<AlteraFlowEtapaDto>();

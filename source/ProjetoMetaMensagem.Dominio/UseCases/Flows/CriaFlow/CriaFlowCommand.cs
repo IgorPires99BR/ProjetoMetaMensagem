@@ -14,6 +14,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         public string Nome { get; set; } = string.Empty;
         public string? Descricao { get; set; }
         public string? GatilhoPalavraChave { get; set; } // Representa o "oi, olá, bom dia" da imagem
+        // NULL = flow vale para todos os numeros da empresa (comportamento padrao/legado).
+        public Guid? NumeroId { get; set; }
 
         // Lista com os steps que o usuário montou na tela
         public List<CriaFlowEtapaDto> Etapas { get; set; } = new List<CriaFlowEtapaDto>();

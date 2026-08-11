@@ -112,6 +112,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryFirstOrDefaultAsync<Numero>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
+        public async Task<Numero?> ObterPorInstanciaId(string instanciaId)
+        {
+            var sql = $"SELECT * FROM {nameof(Numero)} WHERE {nameof(Numero.InstanciaId)} = @InstanciaId";
+            return await _session.Connection.QueryFirstOrDefaultAsync<Numero>(sql, new { InstanciaId = instanciaId }, transaction: _session.Transaction);
+        }
+
         public async Task<IEnumerable<Numero>> Obter()
         {
             return await _session.Connection.QueryAsync<Numero>($"SELECT * FROM {nameof(Numero)}", transaction: _session.Transaction);

@@ -22,7 +22,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
             _logger = logger;
         }
 
-        public async Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem)
+        public async Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem = null, Guid? numeroId = null)
         {
             var resultado = new FlowOrchestrationResult();
 
@@ -45,13 +45,20 @@ namespace ProjetoMetaMensagem.Servico.Flow
 
                 if (estadoAtual == null)
                 {
-                    // 2. Nao ha conversa ativa -> busca um flow cujo gatilho corresponda a mensagem
-                    var flows = await _unitOfWork.Flow.ObterTodosPorEmpresa(empresaId);
-                    var flowAtivado = flows.FirstOrDefault(f =>
-                        f.Ativo &&
-                        !string.IsNullOrEmpty(f.GatilhoInicial) &&
-                        f.GatilhoInicial.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .Any(g => mensagem.Trim().Equals(g, StringComparison.OrdinalIgnoreCase)));
+                    // 2. Nao ha conversa ativa -> busca um flow cujo gatilho corresponda a mensagem.
+                    // Inclui os flows genericos da empresa (NumeroId nulo) e os especificos do
+                    // numero que recebeu a mensagem; entre os que baterem o gatilho, o especifico
+                    // do numero tem prioridade sobre o generico (OrderBy false primeiro: NumeroId
+                    // != null vira "false" e ordena antes de "true"/generico).
+                    var flows = await _unitOfWork.Flow.ObterTodosPorEmpresaENumero(empresaId, numeroId);
+                    var flowAtivado = flows
+                        .Where(f =>
+                            f.Ativo &&
+                            !string.IsNullOrEmpty(f.GatilhoInicial) &&
+                            f.GatilhoInicial.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                .Any(g => mensagem.Trim().Equals(g, StringComparison.OrdinalIgnoreCase)))
+                        .OrderBy(f => f.NumeroId == null)
+                        .FirstOrDefault();
 
                     if (flowAtivado == null)
                     {
@@ -85,7 +92,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     await _unitOfWork.ConversationState.Incluir(estadoAtual);
 
                     // 5. Executa a etapa inicial (deve ser uma mensagem de boas-vindas)
-                    await ExecutarEtapa(etapaInicial, null, estadoAtual, empresaId, celular);
+                    await ExecutarEtapa(etapaInicial, null, estadoAtual, empresaId, celular, phoneNumberIdOrigem);
 
                     resultado.Sucesso = true;
                     resultado.FlowId = flowAtivado.Id;
@@ -144,7 +151,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     }
 
                     // 9. Executa a nova etapa
-                    await ExecutarEtapa(proximaEtapa, estadoAtual.Variaveis, estadoAtual, empresaId, celular);
+                    await ExecutarEtapa(proximaEtapa, estadoAtual.Variaveis, estadoAtual, empresaId, celular, phoneNumberIdOrigem);
 
                     // 10. Atualiza o estado da conversa
                     estadoAtual.EtapaAtualId = proximaEtapa.Id;
@@ -167,7 +174,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
             return resultado;
         }
 
-        private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual, Guid empresaId, string celular)
+        private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual, Guid empresaId, string celular, string? phoneNumberIdOrigem = null)
         {
             if (etapa.NomeEtapa == "Mensagem" && !string.IsNullOrEmpty(etapa.ConteudoLivre))
             {
@@ -187,7 +194,10 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 }
 
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaId);
-                var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
+                // Responde pelo mesmo numero que recebeu a mensagem (phoneNumberIdOrigem) --
+                // sem isso, toda resposta de Flow saia pelo Empresa.PhoneNumberId "padrao" da
+                // empresa, mesmo quando o cliente escreveu pra outro numero conectado.
+                var phoneNumberId = phoneNumberIdOrigem ?? await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
                 var wamid = await _metaService.EnviarTextoLivreAsync(celular, mensagem, token, phoneNumberId);
 
                 await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
@@ -224,7 +234,8 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     .ToList();
 
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaId);
-                var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
+                // Mesmo motivo do envio de texto livre acima: responde pelo numero de origem.
+                var phoneNumberId = phoneNumberIdOrigem ?? await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
 
                 var command = new EnviarMensagemTemplateMetaCommand
                 {

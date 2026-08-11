@@ -108,17 +108,58 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return lookup.Values;
         }
 
+        public async Task<IEnumerable<Flow>> ObterTodosPorEmpresaENumero(Guid empresaId, Guid? numeroId)
+        {
+            // Inclui sempre os flows genericos (NumeroId IS NULL) alem dos especificos do
+            // numero informado -- se numeroId vier null, so a metade "IS NULL" casa, entao
+            // retorna so os genericos.
+            var sql = $@"
+                SELECT f.*, fe.*
+                FROM {TabelaFluxo} f
+                LEFT JOIN {TabelaFluxoEtapa} fe ON f.Id = fe.FlowId
+                WHERE f.EmpresaId = @IdEmpresa
+                  AND (f.NumeroId = @NumeroId OR f.NumeroId IS NULL);";
+
+            var lookup = new Dictionary<Guid, Flow>();
+
+            await _session.Connection.QueryAsync<Flow, FlowEtapa, Flow>(
+                sql,
+                (flow, etapa) =>
+                {
+                    if (!lookup.TryGetValue(flow.Id, out var flowExistente))
+                    {
+                        flowExistente = flow;
+                        flowExistente.Etapas = new List<FlowEtapa>();
+                        lookup.Add(flowExistente.Id, flowExistente);
+                    }
+
+                    if (etapa != null)
+                    {
+                        flowExistente.Etapas.Add(etapa);
+                    }
+
+                    return flowExistente;
+                },
+                new { IdEmpresa = empresaId, NumeroId = numeroId },
+                transaction: _session.Transaction,
+                splitOn: "Id"
+            );
+
+            return lookup.Values;
+        }
+
         public async Task Incluir(Flow flow)
         {
             var sql = $@"
                 INSERT INTO {TabelaFluxo} (
-                    {nameof(flow.Id)}, 
-                    {nameof(flow.EmpresaId)}, 
-                    {nameof(flow.Nome)}, 
+                    {nameof(flow.Id)},
+                    {nameof(flow.EmpresaId)},
+                    {nameof(flow.Nome)},
                     {nameof(flow.Descricao)},
                     {nameof(flow.GatilhoInicial)},
                     {nameof(flow.Ativo)},
-                    {nameof(flow.DataCriacao)}
+                    {nameof(flow.DataCriacao)},
+                    {nameof(flow.NumeroId)}
                 )
                 VALUES (
                     @{nameof(flow.Id)},
@@ -127,7 +168,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(flow.Descricao)},
                     @{nameof(flow.GatilhoInicial)},
                     @{nameof(flow.Ativo)},
-                    @{nameof(flow.DataCriacao)}
+                    @{nameof(flow.DataCriacao)},
+                    @{nameof(flow.NumeroId)}
                 );";
 
             await _session.Connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
@@ -190,7 +232,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(flow.Nome)} = @{nameof(flow.Nome)},
                     {nameof(flow.Descricao)} = @{nameof(flow.Descricao)},
                     {nameof(flow.GatilhoInicial)} = @{nameof(flow.GatilhoInicial)},
-                    {nameof(flow.Ativo)} = @{nameof(flow.Ativo)}
+                    {nameof(flow.Ativo)} = @{nameof(flow.Ativo)},
+                    {nameof(flow.NumeroId)} = @{nameof(flow.NumeroId)}
                 WHERE {nameof(flow.Id)} = @{nameof(flow.Id)}
                 {RecorteDaEmpresa};";
 
@@ -202,6 +245,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     flow.Descricao,
                     flow.GatilhoInicial,
                     flow.Ativo,
+                    flow.NumeroId,
                     EmpresaIdSolicitante = empresaIdSolicitante
                 },
                 transaction: _session.Transaction);

@@ -59,8 +59,23 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                         var metadata = change.Value?.Metadata;
                         if (string.IsNullOrEmpty(metadata?.PhoneNumberId)) continue;
 
-                        // Busca a empresa associada ao PhoneNumberId recebido
-                        Guid? empresaId = await _unitOfWork.Empresa.ObterPorPhoneNumberId(metadata.PhoneNumberId);
+                        // Numero especifico que recebeu o evento (empresas podem ter mais de um
+                        // numero conectado). Usado tanto pra achar a empresa quanto pra responder
+                        // pelo mesmo numero no Flow.
+                        var numeroOrigem = await _unitOfWork.Numero.ObterPorInstanciaId(metadata.PhoneNumberId);
+
+                        // Resolve a empresa preferencialmente pelo Numero (funciona pra qualquer
+                        // numero da empresa, nao so o "principal"). Cai pro Empresa.PhoneNumberId
+                        // so quando a empresa nunca cadastrou um Numero com esse InstanciaId --
+                        // sem esse fallback, empresas antigas que so tem PhoneNumberId direto na
+                        // Empresa (sem linha em Numero) parariam de receber mensagens.
+                        Guid? empresaId = null;
+                        if (numeroOrigem != null)
+                        {
+                            var usuarioDoNumero = await _unitOfWork.Usuario.ObterPorId(numeroOrigem.UsuarioId);
+                            empresaId = usuarioDoNumero?.EmpresaId;
+                        }
+                        empresaId ??= await _unitOfWork.Empresa.ObterPorPhoneNumberId(metadata.PhoneNumberId);
 
                         // Se não encontrar uma empresa cadastrada para esse PhoneNumberId, pula o processamento
                         if (!empresaId.HasValue) continue;
@@ -209,7 +224,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             {
                                 try
                                 {
-                                    await _flowOrchestratorService.ProcessarMensagem(empresaId.Value, contato.Id, msgMeta.From, novaMensagem.Conteudo);
+                                    await _flowOrchestratorService.ProcessarMensagem(empresaId.Value, contato.Id, msgMeta.From, novaMensagem.Conteudo, metadata.PhoneNumberId, numeroOrigem?.Id);
                                 }
                                 catch (Exception exFlow)
                                 {

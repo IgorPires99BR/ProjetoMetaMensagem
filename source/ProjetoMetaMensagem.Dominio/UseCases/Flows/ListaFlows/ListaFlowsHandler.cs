@@ -38,7 +38,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
             {
                 var listaResultados = new List<ListaFlowsResult>();
 
-                var flows = await _unitOfWork.Flow.ObterTodosPorEmpresa(command.IdEmpresa);
+                var flows = command.NumeroId.HasValue
+                    ? await _unitOfWork.Flow.ObterTodosPorEmpresaENumero(command.IdEmpresa, command.NumeroId)
+                    : await _unitOfWork.Flow.ObterTodosPorEmpresa(command.IdEmpresa);
 
                 foreach (var flow in flows)
                 {

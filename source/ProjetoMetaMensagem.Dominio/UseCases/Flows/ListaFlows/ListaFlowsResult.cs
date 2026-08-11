@@ -20,6 +20,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
             Descricao = flow.Descricao;
             GatilhoPalavraChave = flow.GatilhoInicial;
             Ativo = flow.Ativo;
+            NumeroId = flow.NumeroId;
 
             // Mapeia a lista de etapas internas caso elas tenham sido carregadas pelo repositório
             if (flow.Etapas != null)
@@ -45,6 +46,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
         public string Descricao { get; set; }
         public string GatilhoPalavraChave { get; set; }
         public bool Ativo { get; set; }
+        public Guid? NumeroId { get; set; }
 
         // Mapeia diretamente o array para o front-end ler como 'etapas'
         public List<ListaFlowsEtapaDto> Etapas { get; set; } = new List<ListaFlowsEtapaDto>();

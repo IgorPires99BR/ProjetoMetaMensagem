@@ -11,6 +11,10 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
     public interface IFlowOrchestratorService
     {
-        Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem);
+        // phoneNumberIdOrigem = o phone_number_id da Meta que recebeu a mensagem (metadata do
+        // webhook) -- usado pra responder pelo MESMO numero que o cliente escreveu, em vez do
+        // numero "padrao" da empresa. numeroId = o Numero correspondente, ja resolvido (se
+        // encontrado), reservado para telas/planos futuros que escopam Flows por numero.
+        Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem = null, Guid? numeroId = null);
     }
 }

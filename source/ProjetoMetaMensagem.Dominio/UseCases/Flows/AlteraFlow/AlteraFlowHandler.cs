@@ -59,6 +59,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
             flowExistente.Descricao = command.Descricao;
             flowExistente.GatilhoInicial = command.GatilhoPalavraChave;
             flowExistente.Ativo = command.Ativo;
+            flowExistente.NumeroId = command.NumeroId;
 
             // 3. Monta a nova lista de etapas encadeadas
             var novasEtapas = new List<FlowEtapa>();

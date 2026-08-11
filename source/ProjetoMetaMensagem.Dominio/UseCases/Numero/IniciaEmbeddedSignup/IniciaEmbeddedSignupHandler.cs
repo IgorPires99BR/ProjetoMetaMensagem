@@ -65,7 +65,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
                     return response;
                 }
 
-                var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
+                var wabaId = command.WabaId ?? await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
 
                 var novoNumero = new Entidades.Numero
                 {
@@ -73,6 +73,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
                     UsuarioId = command.UsuarioId,
                     Telefone = command.NumeroTelefone,
                     Descricao = command.NomeEmpresa,
+                    // InstanciaId = phone_number_id da Meta. Sem gravar aqui, o numero fica sem
+                    // identificador valido e AtivaCoexistenciaHandler falha logo na primeira
+                    // tentativa ("O número ainda não possui um identificador válido na Meta").
+                    InstanciaId = command.PhoneNumberId,
                     WabaId = wabaId,
                     SystemUserToken = systemUserToken,
                     TipoConexao = TipoConexaoNumero.ApiOficial,

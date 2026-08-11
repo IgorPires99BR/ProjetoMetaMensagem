@@ -15,5 +15,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
             IdEmpresa = idEmpresa;
         }
         public Guid IdEmpresa { get; set; }
+        // Filtra os flows de um numero especifico (inclui sempre os flows genericos,
+        // NumeroId == null). Sem filtro (null), retorna todos os flows da empresa.
+        public Guid? NumeroId { get; set; }
     }
 }

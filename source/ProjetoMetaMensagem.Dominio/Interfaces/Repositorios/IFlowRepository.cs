@@ -14,6 +14,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<FlowEtapa?> ObterProximaEtapa(Guid etapaAtualId, string respostaCliente);
         Task<Flow?> ObterPorId(Guid id);
         Task<IEnumerable<Flow>> ObterTodosPorEmpresa(Guid empresaId);
+        // Inclui sempre os flows genericos (NumeroId IS NULL) alem dos especificos do numero
+        // informado. numeroId null retorna so os genericos.
+        Task<IEnumerable<Flow>> ObterTodosPorEmpresaENumero(Guid empresaId, Guid? numeroId);
 
         // Métodos de escrita (Persistência)
         Task Incluir(Flow flow);

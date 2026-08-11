@@ -26,11 +26,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Flows
 
         [HttpGet]
         [Route("{IdEmpresa}")]
-        public async Task<IActionResult> Listar(Guid IdEmpresa)
+        public async Task<IActionResult> Listar(Guid IdEmpresa, [FromQuery] Guid? numeroId)
         {
             try
             {
-                var resultado = await _mediator.Send(new ListaFlowsCommand(IdEmpresa));
+                var resultado = await _mediator.Send(new ListaFlowsCommand(IdEmpresa) { NumeroId = numeroId });
 
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }

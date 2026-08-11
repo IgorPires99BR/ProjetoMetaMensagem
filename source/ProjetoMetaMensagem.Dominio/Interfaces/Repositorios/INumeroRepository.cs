@@ -17,6 +17,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<int> Excluir(Guid id, Guid? empresaIdSolicitante);
         Task<Numero?> ObterPorId(int id);
         Task<Numero?> ObterPorId(Guid id);
+        // InstanciaId = phone_number_id da Meta. Usado pra resolver qual Numero especifico
+        // recebeu um evento do webhook (varios numeros podem existir na mesma empresa).
+        Task<Numero?> ObterPorInstanciaId(string instanciaId);
         Task<IEnumerable<Numero>> Obter();
         Task<IEnumerable<Numero>> ObterPorUsuario(Guid usuarioId);
     }
