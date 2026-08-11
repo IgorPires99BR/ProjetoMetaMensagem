@@ -38,11 +38,12 @@ namespace ProjetoMetaMensagem.WebAPI.Common
             var appSecret = configuration["ApiWhatsappConnectionConfiguration:AppSecret"];
             if (string.IsNullOrEmpty(appSecret))
             {
-                // Sem o AppSecret configurado nao ha como validar. Loga alto e deixa passar
-                // pra nao derrubar o recebimento de mensagem por falta de configuracao -- mas
-                // isso PRECISA ser corrigido configurando a variavel de ambiente em producao.
-                _logger.LogWarning("Webhook da Meta recebido sem ApiWhatsappConnectionConfiguration:AppSecret configurado: assinatura NAO esta sendo validada.");
-                await _next(context);
+                // Sem o AppSecret configurado nao ha como validar a assinatura -- e deixar
+                // passar sem validar equivale a nao ter protecao nenhuma no endpoint. Descarta
+                // com 200 (mesmo contrato usado abaixo pra assinatura invalida) em vez de deixar
+                // o payload nao verificado chegar ao controller.
+                _logger.LogError("Webhook da Meta recebido sem ApiWhatsappConnectionConfiguration:AppSecret configurado: requisicao descartada por seguranca. Configure o AppSecret.");
+                context.Response.StatusCode = StatusCodes.Status200OK;
                 return;
             }
 

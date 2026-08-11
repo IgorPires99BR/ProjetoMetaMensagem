@@ -65,6 +65,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.DevolverAoBot;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens;
 using ProjetoMetaMensagem.WebAPI.Hubs;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
+using ProjetoMetaMensagem.Servico.Campanha;
+using ProjetoMetaMensagem.Servico.IA;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,7 +100,11 @@ builder.Services.AddSignalR();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"] ?? "ChaveSuperSecretaMetaMensagem2026!@#";
+// Sem fallback: um segredo hardcoded no codigo-fonte anula a assinatura do token
+// (qualquer um com acesso ao repo poderia forjar um JWT valido). Falha no startup
+// e melhor que subir "funcionando" com uma chave publica.
+var secretKey = jwtSettings["SecretKey"]
+    ?? throw new InvalidOperationException("JwtSettings:SecretKey nao configurado. Defina essa configuracao (appsettings ou variavel de ambiente) antes de iniciar a API.");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -139,6 +145,16 @@ builder.Services.AddScoped<DbSession>();
 builder.Services.AddHttpClient<IWhatsappService, TwilioService>();
 builder.Services.AddHttpClient<IMetaService, MetaServiceImpl>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.Configure<GeminiConfiguration>(builder.Configuration.GetSection("GeminiConfiguration"));
+builder.Services.AddHttpClient<IGeminiService, GeminiService>();
+// AddScoped, nao AddHttpClient: a classe consome IHttpClientFactory.CreateClient() diretamente
+// (mesmo padrao do WebhookDispatcherService.cs), nao recebe HttpClient tipado no construtor.
+builder.Services.AddScoped<IWebhookDispatcherService, ProjetoMetaMensagem.Servico.Webhook.WebhookDispatcherService>();
+
+// Worker de disparo de campanhas agendadas. Estava implementado (CampanhaWorker.cs) mas nunca
+// registrado aqui -- campanhas criadas via /api/campanha/incluir ficavam presas em "AGENDADA"
+// para sempre, sem nenhum processo rodando pra efetivamente enviar as mensagens.
+builder.Services.AddHostedService<CampanhaWorker>();
 
 //Configura��es
 

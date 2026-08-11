@@ -19,12 +19,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFlowOrchestratorService _flowOrchestratorService;
+        private readonly IWebhookDispatcherService _webhookDispatcherService;
         private readonly ILogger<RecebeMensagemWebhookHandler> _logger;
 
-        public RecebeMensagemWebhookHandler(IUnitOfWork unitOfWork, IFlowOrchestratorService flowOrchestratorService, ILogger<RecebeMensagemWebhookHandler> logger)
+        public RecebeMensagemWebhookHandler(IUnitOfWork unitOfWork, IFlowOrchestratorService flowOrchestratorService, IWebhookDispatcherService webhookDispatcherService, ILogger<RecebeMensagemWebhookHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _flowOrchestratorService = flowOrchestratorService;
+            _webhookDispatcherService = webhookDispatcherService;
             _logger = logger;
         }
 
@@ -80,13 +82,27 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                     _logger.LogWarning("Falha na entrega da mensagem {Wamid}: {Erro}", statusMeta.Id, erroDetalhado);
                                 }
 
-                                statusAtualizados.Add(new StatusAtualizadoBroadcastDto
+                                var statusDto = new StatusAtualizadoBroadcastDto
                                 {
                                     WamidMeta = statusMeta.Id,
                                     Status = statusMeta.Status,
                                     EmpresaId = empresaId.Value,
                                     Erro = erroDetalhado
-                                });
+                                };
+                                statusAtualizados.Add(statusDto);
+
+                                // Dispara pros webhooks configurados pelo tenant, isolado em
+                                // try/catch proprio pelo mesmo motivo do Flow logo abaixo: um
+                                // webhook de terceiro fora do ar nao pode derrubar o processamento
+                                // do evento da Meta.
+                                try
+                                {
+                                    await _webhookDispatcherService.Disparar("status_atualizado", statusDto, empresaId.Value);
+                                }
+                                catch (Exception exWebhook)
+                                {
+                                    _logger.LogError(exWebhook, "Falha ao disparar webhooks configurados para status_atualizado (wamid {Wamid})", statusMeta.Id);
+                                }
                             }
                         }
 
@@ -161,6 +177,27 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             }
 
                             mensagensParaSalvar.Add(novaMensagem);
+
+                            // Dispara pros webhooks configurados pelo tenant. Mesmo isolamento em
+                            // try/catch do bloco de status acima -- nao pode derrubar o salvamento
+                            // da mensagem, que e o efeito principal deste webhook.
+                            try
+                            {
+                                await _webhookDispatcherService.Disparar("mensagem_recebida", new MensagemRecebidaBroadcastDto
+                                {
+                                    EmpresaId = novaMensagem.EmpresaId,
+                                    ContatoId = novaMensagem.ContatoId,
+                                    TelefoneRemetente = novaMensagem.TelefoneRemetente,
+                                    Conteudo = novaMensagem.Conteudo,
+                                    DataRecebimento = novaMensagem.DataRecebimento,
+                                    MidiaId = novaMensagem.MidiaId,
+                                    TipoMidia = novaMensagem.TipoMidia
+                                }, empresaId.Value);
+                            }
+                            catch (Exception exWebhook)
+                            {
+                                _logger.LogError(exWebhook, "Falha ao disparar webhooks configurados para mensagem_recebida de {Telefone}", msgMeta.From);
+                            }
 
                             // Dispara o Flow so pra contato ja cadastrado (sem isso nao ha
                             // ConversationState.ContatoId pra gravar) e so pra texto livre --

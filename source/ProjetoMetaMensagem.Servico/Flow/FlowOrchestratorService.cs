@@ -4,6 +4,7 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using System.Text.RegularExpressions;
 
 namespace ProjetoMetaMensagem.Servico.Flow
@@ -201,14 +202,62 @@ namespace ProjetoMetaMensagem.Servico.Flow
             }
             else if (etapa.TemplateId.HasValue)
             {
-                // Etapas de Template (envio de HSM aprovado pela Meta) ainda nao sao executadas:
-                // precisam montar EnviarMensagemTemplateRequisicao com os componentes/variaveis
-                // do template, o que este orquestrador ainda nao resolve. So loga pra nao falhar
-                // silenciosamente -- sem isso, um flow com etapa de Template parece avancar
-                // normalmente mas nunca manda nada ao cliente.
-                _logger.LogWarning(
-                    "Flow: etapa {EtapaId} usa Template ({TemplateId}) mas o envio de Template ainda nao esta implementado no orquestrador.",
-                    etapa.Id, etapa.TemplateId);
+                var template = await _unitOfWork.Template.ObterPorIdEEmpresa(etapa.TemplateId.Value, empresaId);
+                if (template == null)
+                {
+                    _logger.LogWarning(
+                        "Flow: etapa {EtapaId} referencia Template {TemplateId} que nao foi encontrado (ou nao pertence a empresa {EmpresaId}). Envio ignorado.",
+                        etapa.Id, etapa.TemplateId, empresaId);
+                    return;
+                }
+
+                // Os parametros posicionais do HSM sao resolvidos na mesma convencao {{variavel}}
+                // usada nas etapas de Mensagem acima, mas aqui em vez de substituir no texto,
+                // cada ocorrencia vira um item da lista de parametros exigida pela API de envio
+                // de Template da Meta (ordem de aparicao no corpo do template).
+                var variaveis = string.IsNullOrEmpty(variaveisJson)
+                    ? new Dictionary<string, string>()
+                    : JsonConvert.DeserializeObject<Dictionary<string, string>>(variaveisJson) ?? new Dictionary<string, string>();
+
+                var parametrosBody = Regex.Matches(template.Conteudo ?? string.Empty, @"\{\{(\w+)\}\}")
+                    .Select(m => variaveis.TryGetValue(m.Groups[1].Value, out var valor) ? valor : string.Empty)
+                    .ToList();
+
+                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaId);
+                var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
+
+                var command = new EnviarMensagemTemplateMetaCommand
+                {
+                    IdEmpresa = empresaId,
+                    EmpresaId = empresaId,
+                    ContatoId = estadoAtual?.ContatoId ?? Guid.Empty,
+                    Telefone = celular,
+                    TemplateId = template.Id,
+                    NomeTemplate = template.NomeTemplate,
+                    Idioma = template.Idioma,
+                    ParametrosBody = parametrosBody
+                };
+
+                var resultadoEnvio = await _metaService.EnviarTemplateAsync(command, phoneNumberId, token);
+
+                if (resultadoEnvio == null || !resultadoEnvio.Sucesso)
+                {
+                    _logger.LogWarning(
+                        "Flow: falha ao enviar Template {TemplateId} na etapa {EtapaId}: {Erro}",
+                        etapa.TemplateId, etapa.Id, resultadoEnvio?.Erro ?? "resposta nula da Meta");
+                    return;
+                }
+
+                await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
+                {
+                    EmpresaId = empresaId,
+                    ContatoId = estadoAtual?.ContatoId ?? Guid.Empty,
+                    TemplateId = template.Id,
+                    TipoDisparo = "Flow",
+                    Conteudo = JsonConvert.SerializeObject(new { command.NomeTemplate, ParametrosBody = parametrosBody }),
+                    WamidMeta = resultadoEnvio.WamidMeta,
+                    DataEnvio = DateTime.Now
+                });
             }
         }
 

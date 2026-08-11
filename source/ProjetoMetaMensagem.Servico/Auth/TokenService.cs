@@ -19,7 +19,11 @@ namespace ProjetoMetaMensagem.Servico.Auth
         public string GerarToken(string id, string email, string nome, string empresaId, string isAdmin)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"] ?? "ChaveSuperSecretaMetaMensagem2026!@#";
+            // Sem fallback: ver Program.cs para o motivo (chave hardcoded no codigo
+            // anula a seguranca do JWT). Se chegou ate aqui o app ja teria falhado no
+            // startup, mas mantemos a mesma checagem por seguranca.
+            var secretKey = jwtSettings["SecretKey"]
+                ?? throw new InvalidOperationException("JwtSettings:SecretKey nao configurado.");
             var issuer = jwtSettings["Issuer"] ?? "ProjetoMetaMensagem";
             var audience = jwtSettings["Audience"] ?? "ProjetoMetaMensagemApp";
             var expiryMinutes = int.Parse(jwtSettings["ExpiryInMinutes"] ?? "480");

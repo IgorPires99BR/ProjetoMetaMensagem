@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Servico.Webhook
 {
-    public class WebhookDispatcherService
+    public class WebhookDispatcherService : IWebhookDispatcherService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUnitOfWork _unitOfWork;
