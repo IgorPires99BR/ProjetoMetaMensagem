@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Options;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 
@@ -42,6 +44,35 @@ Mensagem do cliente: ""{mensagemCliente}""
 Responda APENAS com o texto da resposta, sem explicações adicionais.";
 
             return await ChamarGemini(prompt);
+        }
+
+        // Ponto de entrada generico usado pelas telas de Chats/Templates/Flows/Disparador --
+        // cada tela monta sua propria instrucao (o que pedir) e contexto (texto de
+        // referencia), esse metodo so sabe pedir "N alternativas" pro Gemini e separar a
+        // resposta. quantidade=1 tambem serve pra pedir uma unica explicacao/sugestao (ex:
+        // "explique este template"), nao so listas de opcoes.
+        private const string DelimitadorAlternativas = "\n===\n";
+
+        public async Task<List<string>> SugerirAlternativas(string instrucao, string? contexto, int quantidade = 3)
+        {
+            var prompt = $@"Você é um assistente de atendimento da ContactSolution, uma plataforma de WhatsApp para empresas.
+{instrucao}
+
+{(string.IsNullOrEmpty(contexto) ? "" : $"Contexto:\n{contexto}\n")}
+{(quantidade > 1
+    ? $"Gere exatamente {quantidade} alternativas diferentes. Separe cada alternativa com a linha \"===\" sozinha, sem numerar, sem markdown, sem explicações adicionais."
+    : "Responda apenas com o texto pedido, sem explicações adicionais, sem cumprimentos iniciais.")}";
+
+            var resposta = await ChamarGemini(prompt);
+
+            var opcoes = resposta
+                .Split(new[] { DelimitadorAlternativas, "\n===\n", "===" }, StringSplitOptions.None)
+                .Select(o => o.Trim())
+                .Where(o => !string.IsNullOrWhiteSpace(o))
+                .Take(quantidade)
+                .ToList();
+
+            return opcoes.Count > 0 ? opcoes : new List<string> { resposta };
         }
 
         private async Task<string> ChamarGemini(string prompt)

@@ -63,6 +63,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebid
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.DevolverAoBot;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens;
+using ProjetoMetaMensagem.Dominio.UseCases.IA.SugerirTexto;
 using ProjetoMetaMensagem.WebAPI.Hubs;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
 using ProjetoMetaMensagem.Servico.Campanha;
@@ -281,6 +282,9 @@ builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto.AlteraProdutoCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto.AlteraProdutoResult>>, ProjetoMetaMensagem.Dominio.UseCases.Produto.AlteraProduto.AlteraProdutoHandler>();
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto.DeletaProdutoCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto.DeletaProdutoResult>>, ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto.DeletaProdutoHandler>();
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto.ListaProdutoCommand, Response<List<ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto.ListaProdutoResult>>>, ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto.ListaProdutoHandler>();
+
+// Registros de IA (assistente generico usado por Chats/Templates/Flows/Disparador)
+builder.Services.AddScoped<IRequestHandler<SugerirTextoCommand, Response<SugerirTextoResult>>, SugerirTextoHandler>();
 
 // Registros de WebhookConfig
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook.CriaWebhookCommand, Response<ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook.CriaWebhookResult>>, ProjetoMetaMensagem.Dominio.UseCases.Webhook.CriaWebhook.CriaWebhookHandler>();
