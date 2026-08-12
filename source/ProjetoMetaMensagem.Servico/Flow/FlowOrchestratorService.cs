@@ -102,7 +102,29 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 else
                 {
                     // 6. Conversa ja ativa -> avanca para a proxima etapa baseado na resposta
-                    var etapaAtual = await _unitOfWork.Flow.ObterEtapaPorId(estadoAtual.EtapaAtualId.Value);
+
+                    // EtapaAtualId e NULL-avel no banco: conversa nao finalizada sem etapa e estado
+                    // inconsistente (dado legado/migracao). Finaliza em vez de estourar -- era o unico
+                    // ponto do fluxo que subia excecao ate o handler do webhook em vez de degradar.
+                    if (estadoAtual.EtapaAtualId == null)
+                    {
+                        _logger.LogWarning(
+                            "EstadoConversa {EstadoId} do contato {ContatoId} esta ativo sem EtapaAtualId; finalizando a conversa.",
+                            estadoAtual.Id, contatoId);
+
+                        estadoAtual.Finalizado = true;
+                        estadoAtual.DataAtualizacao = DateTime.Now;
+                        await _unitOfWork.ConversationState.Atualizar(estadoAtual);
+
+                        _unitOfWork.Commit();
+                        resultado.Sucesso = false;
+                        resultado.FlowFinalizado = true;
+                        resultado.Mensagem = "Conversa sem etapa atual; flow finalizado.";
+                        return resultado;
+                    }
+
+                    var etapaAtualId = estadoAtual.EtapaAtualId.Value;
+                    var etapaAtual = await _unitOfWork.Flow.ObterEtapaPorId(etapaAtualId);
                     if (etapaAtual == null)
                     {
                         _unitOfWork.Commit();
@@ -125,7 +147,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     }
 
                     // 8. Busca a proxima etapa baseada na resposta
-                    var proximaEtapa = await _unitOfWork.Flow.ObterProximaEtapa(estadoAtual.EtapaAtualId.Value, mensagem);
+                    var proximaEtapa = await _unitOfWork.Flow.ObterProximaEtapa(etapaAtualId, mensagem);
 
                     if (proximaEtapa == null)
                     {
@@ -133,7 +155,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                         if (etapaAtual.NomeEtapa == "Capturar Input")
                         {
                             // Se estava capturando input, tenta avancar com "Qualquer_Resposta"
-                            proximaEtapa = await _unitOfWork.Flow.ObterProximaEtapa(estadoAtual.EtapaAtualId.Value, "Qualquer_Resposta");
+                            proximaEtapa = await _unitOfWork.Flow.ObterProximaEtapa(etapaAtualId, "Qualquer_Resposta");
                         }
 
                         if (proximaEtapa == null)

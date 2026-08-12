@@ -85,7 +85,12 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                         {
                                             vinculo.Processado = true;
                                             vinculo.Sucesso = false;
-                                            vinculo.MensagemErro = string.Join("; ", resultado.Erros);
+                                            // resultado nulo tambem cai aqui: usar resultado.Erros direto
+                                            // estourava NullReference e a causa real virava a mensagem
+                                            // generica do catch abaixo.
+                                            vinculo.MensagemErro = resultado is null
+                                                ? "O disparo nao retornou resposta."
+                                                : string.Join("; ", resultado.Erros);
                                         }
                                     }
                                     catch (Exception ex)

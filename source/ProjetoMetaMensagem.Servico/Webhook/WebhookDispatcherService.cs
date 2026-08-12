@@ -15,11 +15,13 @@ namespace ProjetoMetaMensagem.Servico.Webhook
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<WebhookDispatcherService> _logger;
 
-        public WebhookDispatcherService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork)
+        public WebhookDispatcherService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, ILogger<WebhookDispatcherService> logger)
         {
             _httpClientFactory = httpClientFactory;
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task Disparar(string evento, object payload, Guid empresaId)
@@ -48,16 +50,19 @@ namespace ProjetoMetaMensagem.Servico.Webhook
 
                     var response = await client.PostAsync(webhook.Url, content);
 
+                    // Falha na entrega para o endpoint do tenant nao pode derrubar o processamento
+                    // da mensagem, mas tambem nao pode sumir: sem log nao havia como diagnosticar
+                    // webhook configurado que nunca chega no destino.
                     if (!response.IsSuccessStatusCode)
                     {
-                        // Log falha (opcional: registrar em tabela de log de disparo)
-                        // _logger.LogWarning("Webhook {Nome} retornou {StatusCode}", webhook.Nome, response.StatusCode);
+                        _logger.LogWarning("Webhook {Nome} ({Url}) retornou {StatusCode} para o evento {Evento}.",
+                            webhook.Nome, webhook.Url, (int)response.StatusCode, evento);
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Log erro (opcional)
-                    // _logger.LogError(ex, "Erro ao disparar webhook {Nome}", webhook.Nome);
+                    _logger.LogError(ex, "Erro ao disparar webhook {Nome} ({Url}) para o evento {Evento}.",
+                        webhook.Nome, webhook.Url, evento);
                 }
             }
         }

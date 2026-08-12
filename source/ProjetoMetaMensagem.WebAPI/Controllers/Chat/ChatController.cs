@@ -9,6 +9,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia;
+using ProjetoMetaMensagem.WebAPI.Common;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 {
@@ -39,7 +40,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 
                 if (resultado == null)
                 {
-                    return BadRequest(new { erros = resultado.Erros });
+                    return StatusCode(500, new { mensagem = "Não foi possível carregar as conversas.", tipo = "Servico" });
+                }
+
+                // Checar so `== null` deixava passar a Response que o handler devolve COM erro e
+                // SEM Value (ex: falha de banco no AddErroServico): virava 200 com value nulo, e a
+                // tela de chats mostrava "nenhuma conversa" em vez do erro real.
+                if (resultado.HasValidations)
+                {
+                    return this.ValidateGenericResponse(resultado);
                 }
 
                 return Ok(new { value = resultado.Value });
@@ -70,7 +79,19 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
 
                 if (resultado == null)
                 {
-                    return BadRequest(new { erros = resultado.Erros });
+                    return StatusCode(500, new { mensagem = "Não foi possível carregar as mensagens.", tipo = "Servico" });
+                }
+
+                if (resultado.HasValidations)
+                {
+                    return this.ValidateGenericResponse(resultado);
+                }
+
+                // Value so e nulo quando o handler falhou, e esse caso ja saiu no HasValidations
+                // acima. 204 aqui nao serve: o front faz res.value direto e quebraria com corpo vazio.
+                if (resultado.Value == null)
+                {
+                    return StatusCode(500, new { mensagem = "Não foi possível carregar as mensagens.", tipo = "Servico" });
                 }
 
                 // O resultado mapeado (com as propriedades From, Text, Time) vai direto para o Angular

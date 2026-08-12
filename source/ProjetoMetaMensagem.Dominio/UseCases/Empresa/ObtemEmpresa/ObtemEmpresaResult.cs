@@ -27,7 +27,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
             PlanoId = empresa.PlanoId;
             WabaId = empresa.WabaId;
             Telefone = empresa.Telefone;
-            DataCriacao = empresa.DataCriacao.Value;
+            // A coluna DataCriacao tem DEFAULT GETDATE() mas nao e NOT NULL: linha legada ou
+            // insert que passe NULL explicito derrubava o GET da empresa inteiro.
+            DataCriacao = empresa.DataCriacao ?? default;
         }
 
         public Guid Id { get; set; } 

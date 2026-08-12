@@ -89,6 +89,13 @@ namespace ProjetoMetaMensagem.Servico.MetaService
 
                 var metaResponse = JsonConvert.DeserializeObject<ObtemNumerosMetaResponse>(responseContent);
 
+                // Sem esta guarda, um corpo inesperado da Meta virava "Object reference not set"
+                // no log -- erro que nao diz nada sobre a causa real.
+                if (metaResponse?.Data == null)
+                {
+                    throw new Exception($"Resposta inesperada da Meta ao obter números: {responseContent}");
+                }
+
                 return metaResponse.Data.Select(n => new NumeroMetaDto
                 {
                     Id = n.Id,
@@ -129,6 +136,11 @@ namespace ProjetoMetaMensagem.Servico.MetaService
 
                 var resultado = JsonConvert.DeserializeObject<CriaNumeroMetaResponse>(responseContent);
 
+                if (resultado == null)
+                {
+                    throw new Exception($"Resposta inesperada da Meta ao criar/vincular número: {responseContent}");
+                }
+
                 return resultado.Id;
             }
             catch (Exception ex)
@@ -154,6 +166,11 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 }
 
                 var metaResponse = JsonConvert.DeserializeObject<TrocaCodeMetaResponse>(responseContent);
+
+                if (metaResponse == null)
+                {
+                    throw new Exception($"Resposta inesperada da Meta ao trocar code do Embedded Signup: {responseContent}");
+                }
 
                 return metaResponse.AccessToken;
             }
@@ -189,6 +206,15 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 }
 
                 var metaResponse = JsonConvert.DeserializeObject<AtivaCoexistenciaResponse>(responseContent);
+
+                if (metaResponse == null)
+                {
+                    return new ResultadoCoexistencia
+                    {
+                        Sucesso = false,
+                        Erro = $"Resposta inesperada da Meta: {responseContent}"
+                    };
+                }
 
                 return new ResultadoCoexistencia
                 {
@@ -293,6 +319,11 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 }
 
                 var metaResponse = JsonConvert.DeserializeObject<ObtemTemplateMetaResponse>(responseContent);
+
+                if (metaResponse?.Data == null)
+                {
+                    throw new Exception($"Resposta inesperada da Meta ao obter templates: {responseContent}");
+                }
 
                 return metaResponse.Data.Select(t => new TemplateMetaDto
                 {
