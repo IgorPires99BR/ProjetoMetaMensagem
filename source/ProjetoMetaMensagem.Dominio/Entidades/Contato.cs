@@ -12,9 +12,13 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 {
     public class Contato
     {
+        // Gera o Id aqui (mesmo padrao do HistoricoDisparo) porque o INSERT grava a coluna Id:
+        // a importacao em lote monta o contato por este construtor e, sem isso, todos sairiam
+        // com Guid.Empty e colidiriam na chave primaria a partir do segundo.
+        // Ao ler do banco nao atrapalha: o Dapper sobrescreve com o valor da linha.
         public Contato()
         {
-            
+            Id = Guid.NewGuid();
         }
 
         public Contato(CriaContatoCommand command)
