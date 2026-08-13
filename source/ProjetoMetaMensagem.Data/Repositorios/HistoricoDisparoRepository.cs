@@ -134,10 +134,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task AtualizarStatusEntregaPorWamid(string wamid, string status, string? motivoFalha = null)
         {
+            // COALESCE porque sent/delivered/read chegam sem bloco de erro: sem ele, qualquer
+            // status posterior ao "failed" gravava NULL por cima e apagava o motivo. A Meta
+            // entrega os webhooks de status fora de ordem e repetidos, entao isso acontece.
             var sql = $@"
                 UPDATE {nameof(HistoricoDisparo)}
                 SET {nameof(HistoricoDisparo.StatusEntrega)} = @Status,
-                    {nameof(HistoricoDisparo.MotivoFalha)} = @MotivoFalha
+                    {nameof(HistoricoDisparo.MotivoFalha)} = COALESCE(@MotivoFalha, {nameof(HistoricoDisparo.MotivoFalha)})
                 WHERE {nameof(HistoricoDisparo.WamidMeta)} = @Wamid";
 
             await _session.Connection.ExecuteAsync(
