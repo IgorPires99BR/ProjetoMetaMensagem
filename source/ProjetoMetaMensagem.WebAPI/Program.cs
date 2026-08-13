@@ -93,15 +93,28 @@ builder.Services.AddHsts(options =>
     options.IncludeSubDomains = true;
 });
 
+// A producao roda atras de Cloudflare -> Render (dois hops de proxy, confirmado pelo header
+// "Server: cloudflare" nas respostas). CF-Connecting-IP e a fonte confiavel do IP real do
+// cliente nesse caso -- a Cloudflare sempre sobrescreve esse header na borda, entao o cliente
+// nao consegue forja-lo. Contar hops de X-Forwarded-For exigiria saber o numero exato de
+// proxies na frente (variavel/desconhecido) e ainda seria falsificavel pelo proprio cliente
+// antes de chegar na Cloudflare. Sem Cloudflare (dev local), cai no RemoteIpAddress normal.
+static string ResolveClientIp(HttpContext context)
+{
+    var cfConnectingIp = context.Request.Headers["CF-Connecting-IP"].FirstOrDefault();
+    return !string.IsNullOrEmpty(cfConnectingIp)
+        ? cfConnectingIp
+        : context.Connection.RemoteIpAddress?.ToString() ?? "desconhecido";
+}
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    // Limite global por IP -- rede de seguranca basica contra scraping/DoS sem atrapalhar uso
-    // normal. Depende do ForwardedHeaders acima pra pegar o IP real do cliente, nao o do proxy.
+    // Limite global por IP -- rede de seguranca basica contra scraping/DoS sem atrapalhar uso normal.
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+            partitionKey: ResolveClientIp(context),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 100,
@@ -114,7 +127,7 @@ builder.Services.AddRateLimiter(options =>
     // ou contagem de tentativas, entao isso e a unica barreira contra tentativa exaustiva de senha.
     options.AddPolicy("auth", context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+            partitionKey: ResolveClientIp(context),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
