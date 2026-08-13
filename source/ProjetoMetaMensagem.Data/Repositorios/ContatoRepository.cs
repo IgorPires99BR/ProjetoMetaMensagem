@@ -93,12 +93,6 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryFirstOrDefaultAsync<Contato>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
-        public async Task<IEnumerable<Contato>> Obter()
-        {
-            var sql = $"SELECT * FROM {nameof(Contato)}";
-            return await _session.Connection.QueryAsync<Contato>(sql, transaction: _session.Transaction);
-        }
-
         public async Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone)
         {
             // Contato nao tem EmpresaId direto (so UsuarioId), entao o escopo por empresa

@@ -16,7 +16,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<int> Alterar(Contato contato, Guid? empresaIdSolicitante);
         Task<int> Excluir(string id, Guid? empresaIdSolicitante);
         Task<Contato?> ObterPorId(int id);
-        Task<IEnumerable<Contato>> Obter();
         Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone);
         // null = administrador (sem restricao, ve contatos de todas as empresas).
         Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId);

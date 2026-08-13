@@ -47,8 +47,24 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                 await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "PROCESSANDO", null);
 
                                 var vinculos = (await unitOfWork.Campanha.ObterContatosPorCampanha(campanha.Id)).ToList();
-                                var todosContatos = await unitOfWork.Contato.Obter();
-                                var mapaContatos = todosContatos.ToDictionary(c => c.Id);
+
+                                // Busca so os contatos desta campanha, e dentro da empresa dela.
+                                // Antes isto carregava a tabela Contato INTEIRA, de todas as
+                                // empresas, a cada campanha e a cada ciclo do worker -- caro e
+                                // sem recorte: um vinculo apontando pra contato de outra empresa
+                                // era resolvido normalmente e a campanha mandava mensagem real
+                                // pra ele. Agora esse vinculo nao casa e cai no "nao encontrado".
+                                //
+                                // Em lotes porque o IN (@Ids) do ObterPorIds vira um parametro por
+                                // id, e o SQL Server corta em 2100 -- uma campanha grande estouraria.
+                                var mapaContatos = new Dictionary<Guid, Dominio.Entidades.Contato>();
+                                foreach (var lote in vinculos.Select(v => v.ContatoId).Distinct().Chunk(1000))
+                                {
+                                    foreach (var contatoDoLote in await unitOfWork.Contato.ObterPorIds(campanha.EmpresaId, lote))
+                                    {
+                                        mapaContatos[contatoDoLote.Id] = contatoDoLote;
+                                    }
+                                }
 
                                 foreach (var vinculo in vinculos)
                                 {
