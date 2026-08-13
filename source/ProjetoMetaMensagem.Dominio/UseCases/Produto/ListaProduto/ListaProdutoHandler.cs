@@ -26,6 +26,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.ListaProduto
 
             try
             {
+                var validator = new ListaProdutoValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
                 var listaResultados = new List<ListaProdutoResult>();
 
                 var produtos = await _unitOfWork.Produto.ListarPorEmpresa(command.EmpresaId);

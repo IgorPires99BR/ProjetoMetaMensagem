@@ -31,14 +31,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta
         {
             var response = new Response<CriarTemplateMetaResult>();
 
-            //var validator = new CriaClienteValidator();
-            //var validateResult = validator.Validate(request);
+            var validator = new CriarTemplateMetaValidator();
+            var validateResult = validator.Validate(command);
 
-            //if (!validateResult.IsValid)
-            //{
-            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-            //    return response;
-            //}
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
 
             try
             {

@@ -25,6 +25,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Produto.DeletaProduto
 
             try
             {
+                var validator = new DeletaProdutoValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
                 _unitOfWork.BeginTransaction();
                 var linhasAfetadas = await _unitOfWork.Produto.Excluir(command.Id, command.EmpresaIdSolicitante);
 

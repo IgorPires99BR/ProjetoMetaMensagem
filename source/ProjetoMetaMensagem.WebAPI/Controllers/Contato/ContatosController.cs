@@ -71,12 +71,16 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             }
         }
 
+        // Rota mantem "{usuarioId}" por compatibilidade com o front (Contatos e Disparador
+        // chamam esta mesma rota passando o usuario logado), mas o valor nao e mais usado pra
+        // filtrar: a lista e por empresa agora (ver ObtemContatoHandler), com o escopo vindo do
+        // token -- nunca da rota, senao o proprio atacante escolheria a empresa.
         [HttpGet("api/contato/obter-por-usuario/{usuarioId}")]
         public async Task<IActionResult> ObterPorUsuario(Guid usuarioId)
         {
             try
             {
-                var resultado = await _mediator.Send(new ObtemContatoCommand(usuarioId));
+                var resultado = await _mediator.Send(new ObtemContatoCommand(this.EmpresaDoEscopo()));
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)

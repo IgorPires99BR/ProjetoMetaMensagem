@@ -87,8 +87,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             {
                                 if (string.IsNullOrEmpty(statusMeta.Id) || string.IsNullOrEmpty(statusMeta.Status)) continue;
 
-                                await _unitOfWork.HistoricoDisparo.AtualizarStatusEntregaPorWamid(statusMeta.Id, statusMeta.Status);
-
                                 string? erroDetalhado = null;
                                 if (statusMeta.Status == "failed" && statusMeta.Errors != null && statusMeta.Errors.Any())
                                 {
@@ -96,6 +94,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                     erroDetalhado = $"({primeiroErro.Code}) {primeiroErro.Title}: {primeiroErro.ErrorData?.Details ?? primeiroErro.Message}";
                                     _logger.LogWarning("Falha na entrega da mensagem {Wamid}: {Erro}", statusMeta.Id, erroDetalhado);
                                 }
+
+                                await _unitOfWork.HistoricoDisparo.AtualizarStatusEntregaPorWamid(statusMeta.Id, statusMeta.Status, erroDetalhado);
 
                                 var statusDto = new StatusAtualizadoBroadcastDto
                                 {

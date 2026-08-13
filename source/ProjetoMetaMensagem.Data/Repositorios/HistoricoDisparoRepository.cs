@@ -121,15 +121,16 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { WamidMeta = wamidMeta }, transaction: _session.Transaction);
         }
 
-        public async Task AtualizarStatusEntregaPorWamid(string wamid, string status)
+        public async Task AtualizarStatusEntregaPorWamid(string wamid, string status, string? motivoFalha = null)
         {
             var sql = $@"
                 UPDATE {nameof(HistoricoDisparo)}
-                SET {nameof(HistoricoDisparo.StatusEntrega)} = @Status
+                SET {nameof(HistoricoDisparo.StatusEntrega)} = @Status,
+                    {nameof(HistoricoDisparo.MotivoFalha)} = @MotivoFalha
                 WHERE {nameof(HistoricoDisparo.WamidMeta)} = @Wamid";
 
             await _session.Connection.ExecuteAsync(
-                sql, new { Wamid = wamid, Status = status }, transaction: _session.Transaction);
+                sql, new { Wamid = wamid, Status = status, MotivoFalha = motivoFalha }, transaction: _session.Transaction);
         }
 
     }

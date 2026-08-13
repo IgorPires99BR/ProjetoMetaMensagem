@@ -124,10 +124,19 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         }
 
 
-        public async Task<IEnumerable<Contato>> ObterPorUsuario(Guid usuarioId)
+        public async Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId)
         {
-            var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.UsuarioId)} = @UsuarioId";
-            return await _session.Connection.QueryAsync<Contato>(sql, new { UsuarioId = usuarioId }, transaction: _session.Transaction);
+            // Contato nao tem EmpresaId direto, entao o escopo passa por Usuario -- mesmo
+            // padrao do ObterPorTelefone/ObterPorIds. Antes esta lista era filtrada por
+            // UsuarioId: um contato cadastrado por um vendedor nao aparecia pra outro vendedor
+            // da mesma empresa (nem no Disparador, que usa esta mesma consulta), embora a
+            // checagem de telefone repetido (ObterPorTelefone) ja fosse por empresa.
+            var sql = @"
+                SELECT c.* FROM Contato c
+                INNER JOIN Usuario u ON u.Id = c.UsuarioId
+                WHERE (@EmpresaId IS NULL OR u.EmpresaId = @EmpresaId)";
+
+            return await _session.Connection.QueryAsync<Contato>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Contato>> ObterPorIds(Guid empresaId, IEnumerable<Guid> ids)

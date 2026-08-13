@@ -38,6 +38,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
         public string? Status { get; set; }
 
         /// <summary>
+        /// Motivo detalhado quando Status = "failed". Nulo para mensagens recebidas ou sem falha.
+        /// </summary>
+        public string? Erro { get; set; }
+
+        /// <summary>
         /// Id da mídia na Meta (quando a mensagem é imagem/áudio/documento). Usado pelo front pra montar a URL de proxy.
         /// </summary>
         public string? MidiaId { get; set; }

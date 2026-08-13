@@ -26,6 +26,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // envio falho estourava violacao de chave duplicada.
         public string? WamidMeta { get; set; }
         public string? StatusEntrega { get; set; }
+        // Motivo detalhado (codigo + titulo + descricao) quando StatusEntrega = "failed",
+        // vindo do array "errors" que a Meta manda no webhook de status.
+        public string? MotivoFalha { get; set; }
         public DateTime DataEnvio { get; set; }
         public string? MidiaId { get; set; }
         public string? TipoMidia { get; set; }

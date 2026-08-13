@@ -27,14 +27,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         {
             var response = new Response<EnviarMensagemTemplateMetaResult>();
 
-            //var validator = new CriaClienteValidator();
-            //var validateResult = validator.Validate(request);
+            var validator = new EnviarMensagemTemplateMetaValidator();
+            var validateResult = validator.Validate(command);
 
-            //if (!validateResult.IsValid)
-            //{
-            //    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
-            //    return response;
-            //}
+            if (!validateResult.IsValid)
+            {
+                response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                return response;
+            }
 
             try
             {

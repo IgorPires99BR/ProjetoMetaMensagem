@@ -40,7 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
                     return response;
                 }
 
-                var contatos = await _unitOfWork.Contato.ObterPorUsuario(command.IdEmpresa);
+                var contatos = await _unitOfWork.Contato.ObterPorEmpresa(command.EmpresaIdSolicitante);
 
                 foreach (var contato in contatos)
                 {

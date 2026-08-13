@@ -29,6 +29,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
 
             try
             {
+                var validator = new ListaChatsAtivosValidator();
+                var validateResult = validator.Validate(command);
+
+                if (!validateResult.IsValid)
+                {
+                    response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
                 // 1. Busca os chats/conversas ativas daquela empresa específica, combinando mensagens
                 // recebidas e disparos enviados — sem isso, contatos que só receberam um disparo
                 // (e ainda não responderam) não apareciam na lista de conversas.

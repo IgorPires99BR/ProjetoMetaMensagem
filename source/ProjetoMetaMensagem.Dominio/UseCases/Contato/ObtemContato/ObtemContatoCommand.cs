@@ -10,10 +10,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 {
     public class ObtemContatoCommand : IRequest<Response<List<ObtemContatoResult>>>
     {
-        public ObtemContatoCommand(Guid empresaId)
+        public ObtemContatoCommand(Guid? empresaIdSolicitante)
         {
-            IdEmpresa = empresaId;
+            EmpresaIdSolicitante = empresaIdSolicitante;
         }
-        public Guid IdEmpresa { get; set; }
+
+        // Escopo vem do token (null = administrador, ve todas as empresas), nunca da rota.
+        public Guid? EmpresaIdSolicitante { get; set; }
     }
 }
