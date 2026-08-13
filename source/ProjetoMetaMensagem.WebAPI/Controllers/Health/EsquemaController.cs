@@ -23,13 +23,54 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<EsquemaController> _logger;
+        private readonly IConfiguration _configuration;
 
         // Mesmo motivo do HealthController: DbSession abre a conexao no construtor, entao
         // injetar direto faria a excecao estourar na resolucao de DI, antes do try/catch.
-        public EsquemaController(IServiceProvider serviceProvider, ILogger<EsquemaController> logger)
+        public EsquemaController(IServiceProvider serviceProvider, ILogger<EsquemaController> logger, IConfiguration configuration)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _configuration = configuration;
+        }
+
+        // Diz quais configuracoes criticas EXISTEM no ambiente, nunca o valor delas.
+        //
+        // Existe por causa de um caso real: o AppSecret nao estava configurado em producao, o
+        // middleware do webhook descartava todo payload da Meta e respondia 200, e a plataforma
+        // passou 5 dias sem receber uma unica mensagem sem que nada parecesse quebrado. De fora
+        // nao havia como distinguir "configurado e correto" de "ausente". Agora ha.
+        [HttpGet("api/health/configuracao")]
+        public IActionResult Configuracao()
+        {
+            if (!this.EhAdminDaPlataforma())
+            {
+                return StatusCode(403, new { mensagem = "Acesso restrito à operação da plataforma.", tipo = "Negocio" });
+            }
+
+            // So o booleano. Devolver tamanho ou prefixo ja ajudaria quem tentasse adivinhar.
+            bool Existe(string chave) => !string.IsNullOrWhiteSpace(_configuration[chave]);
+
+            var itens = new[]
+            {
+                new { chave = "ApiWhatsappConnectionConfiguration:AppSecret", configurado = Existe("ApiWhatsappConnectionConfiguration:AppSecret"), usadoPara = "Validar a assinatura do webhook da Meta. Sem isto, nenhuma mensagem recebida entra." },
+                new { chave = "ApiWhatsappConnectionConfiguration:AccessToken", configurado = Existe("ApiWhatsappConnectionConfiguration:AccessToken"), usadoPara = "Fallback de envio quando a empresa nao tem token proprio." },
+                new { chave = "ApiWhatsappConnectionConfiguration:BaseUrl", configurado = Existe("ApiWhatsappConnectionConfiguration:BaseUrl"), usadoPara = "Endereco da Graph API da Meta." },
+                new { chave = "JwtSettings:SecretKey", configurado = Existe("JwtSettings:SecretKey"), usadoPara = "Assinar o token de login. Sem isto a API nem sobe." },
+                new { chave = "GeminiConfiguration:ApiKey", configurado = Existe("GeminiConfiguration:ApiKey"), usadoPara = "Assistente de IA. Sem isto so o assistente para de funcionar." },
+                new { chave = "GmailConfig:SenhaApp", configurado = Existe("GmailConfig:SenhaApp"), usadoPara = "Envio de e-mail do sistema, como recuperacao de senha." },
+            };
+
+            var faltando = itens.Where(i => !i.configurado).Select(i => i.chave).ToList();
+
+            return Ok(new
+            {
+                tudoConfigurado = faltando.Count == 0,
+                faltando,
+                itens,
+                ambiente = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "desconhecido",
+                horaServidor = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+            });
         }
 
         private class ObjetoDoBanco

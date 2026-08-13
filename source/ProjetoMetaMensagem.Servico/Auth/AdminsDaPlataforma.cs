@@ -19,6 +19,10 @@ namespace ProjetoMetaMensagem.Servico.Auth
     {
         private static readonly string[] Padrao =
         {
+            // Conta usada em producao. A "vtrz@gmail.com" abaixo e a do banco de dev, e as duas
+            // precisam estar aqui: sem a de producao, quem opera a plataforma fica preso a
+            // propria empresa e nao consegue nem abrir os endpoints de diagnostico.
+            "vtrzmartil@gmail.com",
             "vtrz@gmail.com",
             "igorpires97@gmail.com"
         };
