@@ -1,5 +1,6 @@
 ﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.Login;
@@ -10,6 +11,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.Login
 {
     [ApiController]
     [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    // Sem lockout/contagem de tentativas no login (BCrypt.Verify direto) -- este limite por IP
+    // e a unica barreira contra tentativa exaustiva de senha.
+    [EnableRateLimiting("auth")]
     public class AuthController : Controller
     {
         private readonly IMediator _mediator;

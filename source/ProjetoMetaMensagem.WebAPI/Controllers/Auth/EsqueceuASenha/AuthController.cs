@@ -1,5 +1,6 @@
 ﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Auth.EsqueceuASenha;
 using ProjetoMetaMensagem.WebAPI.Common;
@@ -10,6 +11,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Auth.EsqueceuASenha
     [ApiController]
     [Route("[controller]")]
     [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    // Mesmo motivo do login: sem isso, da pra descobrir quais emails estao cadastrados
+    // (enumeracao) ou floodar a caixa de entrada de alguem via SMTP do Gmail configurado.
+    [EnableRateLimiting("auth")]
     public class AuthController : Controller
     {
         private readonly IMediator _mediator;

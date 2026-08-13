@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -14,6 +15,10 @@ namespace ProjetoMetaMensagem.Controllers
     // a desativar a assinatura do webhook, entao aqui precisa responder 200 sempre.
     [Route("api/webhook/whatsapp")]
     [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    // Ja protegido pela assinatura HMAC (ValidacaoAssinaturaMetaMiddleware), que e mais forte
+    // que limite por IP. Deixar sujeito ao rate limit global arrisca devolver 429 pra Meta em
+    // picos legitimos de evento, o que e pior do que nao limitar aqui.
+    [DisableRateLimiting]
     public class WhatsappWebhookController : ControllerBase
     {
         private readonly IMediator _mediator;

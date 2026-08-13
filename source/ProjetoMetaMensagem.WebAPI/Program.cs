@@ -68,8 +68,60 @@ using ProjetoMetaMensagem.WebAPI.Hubs;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
 using ProjetoMetaMensagem.Servico.Campanha;
 using ProjetoMetaMensagem.Servico.IA;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Render (como a maioria dos PaaS) termina o TLS na borda e repassa pro container em HTTP puro
+// (ver ASPNETCORE_URLS=http://+:8080 no .dockerfile) -- sem isso, o app nao sabe que a requisicao
+// original era HTTPS e UseHttpsRedirection() entraria em loop de redirecionamento infinito, porque
+// internamente toda requisicao chega como HTTP. KnownNetworks/KnownProxies limpos porque o IP do
+// proxy da Render nao e fixo/conhecido; como o container so e alcancavel atraves desse proxy,
+// aceitar o header de qualquer origem aqui e o padrao recomendado para esse tipo de hospedagem.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Limite global por IP -- rede de seguranca basica contra scraping/DoS sem atrapalhar uso
+    // normal. Depende do ForwardedHeaders acima pra pegar o IP real do cliente, nao o do proxy.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // Login e "esqueci minha senha" sao alvo classico de forca bruta/enumeracao de email --
+    // limite bem mais apertado, tambem por IP. O login hoje faz BCrypt.Verify sem nenhum lockout
+    // ou contagem de tentativas, entao isso e a unica barreira contra tentativa exaustiva de senha.
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 
 builder.Services.AddCors(options =>
 {
@@ -315,26 +367,48 @@ builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.
 builder.Services.AddScoped<IRequestHandler<ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.RemoverLead.RemoverLeadCommand, Response<bool>>, ProjetoMetaMensagem.Dominio.UseCases.LeadPipeline.RemoverLead.RemoverLeadHandler>();
 
 var app = builder.Build();
- 
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Projeto Meta Mensagem V1");
-        // Se quiser que abra direto ao iniciar, deixe vazio. 
-        // Se preferir acessar via /swagger, comente a linha abaixo.
-        c.RoutePrefix = string.Empty;
-    });
+
+// Precisa ser o primeiro middleware do pipeline: tudo que le esquema (https/http) ou IP do
+// cliente abaixo (HSTS, HttpsRedirection, o RemoteIpAddress usado no rate limiter) depende
+// do X-Forwarded-Proto/X-Forwarded-For ja terem sido aplicados a Request antes de chegar neles.
+app.UseForwardedHeaders();
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Projeto Meta Mensagem V1");
+    // Se quiser que abra direto ao iniciar, deixe vazio.
+    // Se preferir acessar via /swagger, comente a linha abaixo.
+    c.RoutePrefix = string.Empty;
+});
 
 
 
 app.UseCors("AllowReactApp");
 
-//app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+app.UseHttpsRedirection();
+
+// Headers de seguranca basicos. CSP fica de fora de proposito: essa API so serve JSON (+
+// Swagger), quem serve HTML pro usuario final e o Angular hospedado a parte -- um CSP aqui
+// nao protegeria nada relevante e quebraria o Swagger UI (usa script/style inline).
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    await next();
+});
 
 app.UseMiddleware<ProjetoMetaMensagem.WebAPI.Common.ValidacaoAssinaturaMetaMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 // O front conecta em `${environment.apiUrl}/hubs/chat`, e apiUrl ja inclui "/api" --
