@@ -116,11 +116,32 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                         vinculo.Sucesso = false;
                                         vinculo.MensagemErro = ex.Message;
                                     }
+                                    finally
+                                    {
+                                        // No finally porque os tres caminhos acima (contato nao
+                                        // encontrado, envio ok, envio falho) precisam gravar, e o
+                                        // primeiro sai por continue. Sem isto o resultado por
+                                        // contato so existia em memoria: a campanha era dada como
+                                        // concluida no log e o banco continuava com Processado=0
+                                        // e MensagemErro nulo, entao nao dava pra saber quem
+                                        // recebeu, quem falhou nem por que.
+                                        try
+                                        {
+                                            await unitOfWork.Campanha.AtualizarResultadoContato(vinculo);
+                                        }
+                                        catch (Exception exGravacao)
+                                        {
+                                            // Nao pode derrubar a campanha: o envio ja aconteceu,
+                                            // perder o registro dele e ruim mas nao para a fila.
+                                            _logger.LogError(exGravacao, "Falha ao gravar o resultado do contato {ContatoId} na campanha {CampanhaId}", vinculo.ContatoId, campanha.Id);
+                                        }
+                                    }
                                 }
 
                                 var total = vinculos.Count;
                                 var processados = vinculos.Count(v => v.Processado);
 
+                                await unitOfWork.Campanha.AtualizarProgresso(campanha.Id, processados);
                                 await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "CONCLUIDA", null);
 
                                 _logger.LogInformation("Campanha {CampanhaId} concluida com {Total}/{Processados} processados",

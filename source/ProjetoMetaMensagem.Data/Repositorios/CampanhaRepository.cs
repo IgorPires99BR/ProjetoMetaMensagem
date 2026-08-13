@@ -98,6 +98,31 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { Agora = DateTime.Now }, transaction: _session.Transaction);
         }
 
+        public async Task AtualizarResultadoContato(CampanhaContato vinculo)
+        {
+            // Gravado a cada contato, e nao em bloco no fim: se o worker cair ou o processo for
+            // reiniciado no meio de uma campanha grande, o que ja foi enviado fica registrado.
+            var sql = $@"
+                UPDATE {nameof(CampanhaContato)}
+                SET {nameof(CampanhaContato.Processado)} = @{nameof(CampanhaContato.Processado)},
+                    {nameof(CampanhaContato.Sucesso)} = @{nameof(CampanhaContato.Sucesso)},
+                    {nameof(CampanhaContato.MensagemErro)} = @{nameof(CampanhaContato.MensagemErro)}
+                WHERE {nameof(CampanhaContato.Id)} = @{nameof(CampanhaContato.Id)};";
+
+            await _session.Connection.ExecuteAsync(sql, vinculo, transaction: _session.Transaction);
+        }
+
+        public async Task AtualizarProgresso(Guid campanhaId, int processados)
+        {
+            var sql = $@"
+                UPDATE {nameof(Campanha)}
+                SET {nameof(Campanha.Processados)} = @Processados
+                WHERE {nameof(Campanha.Id)} = @Id;";
+
+            await _session.Connection.ExecuteAsync(sql,
+                new { Id = campanhaId, Processados = processados }, transaction: _session.Transaction);
+        }
+
         public async Task<int> AtualizarStatus(Guid id, string status, Guid? empresaIdSolicitante)
         {
             // Recorte de empresa no WHERE: antes o UPDATE casava so pelo Id e qualquer usuario
