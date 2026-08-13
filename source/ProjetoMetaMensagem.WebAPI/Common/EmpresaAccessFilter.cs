@@ -4,7 +4,8 @@ namespace ProjetoMetaMensagem.WebAPI.Common
 {
     // Garante isolamento multi-tenant: se a rota/query tiver um parametro de empresa
     // (idEmpresa, empresaId, idempresa, empresaid), ele precisa bater com a claim "empresaId"
-    // do token JWT do usuario logado. Administradores (claim isAdmin=true) sao dispensados.
+    // do token JWT do usuario logado. So a conta de plataforma (claim isAdminPlataforma=true)
+    // e dispensada -- o admin do cliente (isAdmin) continua preso a propria empresa.
     public class EmpresaAccessFilter : IActionFilter
     {
         private static readonly string[] NomesParametroEmpresa = { "idEmpresa", "empresaId", "idempresa", "empresaid" };
@@ -16,8 +17,10 @@ namespace ProjetoMetaMensagem.WebAPI.Common
             if (user?.Identity == null || !user.Identity.IsAuthenticated)
                 return; // endpoints [AllowAnonymous] nao tem usuario autenticado
 
-            var isAdmin = user.FindFirst("isAdmin")?.Value;
-            if (string.Equals(isAdmin, "true", StringComparison.OrdinalIgnoreCase))
+            // So a conta de plataforma passa direto. O admin do cliente (isAdmin) continua
+            // sujeito ao recorte: ele manda na propria empresa, nao nas dos outros.
+            var ehPlataforma = user.FindFirst("isAdminPlataforma")?.Value;
+            if (string.Equals(ehPlataforma, "true", StringComparison.OrdinalIgnoreCase))
                 return;
 
             var empresaIdToken = user.FindFirst("empresaId")?.Value;

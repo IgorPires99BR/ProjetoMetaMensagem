@@ -37,7 +37,10 @@ namespace ProjetoMetaMensagem.Servico.Auth
                 new Claim(ClaimTypes.Email, email ?? ""),
                 new Claim(ClaimTypes.Name, nome),
                 new Claim("empresaId", empresaId),
-                new Claim("isAdmin", isAdmin ?? "false")
+                new Claim("isAdmin", isAdmin ?? "false"),
+                // Decidido no login, nao no request: quem dispensa o recorte por empresa e
+                // so a conta de plataforma. Ver AdminsDaPlataforma para a diferenca dos dois niveis.
+                new Claim("isAdminPlataforma", AdminsDaPlataforma.Contem(_configuration, email) ? "true" : "false")
             };
 
             var token = new JwtSecurityToken(
