@@ -32,6 +32,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Campanha.CriaCampanha
 
             try
             {
+                // ContatoIds vem do corpo da requisicao: sem conferir que cada um pertence a
+                // EmpresaId, um usuario autenticado de uma empresa conseguia mandar mensagem de
+                // verdade (via CampanhaWorker) pra contatos de OUTRA empresa, so sabendo os ids.
+                var contatosValidos = await _unitOfWork.Contato.ObterPorIds(command.EmpresaId, command.ContatoIds ?? new List<Guid>());
+                if (contatosValidos.Count() != (command.ContatoIds?.Count ?? 0))
+                {
+                    response.AddErro("Um ou mais contatos informados não pertencem a esta empresa.");
+                    return response;
+                }
+
                 _unitOfWork.BeginTransaction();
                 var campanha = new Entidades.Campanha
                 {

@@ -12,12 +12,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao
     public class CriaTemplateConexaoHandler : IRequestHandler<CriaTemplateConexaoCommand, Response<CriaTemplateConexaoResult>>
     {
         private readonly ITemplateConexaoRepository _templateConexaoRepository;
+        private readonly ITemplateRepository _templateRepository;
 
         private readonly ILogger<CriaTemplateConexaoHandler> _logger;
 
-        public CriaTemplateConexaoHandler(ITemplateConexaoRepository templateConexaoRepository, ILogger<CriaTemplateConexaoHandler> logger)
+        public CriaTemplateConexaoHandler(ITemplateConexaoRepository templateConexaoRepository, ITemplateRepository templateRepository, ILogger<CriaTemplateConexaoHandler> logger)
         {
             _templateConexaoRepository = templateConexaoRepository;
+            _templateRepository = templateRepository;
             _logger = logger;
         }
 
@@ -33,6 +35,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao
                 if (!validateResult.IsValid)
                 {
                     response.AddErros(validateResult.Errors.ToCustomValidationFailure());
+                    return response;
+                }
+
+                // TemplateOrigemId/TemplateDestinoId vem do corpo: sem conferir que os dois sao
+                // da mesma EmpresaId, dava pra ligar o proprio template ao de OUTRA empresa (o
+                // botao passaria a apontar/expor um template alheio nas listagens de conexao).
+                var origem = await _templateRepository.ObterPorIdEEmpresa(command.TemplateOrigemId, command.EmpresaId);
+                var destino = await _templateRepository.ObterPorIdEEmpresa(command.TemplateDestinoId, command.EmpresaId);
+                if (origem == null || destino == null)
+                {
+                    response.AddErro("Template de origem ou destino não encontrado.");
                     return response;
                 }
 

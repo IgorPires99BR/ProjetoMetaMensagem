@@ -93,6 +93,14 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
             return await _session.Connection.ExecuteScalarAsync<int>(sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
         }
+
+        public async Task<bool> ExisteMidiaId(Guid empresaId, string midiaId)
+        {
+            var sql = @"SELECT COUNT(1) FROM MensagemRecebida WHERE EmpresaId = @EmpresaId AND MidiaId = @MidiaId";
+            var count = await _session.Connection.ExecuteScalarAsync<int>(
+                sql, new { EmpresaId = empresaId, MidiaId = midiaId }, transaction: _session.Transaction);
+            return count > 0;
+        }
     }
 }
 

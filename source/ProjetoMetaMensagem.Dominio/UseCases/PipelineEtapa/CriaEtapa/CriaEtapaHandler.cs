@@ -31,6 +31,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.CriaEtapa
 
             try
             {
+                var pipeline = await _repository.ObterPorId(command.PipelineId);
+                if (pipeline == null || (command.EmpresaIdSolicitante.HasValue && pipeline.EmpresaId != command.EmpresaIdSolicitante.Value))
+                {
+                    response.AddErro("Pipeline não encontrado.");
+                    return response;
+                }
+
                 var entity = new Entidades.PipelineEtapa
                 {
                     PipelineId = command.PipelineId,

@@ -31,6 +31,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.PipelineEtapa.ListaEtapa
 
             try
             {
+                // Pipeline nao vem no filtro global (EmpresaAccessFilter so olha nomes tipo
+                // "empresaId"/"idEmpresa"), entao o dono do PipelineId precisa ser conferido aqui.
+                var pipeline = await _repository.ObterPorId(command.PipelineId);
+                if (pipeline == null || (command.EmpresaIdSolicitante.HasValue && pipeline.EmpresaId != command.EmpresaIdSolicitante.Value))
+                {
+                    response.AddErro("Pipeline não encontrado.");
+                    return response;
+                }
+
                 var etapas = await _repository.ListarEtapas(command.PipelineId);
                 var results = new List<ListaEtapaResult>();
                 foreach (var e in etapas.OrderBy(e => e.Ordem))

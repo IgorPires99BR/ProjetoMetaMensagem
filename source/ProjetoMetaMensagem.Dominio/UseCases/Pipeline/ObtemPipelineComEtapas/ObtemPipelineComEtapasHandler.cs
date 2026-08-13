@@ -32,7 +32,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemPipelineComEtapas
             try
             {
                 var pipeline = await _repository.ObterPorId(command.PipelineId);
-                if (pipeline == null)
+                // PipelineId nao vem no filtro global (so olha nomes tipo "empresaId"), entao sem
+                // esta checagem um EmpresaId valido (o proprio, ja verificado pelo filtro) combinado
+                // com um PipelineId de OUTRA empresa devolvia a estrutura do funil alheio.
+                if (pipeline == null || pipeline.EmpresaId != command.EmpresaId)
                 {
                     response.AddErro("Pipeline não encontrado.");
                     return response;

@@ -17,5 +17,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<IEnumerable<HistoricoDisparoComTelefone>> ListarPorEmpresa(Guid empresaId);
         Task<HistoricoDisparo?> ObterPorWamidMeta(string wamidMeta);
         Task AtualizarStatusEntregaPorWamid(string wamid, string status, string? motivoFalha = null);
+        // Usado pra confirmar que um MidiaId pertence a empresa antes de baixar a midia da Meta
+        // usando o token dela -- sem isso, qualquer MidiaId (de qualquer empresa) era aceito.
+        Task<bool> ExisteMidiaId(Guid empresaId, string midiaId);
     }
 }

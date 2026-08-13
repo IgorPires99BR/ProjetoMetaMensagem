@@ -121,6 +121,17 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { WamidMeta = wamidMeta }, transaction: _session.Transaction);
         }
 
+        public async Task<bool> ExisteMidiaId(Guid empresaId, string midiaId)
+        {
+            var sql = $@"
+                SELECT COUNT(1) FROM {nameof(HistoricoDisparo)}
+                WHERE {nameof(HistoricoDisparo.EmpresaId)} = @EmpresaId AND {nameof(HistoricoDisparo.MidiaId)} = @MidiaId";
+
+            var count = await _session.Connection.ExecuteScalarAsync<int>(
+                sql, new { EmpresaId = empresaId, MidiaId = midiaId }, transaction: _session.Transaction);
+            return count > 0;
+        }
+
         public async Task AtualizarStatusEntregaPorWamid(string wamid, string status, string? motivoFalha = null)
         {
             var sql = $@"

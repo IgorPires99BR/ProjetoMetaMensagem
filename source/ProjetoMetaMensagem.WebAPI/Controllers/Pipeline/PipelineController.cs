@@ -113,6 +113,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         {
             try
             {
+                // Escopo vem do token, nunca do corpo: senao o proprio atacante o escolheria.
+                cmd.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
                 var resultado = await _mediator.Send(cmd);
                 return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
             }
@@ -127,7 +130,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Pipeline
         {
             try
             {
-                var resultado = await _mediator.Send(new ListaEtapaCommand(pipelineId));
+                // Escopo vem do token, nunca da rota: senao o proprio atacante o escolheria.
+                var resultado = await _mediator.Send(new ListaEtapaCommand(pipelineId)
+                {
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)

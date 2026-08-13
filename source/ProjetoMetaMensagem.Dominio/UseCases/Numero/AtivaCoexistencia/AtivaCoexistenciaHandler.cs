@@ -39,7 +39,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia
 
             try
             {
-                var numero = await _unitOfWork.Numero.ObterPorId(command.NumeroId);
+                // Busca ja escopada por empresa -- antes o recorte so acontecia no UPDATE local
+                // no fim do metodo, DEPOIS da chamada real pra Meta. Se o numero da vitima ja
+                // tivesse SystemUserToken salvo, a coexistencia era ativada de verdade na Meta
+                // antes de qualquer checagem de dono.
+                var numero = await _unitOfWork.Numero.ObterPorIdEEmpresa(command.NumeroId, command.IdEmpresa);
 
                 if (numero == null)
                 {

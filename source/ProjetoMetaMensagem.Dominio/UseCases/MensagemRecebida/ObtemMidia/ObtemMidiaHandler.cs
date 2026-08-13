@@ -37,6 +37,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ObtemMidia
 
             try
             {
+                // MidiaId vem solto (rota/query): sem confirmar que pertence a uma mensagem
+                // desta empresa, qualquer MidiaId era aceito e baixado com o token da propria
+                // empresa -- na pratica so nao vazava midia alheia porque a Meta rejeita token
+                // de WABA diferente da dona do id, mas essa rejeicao nao e nossa responsabilidade.
+                var pertenceAEmpresa = await _unitOfWork.HistoricoDisparo.ExisteMidiaId(command.EmpresaId, command.MidiaId)
+                    || await _unitOfWork.MensagemRecebida.ExisteMidiaId(command.EmpresaId, command.MidiaId);
+
+                if (!pertenceAEmpresa)
+                {
+                    response.AddErro("Mídia não encontrada.");
+                    return response;
+                }
+
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.EmpresaId);
 
                 if (string.IsNullOrEmpty(token))
