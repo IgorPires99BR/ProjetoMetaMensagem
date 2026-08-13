@@ -66,10 +66,26 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                     }
                                 }
 
-                                foreach (var vinculo in vinculos)
+                                // Retomada: o que ja foi tratado numa passada anterior nao volta
+                                // pra fila. Os contadores no fim continuam olhando a lista toda.
+                                var pendentes = vinculos.Where(v => !v.Processado).ToList();
+
+                                foreach (var vinculo in pendentes)
                                 {
                                     if (stoppingToken.IsCancellationRequested)
                                         break;
+
+                                    // Pega o contato antes de falar com a Meta. Se nao conseguir,
+                                    // alguem ja tratou (outro worker num deploy sobreposto) e
+                                    // reenviar so duplicaria mensagem paga pro cliente.
+                                    if (!await unitOfWork.Campanha.ReivindicarContato(vinculo.Id))
+                                    {
+                                        _logger.LogInformation("Contato {ContatoId} da campanha {CampanhaId} ja havia sido tratado; pulando.", vinculo.ContatoId, campanha.Id);
+                                        // Tratado por outro: conta como processado, senao o
+                                        // contador da campanha ficaria eternamente incompleto.
+                                        vinculo.Processado = true;
+                                        continue;
+                                    }
 
                                     try
                                     {
@@ -142,10 +158,23 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                 var processados = vinculos.Count(v => v.Processado);
 
                                 await unitOfWork.Campanha.AtualizarProgresso(campanha.Id, processados);
-                                await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "CONCLUIDA", null);
 
-                                _logger.LogInformation("Campanha {CampanhaId} concluida com {Total}/{Processados} processados",
-                                    campanha.Id, total, processados);
+                                // So conclui quando realmente acabou. Marcar CONCLUIDA com contato
+                                // pendente (o que acontecia ao desligar o processo no meio) tirava
+                                // a campanha da fila pra sempre -- o mesmo beco de antes, por outra
+                                // porta. Ficando em PROCESSANDO, a proxima passada retoma de onde
+                                // parou, porque a fila olha os vinculos e nao o status.
+                                if (processados >= total)
+                                {
+                                    await unitOfWork.Campanha.AtualizarStatus(campanha.Id, "CONCLUIDA", null);
+                                    _logger.LogInformation("Campanha {CampanhaId} concluida com {Processados}/{Total} processados",
+                                        campanha.Id, processados, total);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("Campanha {CampanhaId} interrompida em {Processados}/{Total}; sera retomada na proxima passada.",
+                                        campanha.Id, processados, total);
+                                }
                             }
                             catch (Exception ex)
                             {

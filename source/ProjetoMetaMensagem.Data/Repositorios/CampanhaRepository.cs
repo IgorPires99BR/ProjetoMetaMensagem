@@ -88,14 +88,43 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<IEnumerable<Campanha>> ObterPendentes()
         {
+            // PROCESSANDO entra junto de AGENDADA: quando o processo caia no meio (deploy,
+            // restart), a campanha ficava marcada assim pra sempre e ninguem a retomava. Nao
+            // ha risco de reenvio porque quem decide o que enviar e o vinculo, nao o status --
+            // o worker so trata contato com Processado = 0. CANCELADA fica de fora de proposito.
+            //
+            // Sem filtro por vinculo pendente: uma campanha que ja tratou todo mundo mas ficou
+            // em PROCESSANDO precisa ser coletada mais uma vez justamente pra virar CONCLUIDA e
+            // sair da fila. Como a passada seguinte a conclui, ela nao volta.
             var sql = $@"
                 SELECT * FROM {nameof(Campanha)}
-                WHERE {nameof(Campanha.Status)} = 'AGENDADA'
+                WHERE {nameof(Campanha.Status)} IN ('AGENDADA', 'PROCESSANDO')
                   AND {nameof(Campanha.DataAgendamento)} <= @Agora
                 ORDER BY {nameof(Campanha.DataAgendamento)};";
 
             return await _session.Connection.QueryAsync<Campanha>(
                 sql, new { Agora = DateTime.Now }, transaction: _session.Transaction);
+        }
+
+        public async Task<bool> ReivindicarContato(Guid vinculoId)
+        {
+            // Marca o contato como tratado ANTES do envio, condicionado a ele ainda estar
+            // pendente. O WHERE Processado = 0 e o que torna a operacao atomica: se dois
+            // workers rodarem ao mesmo tempo (acontece durante um deploy), so um afeta linha
+            // e o outro pula, entao o contato nao recebe a mensagem duas vezes.
+            var sql = $@"
+                UPDATE {nameof(CampanhaContato)}
+                SET {nameof(CampanhaContato.Processado)} = 1,
+                    {nameof(CampanhaContato.Sucesso)} = 0,
+                    {nameof(CampanhaContato.MensagemErro)} = @Motivo
+                WHERE {nameof(CampanhaContato.Id)} = @Id
+                  AND {nameof(CampanhaContato.Processado)} = 0;";
+
+            var linhas = await _session.Connection.ExecuteAsync(sql,
+                new { Id = vinculoId, Motivo = CampanhaContato.EnvioInterrompido },
+                transaction: _session.Transaction);
+
+            return linhas == 1;
         }
 
         public async Task AtualizarResultadoContato(CampanhaContato vinculo)
