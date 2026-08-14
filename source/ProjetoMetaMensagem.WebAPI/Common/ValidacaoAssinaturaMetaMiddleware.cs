@@ -38,12 +38,16 @@ namespace ProjetoMetaMensagem.WebAPI.Common
             var appSecret = configuration["ApiWhatsappConnectionConfiguration:AppSecret"];
             if (string.IsNullOrEmpty(appSecret))
             {
-                // Sem o AppSecret configurado nao ha como validar a assinatura -- e deixar
-                // passar sem validar equivale a nao ter protecao nenhuma no endpoint. Descarta
-                // com 200 (mesmo contrato usado abaixo pra assinatura invalida) em vez de deixar
-                // o payload nao verificado chegar ao controller.
-                _logger.LogError("Webhook da Meta recebido sem ApiWhatsappConnectionConfiguration:AppSecret configurado: requisicao descartada por seguranca. Configure o AppSecret.");
-                context.Response.StatusCode = StatusCodes.Status200OK;
+                // 500, e nao 200, porque isto e erro NOSSO de configuracao, nao ataque. Com 200
+                // a Meta considera entregue, nao retenta e nada aparece quebrado: em producao
+                // isso custou 5 dias de mensagens perdidas em silencio, entre 08 e 13/08/2026.
+                // Com 500 ela retenta, e no momento em que a variavel for corrigida a fila entra.
+                //
+                // O risco assumido e a Meta desabilitar a inscricao se ficar falhando por muito
+                // tempo -- ainda assim e melhor que perder mensagem sem ninguem notar, porque
+                // falha visivel se conserta e mensagem perdida nao volta.
+                _logger.LogError("Webhook da Meta recebido sem ApiWhatsappConnectionConfiguration:AppSecret configurado: respondendo 500 pra Meta retentar. Configure o AppSecret.");
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 return;
             }
 

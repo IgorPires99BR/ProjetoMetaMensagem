@@ -80,11 +80,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             {
                 // Escopo vem do token, nunca do cliente.
                 var claimEmpresa = User.FindFirst("empresaId")?.Value;
-                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
-
+                // Listar TODAS as empresas (com o MetaAccessToken de cada uma) e privilegio de
+                // plataforma. O admin do cliente abre a mesma tela, mas so com a empresa dele.
                 var comando = new ObtemEmpresaCommand
                 {
-                    SolicitanteEhAdmin = ehAdmin,
+                    SolicitanteEhAdmin = this.EhAdminDaPlataforma(),
                     EmpresaIdSolicitante = Guid.TryParse(claimEmpresa, out var idEmpresa) ? idEmpresa : null
                 };
 

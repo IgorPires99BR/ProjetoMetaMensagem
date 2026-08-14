@@ -20,21 +20,29 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Incluir(Contato contato)
         {
+            // Grava o Id gerado pela aplicacao em vez de deixar o DEFAULT (newid()) da coluna
+            // decidir: antes o Contato saia daqui com um Guid que nao existia no banco, porque
+            // o INSERT omitia a coluna e o banco criava outro. Ninguem usava esse Id ainda, mas
+            // era uma armadilha pra primeira tela que precisasse do contato recem-criado.
+            //
+            // O SELECT SCOPE_IDENTITY() que existia aqui era resto de outro modelo: Contato.Id e
+            // uniqueidentifier e nao identity, entao sempre devolvia NULL.
             var sql = $@"
                 INSERT INTO {nameof(Contato)} (
-                    {nameof(Contato.UsuarioId)}, 
-                    {nameof(Contato.Telefone)}, 
-                    {nameof(Contato.Nome)}, 
-                    {nameof(Contato.Email)}, 
+                    {nameof(Contato.Id)},
+                    {nameof(Contato.UsuarioId)},
+                    {nameof(Contato.Telefone)},
+                    {nameof(Contato.Nome)},
+                    {nameof(Contato.Email)},
                     {nameof(Contato.DataCriacao)}
-                ) 
+                )
                 VALUES (
-                    @UsuarioId, @Telefone, @Nome, @Email, @DataCriacao
-                );
-                SELECT CAST(SCOPE_IDENTITY() as int);";
+                    @Id, @UsuarioId, @Telefone, @Nome, @Email, @DataCriacao
+                );";
 
             var parameters = new
             {
+                contato.Id,
                 contato.UsuarioId,
                 contato.Telefone,
                 contato.Nome,
@@ -85,18 +93,6 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.ExecuteAsync(sql,
                 new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
                 transaction: _session.Transaction);
-        }
-
-        public async Task<Contato?> ObterPorId(int id)
-        {
-            var sql = $"SELECT * FROM {nameof(Contato)} WHERE {nameof(Contato.Id)} = @Id";
-            return await _session.Connection.QueryFirstOrDefaultAsync<Contato>(sql, new { Id = id }, transaction: _session.Transaction);
-        }
-
-        public async Task<IEnumerable<Contato>> Obter()
-        {
-            var sql = $"SELECT * FROM {nameof(Contato)}";
-            return await _session.Connection.QueryAsync<Contato>(sql, transaction: _session.Transaction);
         }
 
         public async Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone)

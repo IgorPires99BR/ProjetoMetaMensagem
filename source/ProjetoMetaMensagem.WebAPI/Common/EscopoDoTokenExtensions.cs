@@ -12,14 +12,22 @@ namespace ProjetoMetaMensagem.WebAPI.Common
     // corpo ou da rota, o proprio atacante escolheria o escopo dele.
     public static class EscopoDoTokenExtensions
     {
+        // Admin da propria empresa: manda em tudo dentro dela, mas NAO enxerga as outras.
+        // Usado pra liberar telas de administracao, nunca pra dispensar recorte por empresa.
         public static bool EhAdmin(this ControllerBase controller) =>
             string.Equals(controller.User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
 
-        // Devolve null para administradores, que por decisao de produto enxergam todas as empresas.
-        // Os handlers tratam null como "nao filtrar por empresa".
+        // Conta de operacao da propria Contact Solution (ver AdminsDaPlataforma no projeto
+        // Servico): a unica que enxerga todas as empresas.
+        public static bool EhAdminDaPlataforma(this ControllerBase controller) =>
+            string.Equals(controller.User.FindFirst("isAdminPlataforma")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+        // Devolve null so para conta de plataforma, e os handlers tratam null como "nao filtrar
+        // por empresa". Antes bastava ser admin: como IsAdmin e o admin do CLIENTE, isso dava a
+        // ele leitura das outras empresas (contatos, por exemplo) assim que existisse mais de uma.
         public static Guid? EmpresaDoEscopo(this ControllerBase controller)
         {
-            if (controller.EhAdmin()) return null;
+            if (controller.EhAdminDaPlataforma()) return null;
 
             var claim = controller.User.FindFirst("empresaId")?.Value;
             return Guid.TryParse(claim, out var id) ? id : Guid.Empty; // Guid.Empty nao casa com nada: nega por padrao
