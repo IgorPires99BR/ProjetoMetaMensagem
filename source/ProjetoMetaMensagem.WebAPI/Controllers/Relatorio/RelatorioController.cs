@@ -2,6 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioFinanceiro;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioEngajamento;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemPrecoCategoria;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.AtualizaPrecoCategoria;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System;
 using System.Net;
@@ -44,5 +48,105 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.Mensagens"), tipo = "Servico" });
             }
         }
+
+        // GET /api/relatorio/financeiro?dataInicio=&dataFim=
+        // Gasto estimado por cliente/mes. So admin (escopo vem da claim do token, nao do cliente).
+        [HttpGet("api/relatorio/financeiro")]
+        public async Task<IActionResult> Financeiro(DateTime? dataInicio, DateTime? dataFim)
+        {
+            try
+            {
+                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+                var command = new ObtemRelatorioFinanceiroCommand
+                {
+                    SolicitanteEhAdmin = ehAdmin,
+                    DataInicio = dataInicio,
+                    DataFim = dataFim
+                };
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.Financeiro"), tipo = "Servico" });
+            }
+        }
+
+        // GET /api/relatorio/engajamento?empresaId=&dataInicio=&dataFim=
+        // Funil de enviados/visualizaram/responderam por cliente. Admin ve todos (ou filtra por
+        // empresaId); operador comum so enxerga a propria empresa, ignorando o empresaId da query.
+        [HttpGet("api/relatorio/engajamento")]
+        public async Task<IActionResult> Engajamento(Guid? empresaId, DateTime? dataInicio, DateTime? dataFim)
+        {
+            try
+            {
+                var claimEmpresa = User.FindFirst("empresaId")?.Value;
+                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+                var command = new ObtemRelatorioEngajamentoCommand
+                {
+                    SolicitanteEhAdmin = ehAdmin,
+                    EmpresaIdSolicitante = Guid.TryParse(claimEmpresa, out var idEmpresa) ? idEmpresa : null,
+                    EmpresaIdFiltro = empresaId,
+                    DataInicio = dataInicio,
+                    DataFim = dataFim
+                };
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.Engajamento"), tipo = "Servico" });
+            }
+        }
+
+        // GET /api/relatorio/precos-categoria
+        [HttpGet("api/relatorio/precos-categoria")]
+        public async Task<IActionResult> PrecosCategoria()
+        {
+            try
+            {
+                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+                var resultado = await _mediator.Send(new ObtemPrecoCategoriaCommand { SolicitanteEhAdmin = ehAdmin });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.PrecosCategoria"), tipo = "Servico" });
+            }
+        }
+
+        // PUT /api/relatorio/precos-categoria/{categoria}
+        [HttpPut("api/relatorio/precos-categoria/{categoria}")]
+        public async Task<IActionResult> AtualizaPrecoCategoria(string categoria, [FromBody] AtualizaPrecoCategoriaRequest body)
+        {
+            try
+            {
+                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+                var command = new AtualizaPrecoCategoriaCommand
+                {
+                    SolicitanteEhAdmin = ehAdmin,
+                    Categoria = categoria,
+                    PrecoUnitario = body.PrecoUnitario
+                };
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.AtualizaPrecoCategoria"), tipo = "Servico" });
+            }
+        }
+    }
+
+    public class AtualizaPrecoCategoriaRequest
+    {
+        public decimal PrecoUnitario { get; set; }
     }
 }

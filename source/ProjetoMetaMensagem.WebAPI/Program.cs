@@ -63,6 +63,10 @@ using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebid
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.DevolverAoBot;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioFinanceiro;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioEngajamento;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemPrecoCategoria;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.AtualizaPrecoCategoria;
 using ProjetoMetaMensagem.Dominio.UseCases.IA.SugerirTexto;
 using ProjetoMetaMensagem.WebAPI.Hubs;
 using ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook;
@@ -320,6 +324,10 @@ builder.Services.AddScoped<IRequestHandler<DevolverAoBotCommand, Response<Devolv
 builder.Services.AddScoped<IRequestHandler<ObtemMidiaCommand, Response<ObtemMidiaResult>>, ObtemMidiaHandler>();
 builder.Services.AddScoped<IRequestHandler<EnviarMidiaMetaCommand, Response<EnviarMidiaMetaResult>>, EnviarMidiaMetaHandler>();
 builder.Services.AddScoped<IRequestHandler<ListaRelatorioMensagensCommand, Response<ListaRelatorioMensagensResult>>, ListaRelatorioMensagensHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemRelatorioFinanceiroCommand, Response<ObtemRelatorioFinanceiroResult>>, ObtemRelatorioFinanceiroHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemRelatorioEngajamentoCommand, Response<ObtemRelatorioEngajamentoResult>>, ObtemRelatorioEngajamentoHandler>();
+builder.Services.AddScoped<IRequestHandler<ObtemPrecoCategoriaCommand, Response<ObtemPrecoCategoriaResult>>, ObtemPrecoCategoriaHandler>();
+builder.Services.AddScoped<IRequestHandler<AtualizaPrecoCategoriaCommand, Response<ObtemPrecoCategoriaResult>>, AtualizaPrecoCategoriaHandler>();
 
 
 
