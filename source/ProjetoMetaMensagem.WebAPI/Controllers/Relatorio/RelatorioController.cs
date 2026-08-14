@@ -56,7 +56,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
         {
             try
             {
-                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+                // Gasto/engajamento cruzando empresas e dado de plataforma, nao de admin de
+                // cliente -- mesmo cuidado do commit 30620f3 (EmpresasController.Obter).
+                var ehAdmin = this.EhAdminDaPlataforma();
 
                 var command = new ObtemRelatorioFinanceiroCommand
                 {
@@ -83,7 +85,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
             try
             {
                 var claimEmpresa = User.FindFirst("empresaId")?.Value;
-                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+                var ehAdmin = this.EhAdminDaPlataforma();
 
                 var command = new ObtemRelatorioEngajamentoCommand
                 {
@@ -109,7 +111,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
         {
             try
             {
-                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+                var ehAdmin = this.EhAdminDaPlataforma();
 
                 var resultado = await _mediator.Send(new ObtemPrecoCategoriaCommand { SolicitanteEhAdmin = ehAdmin });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
@@ -126,7 +128,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
         {
             try
             {
-                var ehAdmin = string.Equals(User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+                var ehAdmin = this.EhAdminDaPlataforma();
 
                 var command = new AtualizaPrecoCategoriaCommand
                 {
