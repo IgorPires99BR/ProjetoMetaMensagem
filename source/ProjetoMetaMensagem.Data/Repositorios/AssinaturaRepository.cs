@@ -19,11 +19,15 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 INSERT INTO Assinatura (Id, EmpresaId, AssinaturaIdCakto, ClienteIdCakto, OfertaIdCakto,
                                         EmailComprador, Plano, Status, ValorCentavos, DataInicio,
                                         DataProximaCobranca, DataCancelamento, EventoIdCakto, UltimoEvento,
-                                        DataUltimoEvento, DataCriacao)
+                                        DataUltimoEvento, DataCriacao,
+                                        UtmSource, UtmMedium, UtmCampaign, UtmTerm, UtmContent,
+                                        Sck, Fbc, Fbp, RefIdCakto, MetodoPagamento)
                 VALUES (@Id, @EmpresaId, @AssinaturaIdCakto, @ClienteIdCakto, @OfertaIdCakto,
                         @EmailComprador, @Plano, @Status, @ValorCentavos, @DataInicio,
                         @DataProximaCobranca, @DataCancelamento, @EventoIdCakto, @UltimoEvento,
-                        @DataUltimoEvento, @DataCriacao)";
+                        @DataUltimoEvento, @DataCriacao,
+                        @UtmSource, @UtmMedium, @UtmCampaign, @UtmTerm, @UtmContent,
+                        @Sck, @Fbc, @Fbp, @RefIdCakto, @MetodoPagamento)";
 
             await _session.Connection.ExecuteAsync(sql, assinatura, transaction: _session.Transaction);
         }
@@ -46,6 +50,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     EventoIdCakto       = @EventoIdCakto,
                     UltimoEvento        = @UltimoEvento,
                     DataUltimoEvento    = @DataUltimoEvento,
+                    MetodoPagamento     = ISNULL(@MetodoPagamento, MetodoPagamento),
                     DataAtualizacao     = @DataAtualizacao
                 WHERE Id = @Id";
 

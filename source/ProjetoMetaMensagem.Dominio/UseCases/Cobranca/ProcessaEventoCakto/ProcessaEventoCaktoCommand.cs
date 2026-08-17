@@ -46,6 +46,42 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
 
         [JsonProperty("subscription")]
         public AssinaturaCakto? Assinatura { get; set; }
+
+        // Código curto do pedido: é o que aparece pro cliente e o que a Cakto usa no suporte.
+        [JsonProperty("refId")]
+        public string? RefId { get; set; }
+
+        [JsonProperty("paymentMethodName")]
+        public string? MetodoPagamento { get; set; }
+
+        // --- Origem da venda ---
+        // Chegam do checkout e não voltam depois: é a única chance de saber de qual anúncio,
+        // post ou campanha veio este cliente.
+        [JsonProperty("utm_source")]
+        public string? UtmSource { get; set; }
+
+        [JsonProperty("utm_medium")]
+        public string? UtmMedium { get; set; }
+
+        [JsonProperty("utm_campaign")]
+        public string? UtmCampaign { get; set; }
+
+        [JsonProperty("utm_term")]
+        public string? UtmTerm { get; set; }
+
+        [JsonProperty("utm_content")]
+        public string? UtmContent { get; set; }
+
+        [JsonProperty("sck")]
+        public string? Sck { get; set; }
+
+        // Identificador do clique no anúncio do Facebook e do navegador do visitante: é com eles
+        // que a Conversions API da Meta casa a venda com o anúncio que a gerou.
+        [JsonProperty("fbc")]
+        public string? Fbc { get; set; }
+
+        [JsonProperty("fbp")]
+        public string? Fbp { get; set; }
     }
 
     public class CompradorCakto

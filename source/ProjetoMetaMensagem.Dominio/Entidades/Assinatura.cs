@@ -42,6 +42,18 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? UltimoEvento { get; set; }
         public DateTime? DataUltimoEvento { get; set; }
 
+        // De onde veio esta venda (UTMs do checkout + identificadores do Facebook)
+        public string? UtmSource { get; set; }
+        public string? UtmMedium { get; set; }
+        public string? UtmCampaign { get; set; }
+        public string? UtmTerm { get; set; }
+        public string? UtmContent { get; set; }
+        public string? Sck { get; set; }
+        public string? Fbc { get; set; }
+        public string? Fbp { get; set; }
+        public string? RefIdCakto { get; set; }
+        public string? MetodoPagamento { get; set; }
+
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
 

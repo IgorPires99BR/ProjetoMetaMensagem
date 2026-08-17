@@ -145,7 +145,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
                     DataProximaCobranca = proximaCobranca,
                     EventoIdCakto = dados.Id,
                     UltimoEvento = command.Evento,
-                    DataUltimoEvento = DateTime.Now
+                    DataUltimoEvento = DateTime.Now,
+
+                    // Origem so na criacao: a renovacao de daqui a tres meses nao carrega UTM
+                    // nenhum, e sobrescrever apagaria de qual anuncio o cliente veio.
+                    UtmSource = dados.UtmSource,
+                    UtmMedium = dados.UtmMedium,
+                    UtmCampaign = dados.UtmCampaign,
+                    UtmTerm = dados.UtmTerm,
+                    UtmContent = dados.UtmContent,
+                    Sck = dados.Sck,
+                    Fbc = dados.Fbc,
+                    Fbp = dados.Fbp,
+                    RefIdCakto = dados.RefId,
+                    MetodoPagamento = dados.MetodoPagamento
                 };
 
                 await _unitOfWork.Assinatura.Incluir(assinatura);
@@ -164,6 +177,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
                 assinatura.EventoIdCakto = dados.Id;
                 assinatura.UltimoEvento = command.Evento;
                 assinatura.DataUltimoEvento = DateTime.Now;
+                assinatura.MetodoPagamento = dados.MetodoPagamento ?? assinatura.MetodoPagamento;
 
                 await _unitOfWork.Assinatura.Alterar(assinatura);
             }
