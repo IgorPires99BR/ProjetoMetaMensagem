@@ -30,6 +30,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // vindo do array "errors" que a Meta manda no webhook de status.
         public string? MotivoFalha { get; set; }
         public DateTime DataEnvio { get; set; }
+        // JSON exato enviado a Meta, so pra auditoria/diagnostico -- nunca exibido ao usuario
+        // (o texto legivel fica em Conteudo).
+        public string? PayloadEnvio { get; set; }
         public string? MidiaId { get; set; }
         public string? TipoMidia { get; set; }
     }

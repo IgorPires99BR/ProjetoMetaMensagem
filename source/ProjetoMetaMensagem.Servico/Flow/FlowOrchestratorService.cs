@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.Entidades;
+using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
@@ -287,7 +288,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     ContatoId = estadoAtual?.ContatoId ?? Guid.Empty,
                     TemplateId = template.Id,
                     TipoDisparo = "Flow",
-                    Conteudo = JsonConvert.SerializeObject(new { command.NomeTemplate, ParametrosBody = parametrosBody }),
+                    Conteudo = TemplateTextoHelper.MontarTextoEnviado(template.Conteudo, template.NomeTemplate, parametrosBody),
                     WamidMeta = resultadoEnvio.WamidMeta,
                     DataEnvio = DateTime.Now
                 });

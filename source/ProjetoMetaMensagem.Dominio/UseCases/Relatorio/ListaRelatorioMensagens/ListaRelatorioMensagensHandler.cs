@@ -1,6 +1,7 @@
 ﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
@@ -36,6 +37,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens
             {
                 var mensagens = await _unitOfWork.Relatorio.ListarMensagens(
                     command.EmpresaId, command.DataInicio, command.DataFim, command.Pagina, command.TamanhoPagina);
+
+                // Mesmo tratamento do chat: o historico antigo guarda o payload do template em
+                // JSON, e sem formatar o relatorio exibia {"ParametrosBody":...} na coluna de
+                // conteudo, onde deveria estar a mensagem.
+                foreach (var mensagem in mensagens)
+                {
+                    mensagem.Conteudo = MensagemFormatter.FormatarConteudo(mensagem.Conteudo);
+                }
 
                 response.AddValue(new ListaRelatorioMensagensResult { Mensagens = mensagens });
             }

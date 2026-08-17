@@ -7,6 +7,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.Helpers;
+using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta
 {
@@ -58,6 +59,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 }
 
                 // 3. Persistencia no historico em caso de sucesso
+                // Grava o texto final, ja com as variaveis trocadas: e isso que o chat e o
+                // relatorio mostram pro usuario.
+                var templateEnviado = command.TemplateId.HasValue
+                    ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
+                    : null;
+
                 var historico = new HistoricoDisparo
                 {
                     EmpresaId = command.IdEmpresa,
@@ -65,11 +72,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     TemplateId = command.TemplateId,
                     TipoDisparo = "Template",
                     WamidMeta = respostaMeta.WamidMeta,
-                    Conteudo = JsonConvert.SerializeObject(new
-                    {
-                        command.ParametrosBody,
-                        command.ParametrosButton
-                    })
+                    Conteudo = TemplateTextoHelper.MontarTextoEnviado(
+                        templateEnviado?.Conteudo,
+                        command.NomeTemplate,
+                        command.ParametrosBody)
                 };
 
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);

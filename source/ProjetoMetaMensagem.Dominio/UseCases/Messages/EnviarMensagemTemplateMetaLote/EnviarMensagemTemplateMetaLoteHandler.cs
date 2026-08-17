@@ -5,6 +5,7 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using System;
@@ -52,6 +53,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 // O serviço retorna o Dictionary<string, ResultadoEnvioTemplate> contendo [Telefone -> Resultado]
                 var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(command, phoneNumberId, token);
 
+                // Busca uma vez so: o texto do template e o mesmo pros N contatos do lote.
+                var templateEnviado = command.TemplateId.HasValue
+                    ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
+                    : null;
+
+                var textoEnviado = TemplateTextoHelper.MontarTextoEnviado(
+                    templateEnviado?.Conteudo,
+                    command.NomeTemplate,
+                    command.ParametrosBody);
+
                 foreach (var disparo in resultadoDisparos)
                 {
                     var telefone = disparo.Key;
@@ -67,12 +78,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                             TemplateId = command.TemplateId,
                             TipoDisparo = "Template",
                             WamidMeta = respostaMeta.WamidMeta,
-                            Conteudo = JsonConvert.SerializeObject(new
-                            {
-                                command.ParametrosBody,
-                                command.ParametrosButton,
-                                PayloadEnvio = respostaMeta.JsonEnviado // Guarda o JSON para fins de auditoria/log
-                            })
+                            // Texto legivel pro usuario; o JSON da Meta vai na coluna de
+                            // auditoria, sem poluir o que aparece no chat e no relatorio.
+                            Conteudo = textoEnviado,
+                            PayloadEnvio = respostaMeta.JsonEnviado
                         };
 
                         await _unitOfWork.HistoricoDisparo.Incluir(historico);
