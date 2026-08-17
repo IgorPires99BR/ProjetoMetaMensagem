@@ -259,6 +259,12 @@ builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaReposito
 builder.Services.AddScoped<IRelatorioRepository, RelatorioRepository>();
 builder.Services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
 builder.Services.AddScoped<IOrigemLeadRepository, OrigemLeadRepository>();
+builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MetaConversoesConfiguration>(
+    builder.Configuration.GetSection("MetaConversoesConfiguration"));
+builder.Services.AddHttpClient<IConversoesMetaService, ProjetoMetaMensagem.Servico.Meta.ConversoesMetaService>(client =>
+{
+    client.BaseAddress = new Uri("https://graph.facebook.com/v19.0/");
+});
 builder.Services.AddSingleton<IConfiguracaoOfertasCakto, ProjetoMetaMensagem.Servico.Cobranca.ConfiguracaoOfertasCakto>();
 builder.Services.AddScoped<IOnboardingComercialService, ProjetoMetaMensagem.Servico.Cobranca.OnboardingComercialService>();
 

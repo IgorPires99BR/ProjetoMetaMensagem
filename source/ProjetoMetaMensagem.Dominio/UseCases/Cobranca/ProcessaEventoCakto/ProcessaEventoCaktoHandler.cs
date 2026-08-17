@@ -20,6 +20,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
         private readonly IEmailService _emailService;
         private readonly IConfiguracaoOfertasCakto _configuracaoOfertas;
         private readonly IOnboardingComercialService _onboarding;
+        private readonly IConversoesMetaService _conversoesMeta;
         private readonly ILogger<ProcessaEventoCaktoHandler> _logger;
 
         public ProcessaEventoCaktoHandler(
@@ -27,12 +28,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             IEmailService emailService,
             IConfiguracaoOfertasCakto configuracaoOfertas,
             IOnboardingComercialService onboarding,
+            IConversoesMetaService conversoesMeta,
             ILogger<ProcessaEventoCaktoHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _emailService = emailService;
             _configuracaoOfertas = configuracaoOfertas;
             _onboarding = onboarding;
+            _conversoesMeta = conversoesMeta;
             _logger = logger;
         }
 
@@ -193,6 +196,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
 
             await AtualizarStatusEmpresaAsync(empresaId, "Ativo", plano);
 
+            // Fecha o ciclo do anuncio: a Meta so sabia quem comecou conversa, nunca quem pagou.
+            // Fora da transacao de proposito -- falha de rede na Meta nao pode desfazer a venda.
+            await ReportarCompraAsync(assinatura, dados);
+
             return new ProcessaEventoCaktoResult
             {
                 Acao = contaCriada ? "conta-criada-e-liberada" : "assinatura-liberada",
@@ -279,6 +286,46 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             await _onboarding.ReceberNovoClienteAsync(nomeComprador, dados.Comprador?.Telefone, email, empresaId);
 
             return empresaId;
+        }
+
+        // Junta os identificadores que temos do comprador: o ctwa_clid (quando ele veio de um
+        // anuncio Click-to-WhatsApp, gravado na primeira mensagem dele) ou fbc/fbp (quando veio
+        // pela landing). Sem nenhum dos dois a Meta ainda aceita o evento pelo hash do e-mail,
+        // com atribuicao mais fraca.
+        private async Task ReportarCompraAsync(Assinatura assinatura, DadosEventoCakto dados)
+        {
+            try
+            {
+                var telefone = dados.Comprador?.Telefone;
+                string? ctwaClid = null;
+
+                if (!string.IsNullOrWhiteSpace(telefone))
+                {
+                    var origem = await _unitOfWork.OrigemLead.ObterPorTelefone(
+                        assinatura.EmpresaId,
+                        Helpers.TelefoneHelper.FormatarParaMeta(telefone!));
+
+                    ctwaClid = origem?.CtwaClid;
+
+                    if (origem != null && !origem.ConversaoEnviada)
+                    {
+                        await _unitOfWork.OrigemLead.MarcarConversaoEnviada(origem.Id);
+                    }
+                }
+
+                await _conversoesMeta.ReportarCompraAsync(
+                    assinatura.EmailComprador ?? string.Empty,
+                    telefone,
+                    (assinatura.ValorCentavos ?? 0) / 100m,
+                    dados.RefId ?? dados.Id,
+                    ctwaClid,
+                    assinatura.Fbc,
+                    assinatura.Fbp);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha ao reportar a venda de {Email} a Meta", assinatura.EmailComprador);
+            }
         }
 
         private async Task AtualizarStatusEmpresaAsync(Guid empresaId, string status, string? plano)

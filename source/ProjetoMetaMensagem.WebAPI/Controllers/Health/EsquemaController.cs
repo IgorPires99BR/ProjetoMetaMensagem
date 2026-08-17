@@ -62,6 +62,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 new { chave = "CaktoConfiguration:WebhookSecret", configurado = Existe("CaktoConfiguration:WebhookSecret"), usadoPara = "Validar o webhook de pagamento da Cakto. Sem isto, nenhuma conta de cliente novo e criada." },
                 new { chave = "CaktoConfiguration:EmpresaOperacaoId", configurado = Existe("CaktoConfiguration:EmpresaOperacaoId"), usadoPara = "Conta da Contact Solution que recebe o comprador como contato e envia as boas-vindas." },
                 new { chave = "CaktoConfiguration:TemplateBoasVindas", configurado = Existe("CaktoConfiguration:TemplateBoasVindas"), usadoPara = "Template aprovado enviado no WhatsApp assim que o cliente paga. Sem isto o contato e criado, mas nada e enviado." },
+                new { chave = "MetaConversoesConfiguration:PixelId", configurado = Existe("MetaConversoesConfiguration:PixelId"), usadoPara = "Pixel que recebe as conversoes reportadas pelo servidor." },
+                new { chave = "MetaConversoesConfiguration:AccessToken", configurado = Existe("MetaConversoesConfiguration:AccessToken"), usadoPara = "Token do Gerenciador de Eventos. Sem isto a Meta nunca sabe quais leads compraram, e o anuncio otimiza no escuro." },
             };
 
             var faltando = itens.Where(i => !i.configurado).Select(i => i.chave).ToList();
