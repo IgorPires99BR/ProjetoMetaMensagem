@@ -258,6 +258,7 @@ builder.Services.AddScoped<IPipelineRepository, PipelineRepository>();
 builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaRepository>();
 builder.Services.AddScoped<IRelatorioRepository, RelatorioRepository>();
 builder.Services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
+builder.Services.AddSingleton<IConfiguracaoOfertasCakto, ProjetoMetaMensagem.Servico.Cobranca.ConfiguracaoOfertasCakto>();
 
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();

@@ -18,12 +18,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
+        private readonly IConfiguracaoOfertasCakto _configuracaoOfertas;
         private readonly ILogger<ProcessaEventoCaktoHandler> _logger;
 
-        public ProcessaEventoCaktoHandler(IUnitOfWork unitOfWork, IEmailService emailService, ILogger<ProcessaEventoCaktoHandler> logger)
+        public ProcessaEventoCaktoHandler(
+            IUnitOfWork unitOfWork,
+            IEmailService emailService,
+            IConfiguracaoOfertasCakto configuracaoOfertas,
+            ILogger<ProcessaEventoCaktoHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _emailService = emailService;
+            _configuracaoOfertas = configuracaoOfertas;
             _logger = logger;
         }
 
@@ -325,15 +331,38 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             return TipoEventoCakto.SemEfeito;
         }
 
-        private static string MapearPlano(DadosEventoCakto dados)
+        // Descobre o plano pelo id da oferta (o jeito confiável, configurado em
+        // CaktoConfiguration:Ofertas) e, sem configuração, cai no nome da oferta.
+        //
+        // A busca por nome casa PALAVRA INTEIRA: procurar "pro" solto dentro do texto acha
+        // "produto", e um cliente do Starter viraria Pro -- exatamente o tipo de erro que só
+        // aparece depois de alguém pagar. O nome do produto não entra na conta pelo mesmo
+        // motivo: ele é igual para todos os planos.
+        private string MapearPlano(DadosEventoCakto dados)
         {
-            var texto = $"{dados.Oferta?.Nome} {dados.Produto?.Nome}".ToLowerInvariant();
+            var idOferta = dados.Oferta?.Id;
 
-            if (texto.Contains("enterprise") || texto.Contains("corporate")) return PlanoAssinatura.Enterprise;
-            if (texto.Contains("pro")) return PlanoAssinatura.Pro;
+            if (!string.IsNullOrWhiteSpace(idOferta))
+            {
+                var planoConfigurado = _configuracaoOfertas.PlanoDaOferta(idOferta!);
+                if (!string.IsNullOrWhiteSpace(planoConfigurado)) return planoConfigurado!;
+            }
+
+            var nomeOferta = dados.Oferta?.Nome ?? string.Empty;
+
+            if (ContemPalavra(nomeOferta, "enterprise") || ContemPalavra(nomeOferta, "corporativo"))
+                return PlanoAssinatura.Enterprise;
+
+            if (ContemPalavra(nomeOferta, "pro")) return PlanoAssinatura.Pro;
 
             return PlanoAssinatura.Starter;
         }
+
+        private static bool ContemPalavra(string texto, string palavra) =>
+            System.Text.RegularExpressions.Regex.IsMatch(
+                texto ?? string.Empty,
+                $@"\b{System.Text.RegularExpressions.Regex.Escape(palavra)}\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         private static int? ConverterCentavos(decimal? valor)
         {
