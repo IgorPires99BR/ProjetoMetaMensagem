@@ -19,5 +19,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public Guid? FlowId { get; set; }
         public string? MidiaId { get; set; }
         public string? TipoMidia { get; set; }
+
+        // wamid da mensagem na Meta. Usado so pra dedupe de webhook reentregue -- a Meta as
+        // vezes manda o mesmo evento duas vezes, e sem isso o Flow processava a mesma mensagem
+        // do cliente duas vezes (duas conversas criadas, resposta do bot em dobro).
+        public string? WamidRecebido { get; set; }
     }
 }

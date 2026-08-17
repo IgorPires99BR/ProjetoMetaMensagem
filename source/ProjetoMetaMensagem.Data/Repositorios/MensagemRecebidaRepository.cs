@@ -16,8 +16,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task Incluir(MensagemRecebida mensagem)
         {
             var sql = @"
-                INSERT INTO MensagemRecebida (Id, EmpresaId, ContatoId, TelefoneRemetente, Conteudo, Tipo, DataRecebimento, Lida, FlowId, MidiaId, TipoMidia)
-                VALUES (@Id, @EmpresaId, @ContatoId, @TelefoneRemetente, @Conteudo, @Tipo, @DataRecebimento, @Lida, @FlowId, @MidiaId, @TipoMidia)";
+                INSERT INTO MensagemRecebida (Id, EmpresaId, ContatoId, TelefoneRemetente, Conteudo, Tipo, DataRecebimento, Lida, FlowId, MidiaId, TipoMidia, WamidRecebido)
+                VALUES (@Id, @EmpresaId, @ContatoId, @TelefoneRemetente, @Conteudo, @Tipo, @DataRecebimento, @Lida, @FlowId, @MidiaId, @TipoMidia, @WamidRecebido)";
 
             await _session.Connection.ExecuteAsync(sql, mensagem, transaction: _session.Transaction);
         }
@@ -99,6 +99,14 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var sql = @"SELECT COUNT(1) FROM MensagemRecebida WHERE EmpresaId = @EmpresaId AND MidiaId = @MidiaId";
             var count = await _session.Connection.ExecuteScalarAsync<int>(
                 sql, new { EmpresaId = empresaId, MidiaId = midiaId }, transaction: _session.Transaction);
+            return count > 0;
+        }
+
+        public async Task<bool> ExistePorWamid(Guid empresaId, string wamid)
+        {
+            var sql = @"SELECT COUNT(1) FROM MensagemRecebida WHERE EmpresaId = @EmpresaId AND WamidRecebido = @Wamid";
+            var count = await _session.Connection.ExecuteScalarAsync<int>(
+                sql, new { EmpresaId = empresaId, Wamid = wamid }, transaction: _session.Transaction);
             return count > 0;
         }
     }

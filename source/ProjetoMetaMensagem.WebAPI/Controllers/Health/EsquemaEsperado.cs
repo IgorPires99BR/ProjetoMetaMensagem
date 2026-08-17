@@ -76,6 +76,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/32", "FluxoEtapa", "Botao1"),
             new("BD/32", "FluxoEtapa", "Botao2"),
+
+            new("BD/33", "MensagemRecebida", "WamidRecebido"),
         };
     }
 }

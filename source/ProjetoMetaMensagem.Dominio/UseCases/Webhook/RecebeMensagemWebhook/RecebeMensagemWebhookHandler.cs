@@ -134,6 +134,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                         {
                             if (string.IsNullOrEmpty(msgMeta.From)) continue;
 
+                            // A Meta reentrega o mesmo webhook em alguns cenarios (timeout,
+                            // retry de rede). Sem esta checagem o Flow processava a mesma
+                            // mensagem do cliente duas vezes -- visto ao vivo com um lead real
+                            // do anuncio: duas conversas criadas e a mesma pergunta enviada
+                            // duas vezes pro mesmo cliente.
+                            if (!string.IsNullOrEmpty(msgMeta.Id) &&
+                                await _unitOfWork.MensagemRecebida.ExistePorWamid(empresaId.Value, msgMeta.Id))
+                            {
+                                _logger.LogInformation("Webhook duplicado ignorado (wamid {Wamid} ja processado)", msgMeta.Id);
+                                continue;
+                            }
+
                             var remetenteNormalizado = new string(msgMeta.From.Where(char.IsDigit).ToArray());
                             if (!string.IsNullOrEmpty(numeroDaEmpresa) && remetenteNormalizado == numeroDaEmpresa)
                             {
@@ -170,6 +182,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                 Lida = false,
                                 ContatoId = contato?.Id, // Mantém null se o contato não existir no banco
                                 FlowId = null,
+                                WamidRecebido = msgMeta.Id,
                                 // Todo o resto do sistema grava DateTime.Now (hora local). Gravar
                                 // UTC so aqui fazia a mensagem recebida aparecer 3h no futuro no
                                 // chat e no relatorio, bagunçar a ordenação da lista unificada e
