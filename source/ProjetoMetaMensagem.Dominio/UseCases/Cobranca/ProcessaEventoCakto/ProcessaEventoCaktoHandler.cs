@@ -283,7 +283,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             // Mesmo raciocínio: quem comprou vira contato na nossa própria conta e recebe o
             // WhatsApp de boas-vindas. O serviço engole as próprias falhas -- nada aqui pode
             // derrubar uma venda que já entrou.
-            await _onboarding.ReceberNovoClienteAsync(nomeComprador, dados.Comprador?.Telefone, email, empresaId);
+            await _onboarding.ReceberNovoClienteAsync(nomeComprador, dados.Comprador?.Telefone, email, empresaId, empresa.PlanoId);
 
             return empresaId;
         }

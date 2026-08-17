@@ -10,6 +10,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     // rede não pode desfazer um cliente pagante.
     public interface IOnboardingComercialService
     {
-        Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente);
+        Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente, string? plano = null);
     }
 }

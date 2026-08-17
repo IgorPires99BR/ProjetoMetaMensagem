@@ -23,6 +23,12 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
     //   CaktoConfiguration:IdiomaBoasVindas    -> idioma do template (padrão pt_BR)
     public class OnboardingComercialService : IOnboardingComercialService
     {
+        // Segunda mensagem, nome fixo no código (não precisa de config nova/deploy no Render):
+        // avisa que um especialista vai ligar para agendar a implementação. Enquanto a Meta não
+        // aprovar o template, o envio falha silenciosamente (logado) sem afetar o resto do
+        // onboarding -- passa a funcionar sozinho assim que for aprovado.
+        private const string NomeTemplateAtendenteLiga = "pagamento_confirmado_atendente_liga";
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
         private readonly IConfiguration _configuration;
@@ -40,7 +46,7 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             _logger = logger;
         }
 
-        public async Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente)
+        public async Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente, string? plano = null)
         {
             var empresaOperacaoId = LerEmpresaOperacao();
 
@@ -62,6 +68,7 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             {
                 var contatoId = await GarantirContatoAsync(empresaOperacaoId, nomeComprador, telefone, emailComprador);
                 await EnviarBoasVindasWhatsAppAsync(empresaOperacaoId, contatoId, nomeComprador, telefone);
+                await EnviarAvisoAtendenteAsync(empresaOperacaoId, contatoId, nomeComprador, telefone, plano);
             }
             catch (Exception ex)
             {
@@ -167,6 +174,72 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             {
                 _logger.LogWarning("Onboarding: Meta recusou as boas-vindas para {Telefone}: {Erro}", telefone, resultado?.Erro);
             }
+        }
+
+        // Roda com o mesmo template todo santo dia, mas so entrega de fato depois que a Meta
+        // aprovar "pagamento_confirmado_atendente_liga" -- ate la, EnviarTemplateAsync devolve
+        // Sucesso=false e o warning abaixo e o unico efeito.
+        private async Task EnviarAvisoAtendenteAsync(Guid empresaOperacaoId, Guid contatoId, string nome, string telefone, string? plano)
+        {
+            if (contatoId == Guid.Empty) return;
+
+            var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(empresaOperacaoId);
+            var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaOperacaoId);
+
+            if (string.IsNullOrWhiteSpace(phoneNumberId) || string.IsNullOrWhiteSpace(token))
+                return;
+
+            var templates = await _unitOfWork.Template.ObterPorEmpresa(empresaOperacaoId);
+            var templateAviso = templates.FirstOrDefault(t =>
+                string.Equals(t.NomeTemplate, NomeTemplateAtendenteLiga, StringComparison.OrdinalIgnoreCase));
+
+            var command = new EnviarMensagemTemplateMetaCommand
+            {
+                IdEmpresa = empresaOperacaoId,
+                EmpresaId = empresaOperacaoId,
+                ContatoId = contatoId,
+                TemplateId = templateAviso?.Id,
+                Telefone = telefone,
+                NomeTemplate = NomeTemplateAtendenteLiga,
+                Idioma = "pt_BR",
+                ParametrosBody = new System.Collections.Generic.List<string> { PrimeiroNome(nome), FormatarPlano(plano) }
+            };
+
+            var resultado = await _metaService.EnviarTemplateAsync(command, phoneNumberId!, token!);
+
+            if (resultado?.Sucesso == true)
+            {
+                await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
+                {
+                    Id = Guid.NewGuid(),
+                    EmpresaId = empresaOperacaoId,
+                    ContatoId = contatoId,
+                    TemplateId = command.TemplateId,
+                    TipoDisparo = "Onboarding",
+                    WamidMeta = resultado.WamidMeta,
+                    Conteudo = TemplateTextoHelper.MontarTextoEnviado(templateAviso?.Conteudo, NomeTemplateAtendenteLiga, command.ParametrosBody),
+                    DataEnvio = DateTime.Now
+                });
+
+                _logger.LogInformation("Onboarding: aviso de atendente enviado no WhatsApp para {Telefone}", telefone);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Onboarding: template de aviso de atendente ainda nao entrega (provavelmente aguardando aprovacao da Meta) para {Telefone}: {Erro}",
+                    telefone, resultado?.Erro);
+            }
+        }
+
+        private static string FormatarPlano(string? plano)
+        {
+            if (string.IsNullOrWhiteSpace(plano)) return "assinado";
+            return plano.Trim().ToUpperInvariant() switch
+            {
+                "STARTER" => "Starter",
+                "PRO" => "Pro",
+                _ => plano
+            };
         }
 
         private Guid LerEmpresaOperacao()
