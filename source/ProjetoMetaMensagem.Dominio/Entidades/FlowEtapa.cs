@@ -21,5 +21,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string GatilhoResposta { get; set; }
         public Guid? ProximaEtapaId { get; set; }
         public bool EhEtapaInicial { get; set; }
+
+        // Nome da variavel onde a resposta do cliente e guardada (etapas "Capturar Input").
+        // Ex: "nome" -> a resposta vira {{nome}} nas mensagens seguintes do flow.
+        public string? VariavelSaida { get; set; }
     }
 }

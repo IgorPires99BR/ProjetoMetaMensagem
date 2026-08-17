@@ -71,6 +71,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/29", "Assinatura", "Fbc"),
 
             new("BD/30", "OrigemLead"),
+
+            new("BD/31", "FluxoEtapa", "VariavelSaida"),
         };
     }
 }

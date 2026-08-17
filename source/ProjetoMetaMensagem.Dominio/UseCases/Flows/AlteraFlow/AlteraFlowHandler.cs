@@ -80,6 +80,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                     ConteudoLivre = dto.MensagemPergunta,
                     EhEtapaInicial = (i == 0),
                     GatilhoResposta = dto.TipoStep == "Capturar Input" ? "Qualquer_Resposta" : "Avancar",
+                    // A tela sempre pediu a variavel de saida e o valor chegava aqui, mas nao era
+                    // gravado -- entao nenhuma etapa de captura guardava a resposta do cliente.
+                    VariavelSaida = dto.VariavelSaida,
                     TemplateId = dto.TemplateId
                 };
 

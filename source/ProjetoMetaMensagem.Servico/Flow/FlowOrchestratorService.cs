@@ -374,16 +374,19 @@ namespace ProjetoMetaMensagem.Servico.Flow
 
         private static string? ObterVariavelSaida(FlowEtapa etapa)
         {
+            // O que a tela configurou manda.
+            if (!string.IsNullOrWhiteSpace(etapa.VariavelSaida))
+                return etapa.VariavelSaida.Trim();
+
+            // Fallback pros flows criados antes da coluna existir: a variavel era adivinhada
+            // procurando {{algo}} dentro da propria pergunta. Nao vale como comportamento
+            // desejado -- o cliente veria "{{nome}}" cru na mensagem -- mas mantem funcionando
+            // quem por acaso escreveu assim.
             if (string.IsNullOrEmpty(etapa.ConteudoLivre))
                 return null;
 
-            // Tenta extrair o nome da variavel do conteudo livre
-            // Formato esperado: "Digite seu nome" ou similar
             var match = Regex.Match(etapa.ConteudoLivre, @"\{\{(\w+)\}\}");
-            if (match.Success)
-                return match.Groups[1].Value;
-
-            return null;
+            return match.Success ? match.Groups[1].Value : null;
         }
     }
 }

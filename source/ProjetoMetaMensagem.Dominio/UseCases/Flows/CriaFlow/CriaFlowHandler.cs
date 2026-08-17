@@ -51,6 +51,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
                     ConteudoLivre = dto.MensagemPergunta, // Texto digitado na caixa
                     EhEtapaInicial = (i == 0), // O primeiro item da lista da tela vira a etapa inicial
                     GatilhoResposta = dto.TipoStep == "Capturar Input" ? "Qualquer_Resposta" : "Avancar",
+                    // A tela sempre pediu a variavel de saida e o valor chegava aqui, mas nao era
+                    // gravado -- entao nenhuma etapa de captura guardava a resposta do cliente.
+                    VariavelSaida = dto.VariavelSaida,
                     TemplateId = dto.TemplateId
                 };
 
