@@ -195,6 +195,40 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         [JsonPropertyName("interactive")]
         [JsonProperty("interactive")]
         public WebhookInteractiveCommand? Interactive { get; set; }
+
+        // Presente so quando a pessoa chegou por um anuncio Click-to-WhatsApp, e so na PRIMEIRA
+        // mensagem dela. E daqui que sai o ctwa_clid, que a Conversions API pede depois pra
+        // creditar a venda ao anuncio -- nao capturar aqui significa perder a atribuicao.
+        [JsonPropertyName("referral")]
+        [JsonProperty("referral")]
+        public WebhookReferralCommand? Referral { get; set; }
+    }
+
+    public class WebhookReferralCommand
+    {
+        [JsonPropertyName("source_url")]
+        [JsonProperty("source_url")]
+        public string? SourceUrl { get; set; }
+
+        [JsonPropertyName("source_id")]
+        [JsonProperty("source_id")]
+        public string? SourceId { get; set; }
+
+        [JsonPropertyName("source_type")]
+        [JsonProperty("source_type")]
+        public string? SourceType { get; set; }
+
+        [JsonPropertyName("headline")]
+        [JsonProperty("headline")]
+        public string? Headline { get; set; }
+
+        [JsonPropertyName("body")]
+        [JsonProperty("body")]
+        public string? Body { get; set; }
+
+        [JsonPropertyName("ctwa_clid")]
+        [JsonProperty("ctwa_clid")]
+        public string? CtwaClid { get; set; }
     }
 
     public class WebhookButtonCommand

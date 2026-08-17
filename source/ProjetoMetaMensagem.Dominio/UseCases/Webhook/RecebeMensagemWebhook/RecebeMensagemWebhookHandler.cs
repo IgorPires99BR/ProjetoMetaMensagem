@@ -206,6 +206,38 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
 
                             mensagensParaSalvar.Add(novaMensagem);
 
+                            // Chegou por anuncio Click-to-WhatsApp: guarda de qual anuncio veio.
+                            // A Meta so manda o referral na PRIMEIRA mensagem da pessoa -- se
+                            // passar batido aqui, nao ha como creditar a venda ao anuncio depois.
+                            if (msgMeta.Referral != null && !string.IsNullOrWhiteSpace(msgMeta.From))
+                            {
+                                try
+                                {
+                                    await _unitOfWork.OrigemLead.Incluir(new Entidades.OrigemLead
+                                    {
+                                        EmpresaId = empresaId.Value,
+                                        ContatoId = contato?.Id,
+                                        Telefone = msgMeta.From!,
+                                        CtwaClid = msgMeta.Referral.CtwaClid,
+                                        SourceId = msgMeta.Referral.SourceId,
+                                        SourceType = msgMeta.Referral.SourceType,
+                                        SourceUrl = msgMeta.Referral.SourceUrl,
+                                        Headline = msgMeta.Referral.Headline,
+                                        Corpo = msgMeta.Referral.Body
+                                    });
+
+                                    _logger.LogInformation(
+                                        "Lead veio do anuncio {SourceId} (tipo {SourceType})",
+                                        msgMeta.Referral.SourceId, msgMeta.Referral.SourceType);
+                                }
+                                catch (Exception exOrigem)
+                                {
+                                    // Mesmo isolamento do resto: perder a origem e ruim, perder a
+                                    // mensagem do cliente e pior.
+                                    _logger.LogError(exOrigem, "Falha ao gravar a origem do lead {Telefone}", msgMeta.From);
+                                }
+                            }
+
                             // Dispara pros webhooks configurados pelo tenant. Mesmo isolamento em
                             // try/catch do bloco de status acima -- nao pode derrubar o salvamento
                             // da mensagem, que e o efeito principal deste webhook.
