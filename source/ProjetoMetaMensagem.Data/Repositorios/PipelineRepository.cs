@@ -40,6 +40,18 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<int> Excluir(Guid id, Guid? empresaIdSolicitante)
         {
+            // Os leads saem primeiro: LeadPipeline aponta pra PipelineEtapa, entao apagar a etapa
+            // com lead dentro batia na FK e o endpoint respondia 500 -- so nao aparecia antes
+            // porque as tabelas do CRM nem existiam. Mesmo recorte de empresa da ExcluirEtapa.
+            var sqlLeads = @"
+                DELETE FROM LeadPipeline
+                WHERE PipelineEtapaId IN (SELECT Id FROM PipelineEtapa WHERE PipelineId = @Id)
+                  AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
+
+            await _session.Connection.ExecuteAsync(sqlLeads,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
+
             // O mesmo escopo vai na cascata, senao as etapas de um pipeline alheio seriam
             // apagadas antes do DELETE do proprio Pipeline ser barrado.
             var sqlEtapas = $@"
