@@ -27,6 +27,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
         IPipelineRepository Pipeline { get; }
         IMensagemRecebidaRepository MensagemRecebida { get; }
         IRelatorioRepository Relatorio { get; }
+        IAssinaturaRepository Assinatura { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();

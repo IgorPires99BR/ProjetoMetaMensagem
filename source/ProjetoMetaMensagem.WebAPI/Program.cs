@@ -62,6 +62,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.MarcarComoLida;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.DevolverAoBot;
+using ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ListaAssinaturas;
+using ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ListaRelatorioMensagens;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioFinanceiro;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioEngajamento;
@@ -255,6 +257,7 @@ builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 builder.Services.AddScoped<IPipelineRepository, PipelineRepository>();
 builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaRepository>();
 builder.Services.AddScoped<IRelatorioRepository, RelatorioRepository>();
+builder.Services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
 
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();
@@ -324,6 +327,8 @@ builder.Services.AddScoped<IRequestHandler<DevolverAoBotCommand, Response<Devolv
 builder.Services.AddScoped<IRequestHandler<ObtemMidiaCommand, Response<ObtemMidiaResult>>, ObtemMidiaHandler>();
 builder.Services.AddScoped<IRequestHandler<EnviarMidiaMetaCommand, Response<EnviarMidiaMetaResult>>, EnviarMidiaMetaHandler>();
 builder.Services.AddScoped<IRequestHandler<ListaRelatorioMensagensCommand, Response<ListaRelatorioMensagensResult>>, ListaRelatorioMensagensHandler>();
+builder.Services.AddScoped<IRequestHandler<ProcessaEventoCaktoCommand, Response<ProcessaEventoCaktoResult>>, ProcessaEventoCaktoHandler>();
+builder.Services.AddScoped<IRequestHandler<ListaAssinaturasCommand, Response<ListaAssinaturasResult>>, ListaAssinaturasHandler>();
 builder.Services.AddScoped<IRequestHandler<ObtemRelatorioFinanceiroCommand, Response<ObtemRelatorioFinanceiroResult>>, ObtemRelatorioFinanceiroHandler>();
 builder.Services.AddScoped<IRequestHandler<ObtemRelatorioEngajamentoCommand, Response<ObtemRelatorioEngajamentoResult>>, ObtemRelatorioEngajamentoHandler>();
 builder.Services.AddScoped<IRequestHandler<ObtemPrecoCategoriaCommand, Response<ObtemPrecoCategoriaResult>>, ObtemPrecoCategoriaHandler>();

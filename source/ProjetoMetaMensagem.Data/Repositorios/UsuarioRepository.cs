@@ -20,23 +20,33 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task Incluir(Usuario usuario)
         {
+            // Id e IsAdmin ficavam de fora do INSERT: o banco preenchia Id com NEWID() (jogando
+            // fora o id que a aplicacao gerou e devolveu na resposta) e IsAdmin com 0 -- ou seja,
+            // nao havia como criar um usuario administrador pela API. Mesmo bug que o Contato ja
+            // teve. Quando o chamador nao define o Id, ele vem de Guid.NewGuid() na entidade.
             var sql = $@"
                 INSERT INTO {nameof(Usuario)} (
-                    {nameof(Usuario.EmpresaId)}, 
-                    {nameof(Usuario.Nome)}, 
-                    {nameof(Usuario.Email)}, 
-                    {nameof(Usuario.SenhaHash)}, 
+                    {nameof(Usuario.Id)},
+                    {nameof(Usuario.EmpresaId)},
+                    {nameof(Usuario.Nome)},
+                    {nameof(Usuario.Email)},
+                    {nameof(Usuario.SenhaHash)},
+                    {nameof(Usuario.IsAdmin)},
                     {nameof(Usuario.DataCriacao)}
-                ) 
+                )
                 VALUES (
-                    @EmpresaId, @Nome, @Email, @SenhaHash, @DataCriacao
+                    @Id, @EmpresaId, @Nome, @Email, @SenhaHash, @IsAdmin, @DataCriacao
                 )";
 
             var parameters = new DynamicParameters();
+            parameters.Add("Id", usuario.Id == Guid.Empty ? Guid.NewGuid() : usuario.Id);
             parameters.Add("EmpresaId", usuario.EmpresaId);
             parameters.Add("Nome", usuario.Nome);
             parameters.Add("Email", usuario.Email);
             parameters.Add("SenhaHash", usuario.SenhaHash);
+            // A coluna e NOT NULL com default 0; a entidade usa bool? porque nem todo caminho
+            // de criacao informa o campo.
+            parameters.Add("IsAdmin", usuario.IsAdmin ?? false);
             parameters.Add("DataCriacao", DateTimeOffset.Now);
 
             await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);

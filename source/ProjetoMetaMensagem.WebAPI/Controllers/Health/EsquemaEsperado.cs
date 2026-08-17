@@ -62,6 +62,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/26", "LeadPipeline"),
 
             new("BD/27", "HistoricoDisparo", "PayloadEnvio"),
+
+            new("BD/28", "Assinatura"),
+            new("BD/28", "EventoCakto"),
+            new("BD/28", "Empresa", "DataConexaoNumero"),
         };
     }
 }

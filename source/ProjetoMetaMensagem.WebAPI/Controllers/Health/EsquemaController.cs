@@ -58,7 +58,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 new { chave = "ApiWhatsappConnectionConfiguration:BaseUrl", configurado = Existe("ApiWhatsappConnectionConfiguration:BaseUrl"), usadoPara = "Endereco da Graph API da Meta." },
                 new { chave = "JwtSettings:SecretKey", configurado = Existe("JwtSettings:SecretKey"), usadoPara = "Assinar o token de login. Sem isto a API nem sobe." },
                 new { chave = "GeminiConfiguration:ApiKey", configurado = Existe("GeminiConfiguration:ApiKey"), usadoPara = "Assistente de IA. Sem isto so o assistente para de funcionar." },
-                new { chave = "GmailConfig:SenhaApp", configurado = Existe("GmailConfig:SenhaApp"), usadoPara = "Envio de e-mail do sistema, como recuperacao de senha." },
+                new { chave = "GmailConfig:SenhaApp", configurado = Existe("GmailConfig:SenhaApp"), usadoPara = "Envio de e-mail do sistema, como recuperacao de senha e acesso de cliente novo." },
+                new { chave = "CaktoConfiguration:WebhookSecret", configurado = Existe("CaktoConfiguration:WebhookSecret"), usadoPara = "Validar o webhook de pagamento da Cakto. Sem isto, nenhuma conta de cliente novo e criada." },
             };
 
             var faltando = itens.Where(i => !i.configurado).Select(i => i.chave).ToList();

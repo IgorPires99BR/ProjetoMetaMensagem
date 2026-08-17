@@ -23,6 +23,30 @@ namespace ProjetoMetaMensagem.Servico.Email
             _config = options.Value;
         }
 
+        public async Task<bool> EnviarBoasVindasAsync(string emailDestino, string nomeCliente, string senhaProvisoria)
+        {
+            var corpo = $@"Olá, {nomeCliente}!
+
+Sua conta na Contact Solution está pronta.
+
+Acesse: https://contactsolution.com.br/login
+E-mail: {emailDestino}
+Senha temporária: {senhaProvisoria}
+
+Troque essa senha no primeiro acesso.
+
+Primeiros passos, na ordem:
+1. Conecte seu número de WhatsApp (menu Números). É a partir daí que sua conta fica ativa de verdade.
+2. Crie seus modelos de mensagem (menu Templates). A Meta analisa cada um, normalmente em até 24h.
+3. Importe seus contatos (menu Contatos) e faça seu primeiro envio.
+
+Qualquer dúvida, é só responder este e-mail.
+
+Equipe Contact Solution";
+
+            return await EnviarAsync(emailDestino, "Bem-vindo à Contact Solution — seus dados de acesso", corpo);
+        }
+
         public async Task<bool> EnviarEmailAsync(string emailDestino, string novaSenha)
         {
             try
@@ -66,6 +90,38 @@ namespace ProjetoMetaMensagem.Servico.Email
             catch (Exception ex)
             {
                 // Log de erro (simulando o seu print do exception)
+                Console.WriteLine($"❌ Erro ao enviar e-mail: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Mesmo caminho SMTP dos dois envios acima, sem duplicar a montagem do cliente.
+        private async Task<bool> EnviarAsync(string emailDestino, string assunto, string corpo)
+        {
+            try
+            {
+                using var client = new SmtpClient(_config.SmtpServer, _config.SmtpPort)
+                {
+                    Credentials = new NetworkCredential(_config.EmailRemetente, _config.SenhaApp),
+                    EnableSsl = true
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(_config.EmailRemetente, "Contact Solution"),
+                    Subject = assunto,
+                    Body = corpo,
+                    IsBodyHtml = false
+                };
+
+                mailMessage.To.Add(emailDestino);
+
+                await client.SendMailAsync(mailMessage);
+                Console.WriteLine($"✅ E-mail enviado com sucesso para {emailDestino}");
+                return true;
+            }
+            catch (Exception ex)
+            {
                 Console.WriteLine($"❌ Erro ao enviar e-mail: {ex.Message}");
                 return false;
             }
