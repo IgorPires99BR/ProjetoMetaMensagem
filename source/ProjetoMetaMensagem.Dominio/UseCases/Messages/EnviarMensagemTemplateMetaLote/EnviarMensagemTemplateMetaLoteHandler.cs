@@ -53,15 +53,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 // O serviço retorna o Dictionary<string, ResultadoEnvioTemplate> contendo [Telefone -> Resultado]
                 var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(command, phoneNumberId, token);
 
-                // Busca uma vez so: o texto do template e o mesmo pros N contatos do lote.
+                // Uma consulta so; o texto muda por destinatario quando o disparo e personalizado.
                 var templateEnviado = command.TemplateId.HasValue
                     ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
                     : null;
-
-                var textoEnviado = TemplateTextoHelper.MontarTextoEnviado(
-                    templateEnviado?.Conteudo,
-                    command.NomeTemplate,
-                    command.ParametrosBody);
 
                 foreach (var disparo in resultadoDisparos)
                 {
@@ -78,9 +73,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                             TemplateId = command.TemplateId,
                             TipoDisparo = "Template",
                             WamidMeta = respostaMeta.WamidMeta,
-                            // Texto legivel pro usuario; o JSON da Meta vai na coluna de
-                            // auditoria, sem poluir o que aparece no chat e no relatorio.
-                            Conteudo = textoEnviado,
+                            // Texto legivel pro usuario, com os valores que ESTE contato
+                            // recebeu; o JSON da Meta vai na coluna de auditoria, sem poluir
+                            // o que aparece no chat e no relatorio.
+                            Conteudo = TemplateTextoHelper.MontarTextoEnviado(
+                                templateEnviado?.Conteudo,
+                                command.NomeTemplate,
+                                command.ParametrosBodyDe(telefone)),
                             PayloadEnvio = respostaMeta.JsonEnviado
                         };
 

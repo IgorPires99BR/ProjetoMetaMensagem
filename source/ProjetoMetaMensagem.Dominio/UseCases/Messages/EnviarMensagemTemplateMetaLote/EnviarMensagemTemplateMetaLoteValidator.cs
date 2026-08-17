@@ -1,5 +1,6 @@
 using FluentValidation;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote
@@ -28,6 +29,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             // que descartam os vazios), entao uma variavel em branco vira erro cru da Meta no disparo.
             RuleForEach(x => x.ParametrosBody)
                 .NotEmpty().WithMessage("Preencha todas as variáveis do template antes de disparar.");
+
+            // Com personalizacao por destinatario, os valores que valem sao os de cada telefone --
+            // um contato sem nome cadastrado deixaria a variavel vazia e a Meta recusaria so aquele
+            // envio, no meio do lote.
+            RuleFor(x => x)
+                .Must(command => (command.Telefones ?? new List<string>())
+                    .All(telefone => command.ParametrosBodyDe(telefone).All(valor => !string.IsNullOrWhiteSpace(valor))))
+                .WithMessage("Há contato selecionado sem valor para alguma variável da mensagem. Preencha um valor fixo ou tire esse contato da lista.")
+                .When(x => x.ParametrosBodyPorTelefone != null && x.ParametrosBodyPorTelefone.Any());
 
             // Telefones e ContatosIds sao percorridos em paralelo pelo mesmo indice. Se as listas
             // tiverem tamanhos diferentes, o historico do disparo e gravado com contato zerado.

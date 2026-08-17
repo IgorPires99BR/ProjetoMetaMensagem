@@ -23,5 +23,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         public string? ParametroHeaderMediaUrl { get; set; }
         public List<string> ParametrosBody { get; set; } = new List<string>();
         public List<string> ParametrosButton { get; set; } = new List<string>();
+
+        // Valores das variáveis por destinatário, indexados pelo telefone como veio na lista.
+        // Sem isto o lote inteiro ia com os MESMOS valores: um template que começa com
+        // "Olá {{1}}" mandava o mesmo nome para os 500 contatos. Quem não informar continua
+        // caindo em ParametrosBody, que vale para todo mundo.
+        public Dictionary<string, List<string>> ParametrosBodyPorTelefone { get; set; } = new Dictionary<string, List<string>>();
+
+        // Valores efetivos para um destinatário: os dele, se houver, senão os globais.
+        public List<string> ParametrosBodyDe(string telefone)
+        {
+            if (ParametrosBodyPorTelefone != null &&
+                ParametrosBodyPorTelefone.TryGetValue(telefone, out var doContato) &&
+                doContato != null && doContato.Count > 0)
+            {
+                return doContato;
+            }
+
+            return ParametrosBody;
+        }
     }
 }

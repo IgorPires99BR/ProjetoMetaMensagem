@@ -484,14 +484,10 @@ namespace ProjetoMetaMensagem.Servico.MetaService
         {
             var resultadoLote = new Dictionary<string, ResultadoEnvioTemplate>();
 
-            var templateData = MontarTemplateData(comandoLote.NomeTemplate, comandoLote.Idioma, comandoLote.ParametroHeaderMediaUrl, comandoLote.ParametrosBody, comandoLote.ParametrosButton);
-
             var jsonSettings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
             };
-
-            string jsonPayload = JsonConvert.SerializeObject(templateData, jsonSettings);
 
             var telefones = comandoLote.Telefones ?? new List<string>();
             var contatosIds = comandoLote.ContatosIds ?? new List<string>();
@@ -501,6 +497,17 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 string contatoId = contatosIds.Count > index
                     ? contatosIds[index]
                     : "00000000-0000-0000-0000-000000000000";
+
+                // O template e montado por destinatario: quando o disparo personaliza as
+                // variaveis (nome de cada contato, por exemplo), cada um recebe os valores
+                // dele; sem personalizacao, ParametrosBodyDe devolve os valores globais e o
+                // payload sai identico ao de antes.
+                var templateData = MontarTemplateData(
+                    comandoLote.NomeTemplate,
+                    comandoLote.Idioma,
+                    comandoLote.ParametroHeaderMediaUrl,
+                    comandoLote.ParametrosBodyDe(telefone),
+                    comandoLote.ParametrosButton);
 
                 var requestMeta = new EnviarMensagemTemplateRequest
                 {
@@ -512,7 +519,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 {
                     var resultadoIndividual = await EnviarTemplateWireAsync(requestMeta, phoneNumberId, accessToken);
                     resultadoIndividual.ContatoId = contatoId;
-                    resultadoIndividual.JsonEnviado = jsonPayload;
+                    resultadoIndividual.JsonEnviado = JsonConvert.SerializeObject(templateData, jsonSettings);
 
                     return new { Telefone = telefone, Resultado = resultadoIndividual };
                 }
