@@ -53,6 +53,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/24", "Fluxo", "NumeroId"),
 
             new("BD/25", "HistoricoDisparo", "MotivoFalha"),
+
+            // O CRM tinha codigo e endpoints, mas nunca teve script: por nao estar nesta lista,
+            // o diagnostico respondia "tudo aplicado" enquanto /api/pipeline e /api/leads
+            // quebravam com 500 em qualquer ambiente.
+            new("BD/26", "Pipeline"),
+            new("BD/26", "PipelineEtapa"),
+            new("BD/26", "LeadPipeline"),
+
+            new("BD/27", "HistoricoDisparo", "PayloadEnvio"),
         };
     }
 }

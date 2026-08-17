@@ -2,6 +2,7 @@ using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemPipelineComEtapas
@@ -9,11 +10,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemPipelineComEtapas
     public class ObtemPipelineComEtapasHandler : IRequestHandler<ObtemPipelineComEtapasCommand, Response<ObtemPipelineComEtapasResult>>
     {
         private readonly IPipelineRepository _repository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<ObtemPipelineComEtapasHandler> _logger;
 
-        public ObtemPipelineComEtapasHandler(IPipelineRepository repository, ILogger<ObtemPipelineComEtapasHandler> logger)
+        public ObtemPipelineComEtapasHandler(IPipelineRepository repository, IUnitOfWork unitOfWork, ILogger<ObtemPipelineComEtapasHandler> logger)
         {
             _repository = repository;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -44,6 +47,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemPipelineComEtapas
                 var etapas = await _repository.ListarEtapas(command.PipelineId);
                 var leads = await _repository.ListarLeads(command.EmpresaId);
 
+                // Sem isto o cartao do funil chegava na tela sem nome e sem telefone -- so o
+                // ContatoId, que nao diz nada pra quem esta olhando o quadro.
+                var contatos = (await _unitOfWork.Contato.ObterPorIds(command.EmpresaId, leads.Select(l => l.ContatoId).Distinct()))
+                    .ToDictionary(c => c.Id);
+
                 var result = new ObtemPipelineComEtapasResult
                 {
                     Id = pipeline.Id,
@@ -60,8 +68,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemPipelineComEtapas
                         {
                             Id = l.Id,
                             ContatoId = l.ContatoId,
-                            NomeContato = string.Empty,
-                            Telefone = string.Empty,
+                            NomeContato = contatos.TryGetValue(l.ContatoId, out var contato) ? contato.Nome ?? string.Empty : string.Empty,
+                            Telefone = contatos.TryGetValue(l.ContatoId, out var contatoTelefone) ? contatoTelefone.Telefone ?? string.Empty : string.Empty,
                             Valor = l.Valor,
                             Observacao = l.Observacao,
                             DataEntrada = l.DataEntrada
