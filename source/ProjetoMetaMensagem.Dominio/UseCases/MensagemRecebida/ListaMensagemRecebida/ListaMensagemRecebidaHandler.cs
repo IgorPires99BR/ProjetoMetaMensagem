@@ -38,58 +38,23 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRec
                     return response;
                 }
 
-                // Busca ate TamanhoPagina de cada fonte na mesma pagina; como sao duas tabelas
-                // diferentes intercaladas por data, o merge abaixo corta o total certo, mas o
-                // "corte" de cada fonte individualmente e uma aproximacao (assume distribuicao
-                // razoavelmente equilibrada entre enviadas/recebidas por pagina).
-                var mensagensRecebidasTask = await _unitOfWork.MensagemRecebida
-                     .ListarPorContatoPaginado(command.EmpresaId, command.ContatoId, command.Pagina, command.TamanhoPagina);
+                // Busca ja unificada e paginada no banco (MensagemRecebida + HistoricoDisparo
+                // numa unica ordenacao por data) -- paginar cada tabela separado e juntar depois
+                // (como era antes) desalinhava a conversa: um flow manda varias mensagens pra
+                // cada resposta do cliente, entao os dois cursores de paginacao andavam em
+                // ritmos diferentes e a conversa aparecia fora de ordem ao rolar pra cima.
+                var itens = await _unitOfWork.MensagemRecebida
+                    .ListarConversaUnificadaPaginada(command.EmpresaId, command.ContatoId, command.Pagina, command.TamanhoPagina);
 
-                var historicoEnviadasTask = await _unitOfWork.HistoricoDisparo
-                    .ListarPorContatoPaginado(command.EmpresaId, command.ContatoId, command.Pagina, command.TamanhoPagina);
-
-                // 2. Mapeia as recebidas (cliente -> user). Sem wamid/status: confirmação de
-                // entrega/leitura só existe pro lado que nós enviamos.
-                var listaRecebidas = mensagensRecebidasTask.Select(m => new
-                {
-                    m.Id,
-                    From = "user",
-                    Text = m.Conteudo,
-                    Data = m.DataRecebimento,
-                    Wamid = (string?)null,
-                    Status = (string?)null,
-                    Erro = (string?)null,
-                    MidiaId = m.MidiaId,
-                    TipoMidia = m.TipoMidia
-                });
-
-                // 3. Mapeia as enviadas tratando o JSON de disparo de template.
-                // From = "bot" (mesmo valor usado pelo Angular pro lado direito do chat).
-                var listaEnviadas = historicoEnviadasTask.Select(h => new
-                {
-                    h.Id,
-                    From = "bot",
-                    Text = MensagemFormatter.FormatarConteudo(h.Conteudo),
-                    Data = h.DataEnvio,
-                    Wamid = (string?)h.WamidMeta,
-                    Status = h.StatusEntrega,
-                    Erro = h.MotivoFalha,
-                    MidiaId = h.MidiaId,
-                    TipoMidia = h.TipoMidia
-                });
-
-                // 4. Une as duas listas, pega as TamanhoPagina mais recentes (desc) e devolve em
-                // ordem cronologica (asc) pro chat renderizar de cima pra baixo
-                var resultadoDto = listaRecebidas
-                    .Concat(listaEnviadas)
-                    .OrderByDescending(x => x.Data)
-                    .Take(command.TamanhoPagina)
+                // A busca vem desc (mais recente primeiro, pra paginacao); devolve em ordem
+                // cronologica (asc) pro chat renderizar de cima pra baixo.
+                var resultadoDto = itens
                     .OrderBy(x => x.Data)
                     .Select(x => new ItemMensagemChatDto
                     {
                         Id = x.Id,
-                        From = x.From,
-                        Text = x.Text,
+                        From = x.Origem,
+                        Text = x.Origem == "bot" ? MensagemFormatter.FormatarConteudo(x.Texto) : (x.Texto ?? string.Empty),
                         Time = x.Data.ToString("HH:mm"),
                         Wamid = x.Wamid,
                         Status = x.Status,

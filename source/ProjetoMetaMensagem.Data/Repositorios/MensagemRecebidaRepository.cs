@@ -109,6 +109,46 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 sql, new { EmpresaId = empresaId, Wamid = wamid }, transaction: _session.Transaction);
             return count > 0;
         }
+
+        public async Task<List<ItemConversaUnificado>> ListarConversaUnificadaPaginada(Guid empresaId, Guid contatoId, int pagina, int tamanhoPagina)
+        {
+            var sql = $@"
+                ;WITH Unificado AS (
+                    SELECT
+                        m.Id,
+                        'user' AS Origem,
+                        m.Conteudo AS Texto,
+                        m.DataRecebimento AS Data,
+                        CAST(NULL AS NVARCHAR(100)) AS Wamid,
+                        CAST(NULL AS NVARCHAR(50)) AS Status,
+                        CAST(NULL AS NVARCHAR(500)) AS Erro,
+                        m.MidiaId,
+                        m.TipoMidia
+                    FROM MensagemRecebida m
+                    {FiltroDaConversa}
+                    UNION ALL
+                    SELECT
+                        h.Id,
+                        'bot' AS Origem,
+                        h.Conteudo AS Texto,
+                        h.DataEnvio AS Data,
+                        h.WamidMeta AS Wamid,
+                        h.StatusEntrega AS Status,
+                        h.MotivoFalha AS Erro,
+                        h.MidiaId,
+                        h.TipoMidia
+                    FROM HistoricoDisparo h
+                    WHERE h.EmpresaId = @EmpresaId AND h.ContatoId = @ContatoId
+                )
+                SELECT * FROM Unificado
+                ORDER BY Data DESC
+                OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY";
+
+            var result = await _session.Connection.QueryAsync<ItemConversaUnificado>(sql,
+                new { EmpresaId = empresaId, ContatoId = contatoId, Skip = pagina * tamanhoPagina, Take = tamanhoPagina },
+                transaction: _session.Transaction);
+            return result.ToList();
+        }
     }
 }
 

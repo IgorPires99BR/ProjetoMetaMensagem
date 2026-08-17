@@ -20,5 +20,12 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // MensagemRecebida, dispara o Flow duas vezes e o cliente recebe a mesma resposta em
         // dobro (visto ao vivo com um lead real do anuncio em 17/08/2026).
         Task<bool> ExistePorWamid(Guid empresaId, string wamid);
+
+        // Une MensagemRecebida (cliente) e HistoricoDisparo (bot/empresa) numa unica linha do
+        // tempo e pagina o CONJUNTO ja unificado. Paginar cada tabela separado e depois juntar
+        // (como era antes) so funciona se as duas tiverem volume parecido por pagina -- um flow
+        // que manda 3 mensagens pra cada resposta do cliente (comum) desalinha os cursores e a
+        // conversa aparece fora de ordem ao rolar pra cima.
+        Task<List<ItemConversaUnificado>> ListarConversaUnificadaPaginada(Guid empresaId, Guid contatoId, int pagina, int tamanhoPagina);
     }
 }
