@@ -13,7 +13,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
 {
     public class AtualizaTemplateHandler : IRequestHandler<AtualizaTemplateCommand, Response<AtualizaTemplateResult>>
     {
-        private static readonly string[] StatusEditaveis = { "PENDING", "REJECTED", "REJECTED_META" };
+        // A Meta so aceita edicao de template ja avaliado. Enquanto ele esta em analise
+        // (PENDING) ela responde erro, e o usuario recebia um 500 sem explicacao nenhuma.
+        private static readonly string[] StatusEditaveis = { "REJECTED", "REJECTED_META" };
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
@@ -53,7 +55,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
 
                 if (string.IsNullOrEmpty(template.Status) || !StatusEditaveis.Contains(template.Status.ToUpperInvariant()))
                 {
-                    response.AddErro("Só é possível editar templates pendentes ou rejeitados. Templates aprovados não podem ser alterados na Meta — crie um novo template.");
+                    var emAnalise = string.Equals(template.Status, "PENDING", StringComparison.OrdinalIgnoreCase);
+
+                    response.AddErro(emAnalise
+                        ? "Este modelo ainda está em análise na Meta e não pode ser alterado agora. Espere o resultado: se for recusado, você edita e reenvia."
+                        : "Só é possível editar modelos recusados pela Meta. Modelos aprovados não podem ser alterados — crie um novo.");
                     return response;
                 }
 

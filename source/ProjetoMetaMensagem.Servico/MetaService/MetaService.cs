@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ProjetoMetaMensagem.Dominio.Enums;
+using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
@@ -72,7 +73,10 @@ namespace ProjetoMetaMensagem.Servico.MetaService
 
         public async Task<List<NumeroMetaDto>> ObterNumerosMetaAsync(string wabaId, string accessToken)
         {
-            var endpoint = $"{wabaId}/phone_numbers";
+            // O `fields` e obrigatorio: sem ele a Graph devolve so um subconjunto (id, telefone,
+            // nome verificado, quality_rating) e `status` volta nulo -- era o que fazia o painel
+            // mostrar "0 numeros ativos" com o numero conectado logo abaixo na propria lista.
+            var endpoint = $"{wabaId}/phone_numbers?fields=id,display_phone_number,verified_name,status,quality_rating,code_verification_status,account_mode";
 
             try
             {
@@ -131,7 +135,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Erro ao criar/vincular número na Meta: {responseContent}");
+                    throw MetaApiException.DoCorpo(responseContent, "o cadastro do número");
                 }
 
                 var resultado = JsonConvert.DeserializeObject<CriaNumeroMetaResponse>(responseContent);
@@ -142,6 +146,12 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 }
 
                 return resultado.Id;
+            }
+            catch (MetaApiException)
+            {
+                // Recusa da propria Meta ja vem com a mensagem pro usuario: reembrulhar aqui
+                // apagaria justamente o motivo que ele precisa ler.
+                throw;
             }
             catch (Exception ex)
             {
@@ -405,7 +415,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Erro ao criar template na Meta: {responseContent}");
+                throw MetaApiException.DoCorpo(responseContent, "a criação do template");
             }
 
             return responseContent;
@@ -434,7 +444,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Erro ao editar template na Meta: {responseContent}");
+                throw MetaApiException.DoCorpo(responseContent, "a alteração do template");
             }
 
             return responseContent;
@@ -464,7 +474,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                     return true;
                 }
 
-                throw new Exception($"Erro ao excluir template na Meta: {responseContent}");
+                throw MetaApiException.DoCorpo(responseContent, "a exclusão do template");
             }
 
             return true;

@@ -67,6 +67,16 @@ namespace ProjetoMetaMensagem.Dominio.Common
         public void AddErroServico(Exception excecao, ILogger? logger, string operacao)
         {
             TratamentoErro.Registrar(logger, excecao, operacao);
+
+            // Recusa da Meta nao e falha nossa: e uma regra externa que o usuario consegue
+            // corrigir (categoria errada, template em analise, nome duplicado). Vira erro de
+            // negocio com o texto que a propria Meta escreveu, em vez do generico de servico.
+            if (excecao is MetaApiException metaApi)
+            {
+                _erros.Add(new Erro(metaApi.Message, TipoErro.Negocio, 400));
+                return;
+            }
+
             _erros.Add(new Erro(TratamentoErro.Traduzir(excecao), TipoErro.Servico, 500));
         }
     }
