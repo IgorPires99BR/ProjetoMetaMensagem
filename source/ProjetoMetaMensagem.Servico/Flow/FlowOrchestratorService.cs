@@ -276,7 +276,13 @@ namespace ProjetoMetaMensagem.Servico.Flow
 
         private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual, Guid empresaId, string celular, string? phoneNumberIdOrigem = null)
         {
-            if (etapa.NomeEtapa == "Mensagem" && !string.IsNullOrEmpty(etapa.ConteudoLivre))
+            // "Capturar Input" tambem envia o texto dela: a tela de Flows pede a pergunta nessa
+            // etapa ("Qual seu nome?") e ela simplesmente nunca era enviada -- so etapa do tipo
+            // "Mensagem" falava com o cliente. Na pratica, um flow que fazia pergunta na etapa de
+            // captura ficava mudo esperando resposta de uma pergunta que ninguem tinha feito.
+            var enviaTexto = etapa.NomeEtapa == "Mensagem" || etapa.NomeEtapa == "Capturar Input";
+
+            if (enviaTexto && !string.IsNullOrEmpty(etapa.ConteudoLivre))
             {
                 // Substitui variaveis no formato {{nome}} pelos valores capturados
                 var mensagem = etapa.ConteudoLivre;
