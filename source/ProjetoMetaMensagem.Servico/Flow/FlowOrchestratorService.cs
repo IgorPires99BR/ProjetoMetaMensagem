@@ -14,12 +14,14 @@ namespace ProjetoMetaMensagem.Servico.Flow
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
+        private readonly INotificadorChat _notificadorChat;
         private readonly ILogger<FlowOrchestratorService> _logger;
 
-        public FlowOrchestratorService(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<FlowOrchestratorService> logger)
+        public FlowOrchestratorService(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<FlowOrchestratorService> logger, INotificadorChat notificadorChat)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _notificadorChat = notificadorChat;
             _logger = logger;
         }
 
@@ -315,6 +317,11 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     WamidMeta = wamid,
                     DataEnvio = DateTime.Now
                 });
+
+                // Avisa o painel na hora: sem isto, quem estava olhando o Chats via a mensagem do
+                // cliente aparecer e a resposta do bot so depois de recarregar a pagina.
+                await _notificadorChat.NotificarMensagemEnviadaAsync(
+                    empresaId, estadoAtual?.ContatoId ?? Guid.Empty, mensagem, wamid);
             }
             else if (etapa.TemplateId.HasValue)
             {

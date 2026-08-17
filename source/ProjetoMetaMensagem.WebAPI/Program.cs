@@ -259,6 +259,7 @@ builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaReposito
 builder.Services.AddScoped<IRelatorioRepository, RelatorioRepository>();
 builder.Services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
 builder.Services.AddScoped<IOrigemLeadRepository, OrigemLeadRepository>();
+builder.Services.AddScoped<INotificadorChat, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorChat>();
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MetaConversoesConfiguration>(
     builder.Configuration.GetSection("MetaConversoesConfiguration"));
 builder.Services.AddHttpClient<IConversoesMetaService, ProjetoMetaMensagem.Servico.Meta.ConversoesMetaService>(client =>
