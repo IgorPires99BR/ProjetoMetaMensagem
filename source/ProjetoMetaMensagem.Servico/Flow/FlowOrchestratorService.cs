@@ -118,12 +118,19 @@ namespace ProjetoMetaMensagem.Servico.Flow
 
                     await _unitOfWork.ConversationState.Incluir(estadoAtual);
 
-                    // 5. Executa a etapa inicial (deve ser uma mensagem de boas-vindas)
+                    // 5. Executa a etapa inicial (deve ser uma mensagem de boas-vindas) e segue
+                    // pelas etapas que nao esperam resposta -- ver EncadearEtapasSemRespostaAsync.
                     await ExecutarEtapa(etapaInicial, null, estadoAtual, empresaId, celular, phoneNumberIdOrigem);
+                    var etapaFinalDaVez = await EncadearEtapasSemRespostaAsync(
+                        etapaInicial, estadoAtual, empresaId, celular, phoneNumberIdOrigem);
+
+                    estadoAtual.EtapaAtualId = etapaFinalDaVez.Id;
+                    estadoAtual.DataAtualizacao = DateTime.Now;
+                    await _unitOfWork.ConversationState.Atualizar(estadoAtual);
 
                     resultado.Sucesso = true;
                     resultado.FlowId = flowAtivado.Id;
-                    resultado.EtapaId = etapaInicial.Id;
+                    resultado.EtapaId = etapaFinalDaVez.Id;
                     resultado.Mensagem = $"Flow '{flowAtivado.Nome}' iniciado.";
                 }
                 else
@@ -184,6 +191,14 @@ namespace ProjetoMetaMensagem.Servico.Flow
                             // Se estava capturando input, tenta avancar com "Qualquer_Resposta"
                             proximaEtapa = await _unitOfWork.Flow.ObterProximaEtapa(etapaAtualId, "Qualquer_Resposta");
                         }
+                        else
+                        {
+                            // Etapa de mensagem recebe GatilhoResposta "Avancar" na criacao, que
+                            // nunca casa com o texto do cliente. Sem esta rede, uma conversa que
+                            // parou numa mensagem era FINALIZADA na resposta seguinte -- o flow
+                            // morria na saudacao.
+                            proximaEtapa = await _unitOfWork.Flow.ObterProximaEtapa(etapaAtualId, "Avancar");
+                        }
 
                         if (proximaEtapa == null)
                         {
@@ -199,8 +214,10 @@ namespace ProjetoMetaMensagem.Servico.Flow
                         }
                     }
 
-                    // 9. Executa a nova etapa
+                    // 9. Executa a nova etapa e as seguintes que nao esperam resposta
                     await ExecutarEtapa(proximaEtapa, estadoAtual.Variaveis, estadoAtual, empresaId, celular, phoneNumberIdOrigem);
+                    proximaEtapa = await EncadearEtapasSemRespostaAsync(
+                        proximaEtapa, estadoAtual, empresaId, celular, phoneNumberIdOrigem);
 
                     // 10. Atualiza o estado da conversa
                     estadoAtual.EtapaAtualId = proximaEtapa.Id;
@@ -221,6 +238,40 @@ namespace ProjetoMetaMensagem.Servico.Flow
             }
 
             return resultado;
+        }
+
+        // Etapa de "Mensagem" e informativa: ela nao espera resposta, entao o flow deve seguir
+        // na hora para a proxima -- e o que faz a saudacao e a primeira pergunta chegarem juntas.
+        // Antes, o flow enviava so a saudacao e parava; quando o cliente respondia, nada casava o
+        // gatilho "Avancar" e a conversa era finalizada sem nunca perguntar nada.
+        //
+        // Para nas etapas que esperam resposta (Capturar Input) e tem limite de saltos, senao um
+        // encadeamento circular mal configurado deixaria o cliente recebendo mensagem sem parar.
+        private async Task<FlowEtapa> EncadearEtapasSemRespostaAsync(
+            FlowEtapa etapaExecutada, ConversationState estadoAtual, Guid empresaId, string celular, string? phoneNumberIdOrigem)
+        {
+            const int limiteDeSaltos = 10;
+            var atual = etapaExecutada;
+
+            for (var salto = 0; salto < limiteDeSaltos; salto++)
+            {
+                if (atual.NomeEtapa == "Capturar Input") break;
+
+                var proxima = await _unitOfWork.Flow.ObterProximaEtapa(atual.Id, "Avancar");
+                if (proxima == null) break;
+
+                await ExecutarEtapa(proxima, estadoAtual.Variaveis, estadoAtual, empresaId, celular, phoneNumberIdOrigem);
+                atual = proxima;
+
+                if (salto == limiteDeSaltos - 1)
+                {
+                    _logger.LogWarning(
+                        "Flow {FlowId} encadeou {Limite} etapas sem esperar resposta; parando por seguranca.",
+                        estadoAtual.FlowId, limiteDeSaltos);
+                }
+            }
+
+            return atual;
         }
 
         private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual, Guid empresaId, string celular, string? phoneNumberIdOrigem = null)
