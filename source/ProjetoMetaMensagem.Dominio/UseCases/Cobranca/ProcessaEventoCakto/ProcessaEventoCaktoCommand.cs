@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
 {
@@ -53,6 +54,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
 
         [JsonProperty("paymentMethodName")]
         public string? MetodoPagamento { get; set; }
+
+        [JsonProperty("paidAt")]
+        public string? PagoEm { get; set; }
 
         // --- Origem da venda ---
         // Chegam do checkout e não voltam depois: é a única chance de saber de qual anúncio,
@@ -120,6 +124,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
         public string? Nome { get; set; }
     }
 
+    // O painel da Cakto mostra sempre o mesmo modelo de exemplo (produto avulso, com
+    // "subscription": null), então não deu para ver o formato real deste objeto antes da
+    // primeira venda. Os nomes abaixo vêm da referência da API de assinaturas; as variações
+    // em camelCase existem porque o resto do payload mistura os dois estilos (refId e
+    // paymentMethodName convivem com utm_source e offer_type) -- e uma data que não é lida
+    // vira "sem próxima cobrança" no painel, sem erro nenhum aparecendo.
     public class AssinaturaCakto
     {
         [JsonProperty("id")]
@@ -129,6 +139,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
         public string? Status { get; set; }
 
         [JsonProperty("next_payment_date")]
-        public string? ProximaCobranca { get; set; }
+        public string? ProximaCobrancaSnake { get; set; }
+
+        [JsonProperty("nextPaymentDate")]
+        public string? ProximaCobrancaCamel { get; set; }
+
+        [JsonProperty("next_billing_date")]
+        public string? ProximaCobrancaAlternativa { get; set; }
+
+        // Dias entre uma cobrança e outra. Serve de plano B para calcular o vencimento
+        // quando nenhuma das datas acima vier preenchida.
+        [JsonProperty("recurrence_period")]
+        public int? DiasEntreCobrancas { get; set; }
+
+        [JsonProperty("canceledAt")]
+        public string? CanceladaEm { get; set; }
+
+        public string? ProximaCobranca =>
+            new[] { ProximaCobrancaSnake, ProximaCobrancaCamel, ProximaCobrancaAlternativa }
+                .FirstOrDefault(d => !string.IsNullOrWhiteSpace(d));
     }
 }

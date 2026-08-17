@@ -137,7 +137,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             }
 
             var plano = MapearPlano(dados);
-            var proximaCobranca = ParseData(dados.Assinatura?.ProximaCobranca);
+            var proximaCobranca = CalcularProximaCobranca(dados);
 
             if (assinatura == null)
             {
@@ -376,6 +376,23 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
         {
             if (valor == null) return null;
             return (int)Math.Round(valor.Value * 100, MidpointRounding.AwayFromZero);
+        }
+
+        // A data informada pela Cakto manda; sem ela, calcula a partir do pagamento e do
+        // intervalo da assinatura (ou de um mês, o ciclo dos nossos planos). Deixar em branco
+        // faria o painel de Cobranças mostrar "—" onde deveria estar o vencimento, e ninguém
+        // saberia quando esperar a renovação.
+        private static DateTime? CalcularProximaCobranca(DadosEventoCakto dados)
+        {
+            var informada = ParseData(dados.Assinatura?.ProximaCobranca);
+            if (informada != null) return informada;
+
+            var pagamento = ParseData(dados.PagoEm) ?? DateTime.Now;
+            var dias = dados.Assinatura?.DiasEntreCobrancas;
+
+            return dias.HasValue && dias.Value > 0
+                ? pagamento.AddDays(dias.Value)
+                : pagamento.AddMonths(1);
         }
 
         private static DateTime? ParseData(string? valor)
