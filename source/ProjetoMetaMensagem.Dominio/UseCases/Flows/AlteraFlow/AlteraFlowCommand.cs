@@ -35,5 +35,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
         public string? MensagemPergunta { get; set; }
         public string? VariavelSaida { get; set; }
         public Guid? TemplateId { get; set; }
+
+        // Preenchidos numa etapa "Capturar Input" para mandar a pergunta como botoes de
+        // resposta rapida (ate 20 caracteres cada) em vez de texto simples.
+        public string? Botao1 { get; set; }
+        public string? Botao2 { get; set; }
     }
 }

@@ -267,6 +267,8 @@ builder.Services.AddHttpClient<IConversoesMetaService, ProjetoMetaMensagem.Servi
     client.BaseAddress = new Uri("https://graph.facebook.com/v19.0/");
 });
 builder.Services.AddSingleton<IConfiguracaoOfertasCakto, ProjetoMetaMensagem.Servico.Cobranca.ConfiguracaoOfertasCakto>();
+builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.PlanosConfiguration>(
+    builder.Configuration.GetSection("PlanosConfiguration"));
 builder.Services.AddScoped<IOnboardingComercialService, ProjetoMetaMensagem.Servico.Cobranca.OnboardingComercialService>();
 
 // Flow Orchestrator

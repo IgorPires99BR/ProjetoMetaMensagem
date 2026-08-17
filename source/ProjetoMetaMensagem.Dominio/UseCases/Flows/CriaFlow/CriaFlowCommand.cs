@@ -29,5 +29,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         public string? VariavelSaida { get; set; } // "nome" (como no step 2 da imagem), so se aplica a "Capturar Input"
         public bool EhEtapaInicial { get; set; }
         public Guid? TemplateId { get; set; } // Template que dispara o inicio do flow (quando aplicavel)
+
+        // Preenchidos numa etapa "Capturar Input" para mandar a pergunta como botoes de
+        // resposta rapida (ate 20 caracteres cada) em vez de texto simples.
+        public string? Botao1 { get; set; }
+        public string? Botao2 { get; set; }
     }
 }

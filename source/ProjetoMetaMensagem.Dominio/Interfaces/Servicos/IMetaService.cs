@@ -43,6 +43,10 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
         Task<string> EnviarTextoLivreAsync(string celular, string mensagem, string accessToken, string phoneNumberId);
 
+        // Mensagem interativa com ate 3 botoes de resposta rapida. E mensagem de sessao (igual
+        // texto livre), nao template -- so entrega dentro da janela de 24h da conversa.
+        Task<string> EnviarBotoesAsync(string celular, string corpo, List<string> botoes, string accessToken, string phoneNumberId);
+
         // Baixa os bytes de uma mídia recebida via webhook (mediaId) usando o token da empresa
         Task<(byte[] Bytes, string MimeType)> BaixarMidiaAsync(string mediaId, string accessToken);
 

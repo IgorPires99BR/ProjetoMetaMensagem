@@ -25,5 +25,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // Nome da variavel onde a resposta do cliente e guardada (etapas "Capturar Input").
         // Ex: "nome" -> a resposta vira {{nome}} nas mensagens seguintes do flow.
         public string? VariavelSaida { get; set; }
+
+        // Quando preenchidos numa etapa "Capturar Input", o ConteudoLivre e enviado como
+        // mensagem interativa de botoes (ate 20 caracteres cada) em vez de texto simples, e a
+        // resposta do cliente (o titulo do botao tocado) e capturada normalmente em VariavelSaida.
+        public string? Botao1 { get; set; }
+        public string? Botao2 { get; set; }
     }
 }

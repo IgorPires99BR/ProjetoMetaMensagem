@@ -83,7 +83,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                     // A tela sempre pediu a variavel de saida e o valor chegava aqui, mas nao era
                     // gravado -- entao nenhuma etapa de captura guardava a resposta do cliente.
                     VariavelSaida = dto.VariavelSaida,
-                    TemplateId = dto.TemplateId
+                    TemplateId = dto.TemplateId,
+                    Botao1 = dto.Botao1,
+                    Botao2 = dto.Botao2
                 };
 
                 if (etapaAnterior != null)

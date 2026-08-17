@@ -16,13 +16,20 @@ namespace ProjetoMetaMensagem.Servico.Flow
         private readonly IMetaService _metaService;
         private readonly INotificadorChat _notificadorChat;
         private readonly ILogger<FlowOrchestratorService> _logger;
+        private readonly ProjetoMetaMensagem.Servico.Configuration.PlanosConfiguration _planosConfig;
 
-        public FlowOrchestratorService(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<FlowOrchestratorService> logger, INotificadorChat notificadorChat)
+        public FlowOrchestratorService(
+            IUnitOfWork unitOfWork,
+            IMetaService metaService,
+            ILogger<FlowOrchestratorService> logger,
+            INotificadorChat notificadorChat,
+            Microsoft.Extensions.Options.IOptions<ProjetoMetaMensagem.Servico.Configuration.PlanosConfiguration> planosConfig)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
             _notificadorChat = notificadorChat;
             _logger = logger;
+            _planosConfig = planosConfig.Value;
         }
 
         public async Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem = null, Guid? numeroId = null)
@@ -178,6 +185,16 @@ namespace ProjetoMetaMensagem.Servico.Flow
                             var variaveis = JsonConvert.DeserializeObject<Dictionary<string, string>>(estadoAtual.Variaveis ?? "{}")
                                            ?? new Dictionary<string, string>();
                             variaveis[variavelNome] = mensagem;
+
+                            // Etapa de escolha de plano (Botao1/Botao2 = "Starter"/"Pro"): alem
+                            // de guardar a resposta, resolve na hora o link de pagamento certo,
+                            // pra proxima etapa so precisar mandar "{{link_pagamento}}" -- o Flow
+                            // continua 100% linear, sem precisar de ramificacao no motor.
+                            if (!string.IsNullOrEmpty(etapaAtual.Botao1) && !string.IsNullOrEmpty(etapaAtual.Botao2))
+                            {
+                                variaveis["link_pagamento"] = ResolverLinkPagamento(mensagem);
+                            }
+
                             estadoAtual.Variaveis = JsonConvert.SerializeObject(variaveis);
                         }
                     }
@@ -306,7 +323,12 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 // sem isso, toda resposta de Flow saia pelo Empresa.PhoneNumberId "padrao" da
                 // empresa, mesmo quando o cliente escreveu pra outro numero conectado.
                 var phoneNumberId = phoneNumberIdOrigem ?? await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
-                var wamid = await _metaService.EnviarTextoLivreAsync(celular, mensagem, token, phoneNumberId);
+
+                // Capturar Input com Botao1/Botao2 preenchidos manda botoes de resposta rapida
+                // em vez de texto simples -- o cliente escolhe tocando, nao digitando.
+                var wamid = !string.IsNullOrEmpty(etapa.Botao1) && !string.IsNullOrEmpty(etapa.Botao2)
+                    ? await _metaService.EnviarBotoesAsync(celular, mensagem, new List<string> { etapa.Botao1, etapa.Botao2 }, token, phoneNumberId)
+                    : await _metaService.EnviarTextoLivreAsync(celular, mensagem, token, phoneNumberId);
 
                 await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
                 {
@@ -400,6 +422,19 @@ namespace ProjetoMetaMensagem.Servico.Flow
 
             var match = Regex.Match(etapa.ConteudoLivre, @"\{\{(\w+)\}\}");
             return match.Success ? match.Groups[1].Value : null;
+        }
+
+        // "Pro" casa antes de "Starter" ser o default -- se a resposta nao bater com nenhum dos
+        // dois (cliente digitou algo em vez de tocar o botao), manda o link do Starter por ser
+        // o plano de entrada, evitando travar o flow sem link nenhum.
+        private string ResolverLinkPagamento(string respostaCliente)
+        {
+            var resposta = (respostaCliente ?? string.Empty).Trim();
+
+            if (resposta.Contains("pro", StringComparison.OrdinalIgnoreCase))
+                return _planosConfig.LinkPro;
+
+            return _planosConfig.LinkStarter;
         }
     }
 }

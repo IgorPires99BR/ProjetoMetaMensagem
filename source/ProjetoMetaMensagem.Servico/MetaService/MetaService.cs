@@ -393,6 +393,49 @@ namespace ProjetoMetaMensagem.Servico.MetaService
             return responseObj["messages"]?.FirstOrDefault()?["id"]?.ToString() ?? string.Empty;
         }
 
+        public async Task<string> EnviarBotoesAsync(string celular, string corpo, List<string> botoes, string accessToken, string phoneNumberId)
+        {
+            // Limite da Meta: no maximo 3 botoes, titulo de ate 20 caracteres cada.
+            var payload = new MetaInteractiveButtonsRequest
+            {
+                To = celular,
+                Interactive = new InteractiveButtonsContent
+                {
+                    Body = new InteractiveBody { Text = corpo },
+                    Action = new InteractiveButtonsAction
+                    {
+                        Buttons = botoes
+                            .Where(b => !string.IsNullOrWhiteSpace(b))
+                            .Take(3)
+                            .Select((b, i) => new InteractiveButtonWrapper
+                            {
+                                Reply = new InteractiveButtonReply { Id = $"btn_{i}", Title = b.Length > 20 ? b.Substring(0, 20) : b }
+                            })
+                            .ToList()
+                    }
+                }
+            };
+
+            var json = JsonConvert.SerializeObject(payload);
+
+            var idNumeroEnvio = !string.IsNullOrEmpty(phoneNumberId) ? phoneNumberId : _configuration.PhoneNumberId;
+
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{idNumeroEnvio}/messages");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw MetaApiException.DoCorpo(responseContent, "enviar a mensagem de escolha de plano");
+            }
+
+            var responseObj = JObject.Parse(responseContent);
+            return responseObj["messages"]?.FirstOrDefault()?["id"]?.ToString() ?? string.Empty;
+        }
+
         public async Task<string> CriarTemplateMetaAsync(string nome, string idioma, string categoria, List<ComponenteTemplateEnvio> componentes, string wabaId, string accessToken)
         {
             // Endpoint relativo a _httpClient.BaseAddress (config ApiWhatsappConnectionConfiguration.BaseUrl)
