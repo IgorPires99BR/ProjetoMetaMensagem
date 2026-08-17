@@ -19,17 +19,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
         private readonly IConfiguracaoOfertasCakto _configuracaoOfertas;
+        private readonly IOnboardingComercialService _onboarding;
         private readonly ILogger<ProcessaEventoCaktoHandler> _logger;
 
         public ProcessaEventoCaktoHandler(
             IUnitOfWork unitOfWork,
             IEmailService emailService,
             IConfiguracaoOfertasCakto configuracaoOfertas,
+            IOnboardingComercialService onboarding,
             ILogger<ProcessaEventoCaktoHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _emailService = emailService;
             _configuracaoOfertas = configuracaoOfertas;
+            _onboarding = onboarding;
             _logger = logger;
         }
 
@@ -269,6 +272,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             // O e-mail sai fora da transação de propósito: falha de SMTP não pode desfazer uma
             // conta já paga. Se não chegar, o cliente usa "esqueci minha senha".
             await EnviarBoasVindasAsync(email, nomeComprador, senhaProvisoria);
+
+            // Mesmo raciocínio: quem comprou vira contato na nossa própria conta e recebe o
+            // WhatsApp de boas-vindas. O serviço engole as próprias falhas -- nada aqui pode
+            // derrubar uma venda que já entrou.
+            await _onboarding.ReceberNovoClienteAsync(nomeComprador, dados.Comprador?.Telefone, email, empresaId);
 
             return empresaId;
         }

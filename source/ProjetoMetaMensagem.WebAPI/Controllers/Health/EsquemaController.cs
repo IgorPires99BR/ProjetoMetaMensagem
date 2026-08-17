@@ -60,6 +60,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 new { chave = "GeminiConfiguration:ApiKey", configurado = Existe("GeminiConfiguration:ApiKey"), usadoPara = "Assistente de IA. Sem isto so o assistente para de funcionar." },
                 new { chave = "GmailConfig:SenhaApp", configurado = Existe("GmailConfig:SenhaApp"), usadoPara = "Envio de e-mail do sistema, como recuperacao de senha e acesso de cliente novo." },
                 new { chave = "CaktoConfiguration:WebhookSecret", configurado = Existe("CaktoConfiguration:WebhookSecret"), usadoPara = "Validar o webhook de pagamento da Cakto. Sem isto, nenhuma conta de cliente novo e criada." },
+                new { chave = "CaktoConfiguration:EmpresaOperacaoId", configurado = Existe("CaktoConfiguration:EmpresaOperacaoId"), usadoPara = "Conta da Contact Solution que recebe o comprador como contato e envia as boas-vindas." },
+                new { chave = "CaktoConfiguration:TemplateBoasVindas", configurado = Existe("CaktoConfiguration:TemplateBoasVindas"), usadoPara = "Template aprovado enviado no WhatsApp assim que o cliente paga. Sem isto o contato e criado, mas nada e enviado." },
             };
 
             var faltando = itens.Where(i => !i.configurado).Select(i => i.chave).ToList();
