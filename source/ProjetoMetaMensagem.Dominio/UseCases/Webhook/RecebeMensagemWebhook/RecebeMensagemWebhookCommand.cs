@@ -183,6 +183,52 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         [JsonPropertyName("document")]
         [JsonProperty("document")]
         public WebhookDocumentCommand? Document { get; set; }
+
+        // Resposta a um botao de template (type = "button"): a Meta manda o texto do botao
+        // que o cliente tocou. Sem mapear isto, a resposta virava "[Midia do tipo button]" --
+        // o texto se perdia e nenhum flow conseguia casar a palavra-chave dele.
+        [JsonPropertyName("button")]
+        [JsonProperty("button")]
+        public WebhookButtonCommand? Button { get; set; }
+
+        // Resposta a botao ou lista de mensagem interativa (type = "interactive").
+        [JsonPropertyName("interactive")]
+        [JsonProperty("interactive")]
+        public WebhookInteractiveCommand? Interactive { get; set; }
+    }
+
+    public class WebhookButtonCommand
+    {
+        [JsonPropertyName("text")]
+        [JsonProperty("text")]
+        public string? Text { get; set; }
+
+        // Valor configurado no template; usado quando o botao nao traz texto visivel.
+        [JsonPropertyName("payload")]
+        [JsonProperty("payload")]
+        public string? Payload { get; set; }
+    }
+
+    public class WebhookInteractiveCommand
+    {
+        [JsonPropertyName("button_reply")]
+        [JsonProperty("button_reply")]
+        public WebhookReplyCommand? ButtonReply { get; set; }
+
+        [JsonPropertyName("list_reply")]
+        [JsonProperty("list_reply")]
+        public WebhookReplyCommand? ListReply { get; set; }
+    }
+
+    public class WebhookReplyCommand
+    {
+        [JsonPropertyName("id")]
+        [JsonProperty("id")]
+        public string? Id { get; set; }
+
+        [JsonPropertyName("title")]
+        [JsonProperty("title")]
+        public string? Title { get; set; }
     }
 
     public class WebhookTextCommand

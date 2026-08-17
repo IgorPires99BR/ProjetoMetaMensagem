@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Helpers;
+using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
@@ -122,11 +123,18 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 return;
             }
 
+            // O template e buscado pelo nome configurado: e dele que sai o Id (pro historico) e
+            // o texto (pra gravar a mensagem legivel, em vez do payload).
+            var templates = await _unitOfWork.Template.ObterPorEmpresa(empresaOperacaoId);
+            var templateBoasVindas = templates.FirstOrDefault(t =>
+                string.Equals(t.NomeTemplate, nomeTemplate, StringComparison.OrdinalIgnoreCase));
+
             var command = new EnviarMensagemTemplateMetaCommand
             {
                 IdEmpresa = empresaOperacaoId,
                 EmpresaId = empresaOperacaoId,
                 ContatoId = contatoId,
+                TemplateId = templateBoasVindas?.Id,
                 Telefone = telefone,
                 NomeTemplate = nomeTemplate!,
                 Idioma = _configuration["CaktoConfiguration:IdiomaBoasVindas"] ?? "pt_BR",
@@ -138,6 +146,21 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
 
             if (resultado?.Sucesso == true)
             {
+                // Sem gravar o historico, a mensagem chegava no cliente mas nao aparecia no
+                // Chats: quem fosse atender via a resposta dele sem saber o que a plataforma
+                // tinha mandado, e o relatorio nao contava esse envio.
+                await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
+                {
+                    Id = Guid.NewGuid(),
+                    EmpresaId = empresaOperacaoId,
+                    ContatoId = contatoId,
+                    TemplateId = command.TemplateId,
+                    TipoDisparo = "Onboarding",
+                    WamidMeta = resultado.WamidMeta,
+                    Conteudo = TemplateTextoHelper.MontarTextoEnviado(templateBoasVindas?.Conteudo, nomeTemplate, command.ParametrosBody),
+                    DataEnvio = DateTime.Now
+                });
+
                 _logger.LogInformation("Onboarding: boas-vindas enviadas no WhatsApp para {Telefone}", telefone);
             }
             else

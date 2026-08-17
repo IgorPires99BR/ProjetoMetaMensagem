@@ -186,6 +186,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                 novaMensagem.TipoMidia = "document";
                                 novaMensagem.Conteudo = "[Documento]";
                             }
+                            else if (msgMeta.Type == "button" && msgMeta.Button != null)
+                            {
+                                // O cliente tocou num botao do template: pro sistema isso e
+                                // texto normal, e e assim que o flow reconhece a resposta dele.
+                                novaMensagem.Conteudo = msgMeta.Button.Text ?? msgMeta.Button.Payload ?? string.Empty;
+                            }
+                            else if (msgMeta.Type == "interactive" && msgMeta.Interactive != null)
+                            {
+                                novaMensagem.Conteudo =
+                                    msgMeta.Interactive.ButtonReply?.Title
+                                    ?? msgMeta.Interactive.ListReply?.Title
+                                    ?? string.Empty;
+                            }
                             else
                             {
                                 novaMensagem.Conteudo = $"[Mídia do tipo {msgMeta.Type}]";
