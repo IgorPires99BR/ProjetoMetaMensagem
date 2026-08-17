@@ -52,14 +52,40 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     // do numero tem prioridade sobre o generico (OrderBy false primeiro: NumeroId
                     // != null vira "false" e ordena antes de "true"/generico).
                     var flows = await _unitOfWork.Flow.ObterTodosPorEmpresaENumero(empresaId, numeroId);
+
+                    IEnumerable<string> GatilhosDe(Dominio.Entidades.Flow f) =>
+                        (f.GatilhoInicial ?? string.Empty)
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
                     var flowAtivado = flows
                         .Where(f =>
                             f.Ativo &&
                             !string.IsNullOrEmpty(f.GatilhoInicial) &&
-                            f.GatilhoInicial.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                                .Any(g => mensagem.Trim().Equals(g, StringComparison.OrdinalIgnoreCase)))
+                            GatilhosDe(f).Any(g => mensagem.Trim().Equals(g, StringComparison.OrdinalIgnoreCase)))
                         .OrderBy(f => f.NumeroId == null)
                         .FirstOrDefault();
+
+                    // Nenhum gatilho exato bateu: cai no flow curinga, se a empresa tiver um.
+                    //
+                    // O gatilho tinha que ser IGUAL a mensagem pra ativar um flow, o que quebra
+                    // justamente quem chega de anuncio Click-to-WhatsApp: o WhatsApp abre a
+                    // conversa com um texto sugerido, mas a pessoa apaga e escreve o que quer --
+                    // e aí ninguem respondia. Um flow com gatilho "*" atende qualquer primeira
+                    // mensagem, e perde pros gatilhos exatos, que continuam tendo prioridade.
+                    if (flowAtivado == null)
+                    {
+                        flowAtivado = flows
+                            .Where(f => f.Ativo && GatilhosDe(f).Any(g => g == "*"))
+                            .OrderBy(f => f.NumeroId == null)
+                            .FirstOrDefault();
+
+                        if (flowAtivado != null)
+                        {
+                            _logger.LogInformation(
+                                "Flow curinga {FlowId} atendeu a mensagem que nao casou com nenhum gatilho exato",
+                                flowAtivado.Id);
+                        }
+                    }
 
                     if (flowAtivado == null)
                     {

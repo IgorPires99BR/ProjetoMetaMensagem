@@ -147,6 +147,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             // Busca o contato se existir, mas não bloqueia caso não exista
                             var contato = await _unitOfWork.Contato.ObterPorTelefone(empresaId.Value, msgMeta.From);
 
+                            // Quem manda mensagem e nao esta na base vira contato aqui.
+                            //
+                            // Sem isto, dois furos: o flow so rodava pra contato conhecido -- e
+                            // lead de anuncio e, por definicao, desconhecido, entao ele escrevia e
+                            // NAO recebia resposta nenhuma -- e a conversa aparecia no chat sem
+                            // nome, so com o telefone. O nome vem do perfil do WhatsApp.
+                            if (contato == null)
+                            {
+                                contato = await CriarContatoDoRemetenteAsync(
+                                    empresaId.Value,
+                                    msgMeta.From,
+                                    change.Value.Contacts?.FirstOrDefault()?.Profile?.Name);
+                            }
+
                             var novaMensagem = new Entidades.MensagemRecebida
                             {
                                 Id = Guid.NewGuid(),
@@ -265,7 +279,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             // Isolado num try/catch proprio: uma falha no Flow (banco, Meta,
                             // JSON de variaveis malformado) nao pode derrubar o salvamento da
                             // mensagem recebida, que e o efeito principal deste webhook.
-                            if (contato != null && msgMeta.Type == "text" && !string.IsNullOrWhiteSpace(novaMensagem.Conteudo))
+                            // Inclui resposta de botao e de lista: pro flow, o texto do botao que
+                            // o cliente tocou vale como resposta dele igual a texto digitado.
+                            var tipoQueAlimentaFlow = msgMeta.Type == "text" || msgMeta.Type == "button" || msgMeta.Type == "interactive";
+
+                            if (contato != null && tipoQueAlimentaFlow && !string.IsNullOrWhiteSpace(novaMensagem.Conteudo))
                             {
                                 try
                                 {
@@ -312,6 +330,42 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
             }
 
             return response;
+        }
+
+        // O Contato pertence a um usuario, nao a empresa direto: usa o primeiro admin dela, que e
+        // quem "recebe" o lead. Falha aqui nao derruba o webhook -- a mensagem ja foi salva.
+        private async Task<Entidades.Contato?> CriarContatoDoRemetenteAsync(Guid empresaId, string telefone, string? nomePerfil)
+        {
+            try
+            {
+                var usuarios = await _unitOfWork.Usuario.ObterPorEmpresa(empresaId);
+                var dono = usuarios.FirstOrDefault(u => u.IsAdmin == true) ?? usuarios.FirstOrDefault();
+
+                if (dono == null)
+                {
+                    _logger.LogWarning("Empresa {EmpresaId} sem usuario: contato de {Telefone} nao criado", empresaId, telefone);
+                    return null;
+                }
+
+                var novoContato = new Entidades.Contato
+                {
+                    Id = Guid.NewGuid(),
+                    UsuarioId = dono.Id,
+                    Telefone = telefone,
+                    Nome = string.IsNullOrWhiteSpace(nomePerfil) ? telefone : nomePerfil,
+                    DataCriacao = DateTime.Now
+                };
+
+                await _unitOfWork.Contato.Incluir(novoContato);
+                _logger.LogInformation("Contato criado automaticamente para {Telefone} ({Nome})", telefone, novoContato.Nome);
+
+                return novoContato;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha ao criar contato automatico para {Telefone}", telefone);
+                return null;
+            }
         }
     }
 }
