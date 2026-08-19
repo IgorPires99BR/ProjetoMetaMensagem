@@ -12,6 +12,14 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // dela -- o cliente recebia a mesma resposta do bot repetida. Com a trava, a segunda
         // espera a primeira terminar e ja le a etapa atualizada.
         Task<ConversationState?> ObterAtivaParaAtualizacao(Guid empresaId, Guid contatoId);
+
+        // Tenta reservar a conversa para processar o Flow. Nao usa lock de banco: e um UPDATE
+        // condicional, atomico e instantaneo, numa conexao propria fora da transacao (reserva
+        // presa em transacao aberta nao seria enxergada pelas outras requisicoes, que e
+        // justamente quem precisa ver).
+        Task<ResultadoReserva> TentarReservarProcessamento(Guid empresaId, Guid contatoId, int segundosDeReserva);
+
+        Task LiberarProcessamento(Guid empresaId, Guid contatoId);
         Task Incluir(ConversationState state);
         Task Atualizar(ConversationState state);
         Task<List<ConversationState>> ObterPorFlow(Guid flowId);

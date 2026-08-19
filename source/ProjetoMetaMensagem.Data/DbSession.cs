@@ -30,6 +30,21 @@ namespace ProjetoMetaMensagem.Data
 
         }
 
+        // Conexao separada, fora da transacao da requisicao. Usada pela reserva de processamento
+        // do Flow: ela precisa ser enxergada pelas OUTRAS requisicoes na hora, e escrita dentro
+        // da transacao aberta so aparece depois do commit. Quem chama e responsavel por fechar.
+        public IDbConnection AbrirConexaoIndependente()
+        {
+            #if DEBUG
+            var conexao = _configuration.GetConnectionString("ContactSolutionDB");
+#else
+            var conexao = _configuration.GetConnectionString("ContactProdDB");
+#endif
+            var nova = new SqlConnection(conexao);
+            nova.Open();
+            return nova;
+        }
+
         public void Dispose()
         {
             _connection.Dispose();

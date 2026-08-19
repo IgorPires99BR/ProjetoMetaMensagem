@@ -22,5 +22,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // e o FlowOrchestratorService para de avancar etapa ate ser devolvida ao bot.
         public Guid? AssumidoPorUsuarioId { get; set; }
         public DateTime? DataAssumido { get; set; }
+
+        // Ate quando esta conversa esta reservada por um processamento em andamento. Enquanto
+        // estiver no futuro, outra mensagem do mesmo cliente e ignorada pelo Flow -- e assim que
+        // o bot responde uma vez so quando a pessoa manda varias mensagens seguidas.
+        public DateTime? ProcessandoAte { get; set; }
     }
 }

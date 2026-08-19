@@ -44,14 +44,30 @@ namespace ProjetoMetaMensagem.Servico.Flow
         {
             var resultado = new FlowOrchestrationResult();
 
+            // Reserva ANTES de abrir a transacao: dentro dela a reserva ficaria invisivel pras
+            // outras requisicoes, que sao justamente quem precisa enxergar. Cliente que manda
+            // tres mensagens seguidas gera tres requisicoes -- so a que reservar responde, as
+            // outras saem aqui sem enviar nada.
+            var reserva = await _unitOfWork.ConversationState.TentarReservarProcessamento(empresaId, contatoId, SegundosDeReserva);
+
+            if (reserva == ResultadoReserva.JaEmProcessamento)
+            {
+                _logger.LogInformation(
+                    "Mensagem de {ContatoId} ignorada pelo Flow: outra mensagem do mesmo contato ja esta sendo processada",
+                    contatoId);
+
+                resultado.Sucesso = false;
+                resultado.Mensagem = "Outra mensagem deste contato ja esta sendo processada.";
+                return resultado;
+            }
+
+            var precisaLiberar = reserva == ResultadoReserva.Reservada;
+
             try
             {
                 _unitOfWork.BeginTransaction();
 
-                // 1. Verifica se ja existe uma conversa ativa para este contato, travando a
-                // linha ate o fim da transacao -- sem isso, cliente mandando varias mensagens
-                // seguidas recebia a mesma resposta do bot repetida (todas as requisicoes liam
-                // a mesma etapa atual antes de qualquer uma avancar).
+                // 1. Verifica se ja existe uma conversa ativa para este contato
                 var estadoAtual = await _unitOfWork.ConversationState.ObterAtivaParaAtualizacao(empresaId, contatoId);
 
                 // Vendedor assumiu essa conversa manualmente pelo chat -- o flow fica pausado
@@ -284,7 +300,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 // recebe erro de constraint aqui. Em vez de derrubar a mensagem do cliente que
                 // perdeu a corrida, tenta de novo uma vez: agora a conversa ja existe, entao
                 // cai no caminho normal de "conversa ja ativa" e a resposta sai do mesmo jeito.
-                if (!jaTentouNovamente && EhViolacaoDeIndiceUnico(ex))
+                if (!jaTentouNovamente && EhViolacaoDeConversaDuplicada(ex))
                 {
                     _logger.LogInformation(
                         "Corrida ao criar EstadoConversa para o contato {ContatoId} -- reprocessando contra a conversa que venceu",
@@ -294,9 +310,28 @@ namespace ProjetoMetaMensagem.Servico.Flow
 
                 throw;
             }
+            finally
+            {
+                // Libera a reserva aconteca o que acontecer. Se falhar aqui, a reserva ainda
+                // vence sozinha pelo prazo -- por isso a falha e so registrada, nunca propagada:
+                // ela nao pode virar o erro que o chamador ve no lugar do erro de verdade.
+                if (precisaLiberar)
+                {
+                    try { await _unitOfWork.ConversationState.LiberarProcessamento(empresaId, contatoId); }
+                    catch (Exception exLiberar)
+                    {
+                        _logger.LogError(exLiberar, "Falha ao liberar a reserva da conversa do contato {ContatoId}", contatoId);
+                    }
+                }
+            }
 
             return resultado;
         }
+
+        // Quanto tempo uma conversa fica reservada enquanto o Flow processa uma mensagem. Precisa
+        // ser maior que o tempo normal de processamento (envio pra Meta incluso) e pequeno o
+        // suficiente pra nao segurar a conversa se algo morrer no meio.
+        private const int SegundosDeReserva = 20;
 
         // So conta como escolha de plano quando os dois botoes nomeiam planos de verdade.
         private static bool EhEscolhaDePlano(FlowEtapa etapa)
@@ -319,15 +354,24 @@ namespace ProjetoMetaMensagem.Servico.Flow
             return string.Equals(resposta?.Trim(), botao.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool EhViolacaoDeIndiceUnico(Exception ex)
+        // So a violacao do indice de conversa ativa justifica reprocessar. Antes bastava ser
+        // "chave duplicada" em qualquer tabela: um wamid repetido em HistoricoDisparo, por
+        // exemplo, fazia o flow reprocessar e mandar a mesma mensagem de novo pro cliente.
+        private const string IndiceDeConversaAtiva = "UX_EstadoConversa_Ativa";
+
+        private static bool EhViolacaoDeConversaDuplicada(Exception ex)
         {
             var atual = ex;
             while (atual != null)
             {
                 // 2601 = violacao de indice unico, 2627 = violacao de constraint unica --
                 // os dois numeros que o SQL Server usa pra essa mesma familia de erro.
-                if (atual is Microsoft.Data.SqlClient.SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+                if (atual is Microsoft.Data.SqlClient.SqlException sql
+                    && (sql.Number == 2601 || sql.Number == 2627)
+                    && sql.Message.Contains(IndiceDeConversaAtiva, StringComparison.OrdinalIgnoreCase))
+                {
                     return true;
+                }
 
                 atual = atual.InnerException;
             }

@@ -40,6 +40,55 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await ObterPorEmpresaEContato(empresaId, contatoId);
         }
 
+        // Um unico UPDATE condicional resolve a disputa: quem conseguir gravar a reserva (1 linha
+        // afetada) processa, quem pegar 0 desiste. Nao ha leitura antes da escrita, entao nao ha
+        // janela entre "ver que esta livre" e "reservar".
+        //
+        // A reserva vence sozinha (ProcessandoAte no passado): se a requisicao morrer no meio,
+        // a proxima mensagem volta a ser processada em vez de a conversa ficar muda pra sempre.
+        public async Task<ResultadoReserva> TentarReservarProcessamento(Guid empresaId, Guid contatoId, int segundosDeReserva)
+        {
+            var filtro = $@"
+                {nameof(ConversationState.EmpresaId)} = @EmpresaId
+                AND {nameof(ConversationState.ContatoId)} = @ContatoId
+                AND {nameof(ConversationState.Finalizado)} = 0";
+
+            // Conexao propria, fora da transacao da requisicao: a reserva precisa ser enxergada
+            // pelas OUTRAS requisicoes na hora, e escrita dentro de transacao aberta so aparece
+            // depois do commit.
+            using var conexao = _session.AbrirConexaoIndependente();
+
+            // Um UPDATE condicional decide a disputa sozinho: quem afetar a linha reservou.
+            var reservou = await conexao.ExecuteAsync($@"
+                UPDATE {Tabela}
+                SET {nameof(ConversationState.ProcessandoAte)} = DATEADD(second, @Segundos, GETDATE())
+                WHERE {filtro}
+                  AND ({nameof(ConversationState.ProcessandoAte)} IS NULL
+                       OR {nameof(ConversationState.ProcessandoAte)} < GETDATE());",
+                new { EmpresaId = empresaId, ContatoId = contatoId, Segundos = segundosDeReserva });
+
+            if (reservou == 1) return ResultadoReserva.Reservada;
+
+            // Nada foi afetado: ou nao existe conversa (caminho de criacao, segue em frente) ou
+            // existe e esta reservada por outra mensagem em processamento (desiste).
+            var existe = await conexao.ExecuteScalarAsync<int>(
+                $"SELECT COUNT(1) FROM {Tabela} WHERE {filtro};",
+                new { EmpresaId = empresaId, ContatoId = contatoId });
+
+            return existe > 0 ? ResultadoReserva.JaEmProcessamento : ResultadoReserva.SemConversaAinda;
+        }
+
+        public async Task LiberarProcessamento(Guid empresaId, Guid contatoId)
+        {
+            var sql = $@"
+                UPDATE {Tabela} SET {nameof(ConversationState.ProcessandoAte)} = NULL
+                WHERE {nameof(ConversationState.EmpresaId)} = @EmpresaId
+                  AND {nameof(ConversationState.ContatoId)} = @ContatoId;";
+
+            using var conexao = _session.AbrirConexaoIndependente();
+            await conexao.ExecuteAsync(sql, new { EmpresaId = empresaId, ContatoId = contatoId });
+        }
+
         public async Task Incluir(ConversationState state)
         {
             var sql = $@"

@@ -1,0 +1,11 @@
+-- Reserva de processamento por conversa, pra o Flow responder UMA vez so mesmo quando o cliente
+-- manda varias mensagens seguidas.
+--
+-- Antes tentamos UPDLOCK e a primeira mensagem de conversa nova travava (o SELECT sem resultado
+-- segurava o intervalo do indice e o INSERT esperava na mesma transacao). Aqui nao ha lock de
+-- banco: e uma coluna com prazo de validade. Quem consegue gravar a reserva processa; quem nao
+-- consegue desiste na hora, sem esperar ninguem.
+--
+-- O prazo evita o pior caso do lock: se o processo morrer no meio, a reserva expira sozinha e a
+-- proxima mensagem volta a ser processada -- nunca fica presa pra sempre.
+ALTER TABLE EstadoConversa ADD ProcessandoAte DATETIME NULL;
