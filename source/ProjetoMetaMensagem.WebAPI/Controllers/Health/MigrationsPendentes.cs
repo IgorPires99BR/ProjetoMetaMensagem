@@ -29,6 +29,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/35", "FluxoEtapa", "ProximaEtapaIdB",
                 "ALTER TABLE FluxoEtapa ADD ProximaEtapaIdB UNIQUEIDENTIFIER NULL;"),
+
+            new("BD/36", "EstadoConversa", "ProcessandoAte",
+                "ALTER TABLE EstadoConversa ADD ProcessandoAte DATETIME NULL;"),
         };
     }
 }
