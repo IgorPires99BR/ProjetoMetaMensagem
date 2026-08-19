@@ -34,5 +34,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         // resposta rapida (ate 20 caracteres cada) em vez de texto simples.
         public string? Botao1 { get; set; }
         public string? Botao2 { get; set; }
+
+        // Ramificacao: Ordem da etapa pra onde o flow salta quando a resposta casa com o
+        // Botao2. Referencia a Ordem (nao o Id) porque as etapas so ganham Id ao serem
+        // criadas. Null = etapa segue linear.
+        public int? OrdemDestinoB { get; set; }
     }
 }
