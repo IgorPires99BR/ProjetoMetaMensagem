@@ -189,7 +189,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             {nameof(etapa.EhEtapaInicial)},
             {nameof(etapa.VariavelSaida)},
             {nameof(etapa.Botao1)},
-            {nameof(etapa.Botao2)}
+            {nameof(etapa.Botao2)},
+            {nameof(etapa.ProximaEtapaIdB)}
         )
         VALUES (
             @{nameof(etapa.Id)},
@@ -202,7 +203,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             @{nameof(etapa.EhEtapaInicial)},
             @{nameof(etapa.VariavelSaida)},
             @{nameof(etapa.Botao1)},
-            @{nameof(etapa.Botao2)}
+            @{nameof(etapa.Botao2)},
+            @{nameof(etapa.ProximaEtapaIdB)}
         );";
 
             await _session.Connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);

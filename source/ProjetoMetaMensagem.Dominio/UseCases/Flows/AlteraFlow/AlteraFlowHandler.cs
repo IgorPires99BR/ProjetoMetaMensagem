@@ -97,6 +97,23 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                 etapaAnterior = novaEtapa;
             }
 
+            // Resolve a ramificacao depois de todas as etapas existirem: OrdemDestinoB aponta
+            // pra uma etapa que pode vir DEPOIS na lista, entao o Id dela so existe agora.
+            for (int i = 0; i < passosOrdenados.Count; i++)
+            {
+                var destinoB = passosOrdenados[i].OrdemDestinoB;
+                if (destinoB == null) continue;
+
+                var indiceDestino = passosOrdenados.FindIndex(e => e.Ordem == destinoB.Value);
+                if (indiceDestino < 0)
+                {
+                    response.AddErro($"A etapa {passosOrdenados[i].Ordem} aponta o segundo caminho para a etapa {destinoB.Value}, que não existe neste fluxo.");
+                    return response;
+                }
+
+                novasEtapas[i].ProximaEtapaIdB = novasEtapas[indiceDestino].Id;
+            }
+
             try
             {
                 _unitOfWork.BeginTransaction();

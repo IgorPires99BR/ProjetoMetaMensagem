@@ -31,5 +31,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // resposta do cliente (o titulo do botao tocado) e capturada normalmente em VariavelSaida.
         public string? Botao1 { get; set; }
         public string? Botao2 { get; set; }
+
+        // Segundo caminho: quando a resposta do cliente casa com Botao2, o flow salta pra ca em
+        // vez de seguir por ProximaEtapaId. E a unica ramificacao do motor -- so duas saidas,
+        // porque a etapa tambem so oferece dois botoes. NULL = etapa segue linear como antes.
+        public Guid? ProximaEtapaIdB { get; set; }
     }
 }

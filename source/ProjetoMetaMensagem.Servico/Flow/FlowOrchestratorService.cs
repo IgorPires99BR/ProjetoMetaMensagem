@@ -197,11 +197,15 @@ namespace ProjetoMetaMensagem.Servico.Flow
                                            ?? new Dictionary<string, string>();
                             variaveis[variavelNome] = mensagem;
 
-                            // Etapa de escolha de plano (Botao1/Botao2 = "Starter"/"Pro"): alem
-                            // de guardar a resposta, resolve na hora o link de pagamento certo,
-                            // pra proxima etapa so precisar mandar "{{link_pagamento}}" -- o Flow
-                            // continua 100% linear, sem precisar de ramificacao no motor.
-                            if (!string.IsNullOrEmpty(etapaAtual.Botao1) && !string.IsNullOrEmpty(etapaAtual.Botao2))
+                            // Etapa de escolha de plano: alem de guardar a resposta, resolve na
+                            // hora o link de pagamento certo, pra proxima etapa so precisar
+                            // mandar "{{link_pagamento}}".
+                            //
+                            // Confere se os botoes sao mesmo de plano em vez de aceitar qualquer
+                            // etapa com dois botoes: uma pergunta como "O que fazem?/Quanto
+                            // custa?" tambem tem dois botoes e estava gravando um link de plano
+                            // que ninguem escolheu.
+                            if (EhEscolhaDePlano(etapaAtual))
                             {
                                 variaveis["link_pagamento"] = ResolverLinkPagamento(mensagem);
                             }
@@ -210,8 +214,17 @@ namespace ProjetoMetaMensagem.Servico.Flow
                         }
                     }
 
-                    // 8. Busca a proxima etapa baseada na resposta
-                    var proximaEtapa = await _unitOfWork.Flow.ObterProximaEtapa(etapaAtualId, mensagem);
+                    // 8. Ramificacao: etapa com dois botoes pode ter uma segunda saida. Se a
+                    // resposta casa com o Botao2 e existe caminho B, salta pra ele -- e assim
+                    // que "Quanto custa?" pula a explicacao e cai direto nos planos.
+                    FlowEtapa? proximaEtapa = null;
+
+                    if (etapaAtual.ProximaEtapaIdB.HasValue && RespostaCasaComBotao(mensagem, etapaAtual.Botao2))
+                    {
+                        proximaEtapa = await _unitOfWork.Flow.ObterEtapaPorId(etapaAtual.ProximaEtapaIdB.Value);
+                    }
+
+                    proximaEtapa ??= await _unitOfWork.Flow.ObterProximaEtapa(etapaAtualId, mensagem);
 
                     if (proximaEtapa == null)
                     {
@@ -283,6 +296,27 @@ namespace ProjetoMetaMensagem.Servico.Flow
             }
 
             return resultado;
+        }
+
+        // So conta como escolha de plano quando os dois botoes nomeiam planos de verdade.
+        private static bool EhEscolhaDePlano(FlowEtapa etapa)
+        {
+            bool NomeiaPlano(string? texto) =>
+                !string.IsNullOrWhiteSpace(texto) &&
+                (texto.Contains("starter", StringComparison.OrdinalIgnoreCase) ||
+                 texto.Contains("pro", StringComparison.OrdinalIgnoreCase));
+
+            return NomeiaPlano(etapa.Botao1) && NomeiaPlano(etapa.Botao2);
+        }
+
+        // O cliente pode tocar o botao (chega o titulo exato) ou digitar algo parecido. Compara
+        // sem diferenciar maiuscula/acento de espaco sobrando, senao quem digita "quanto custa"
+        // em vez de tocar o botao cai no caminho errado.
+        private static bool RespostaCasaComBotao(string resposta, string? botao)
+        {
+            if (string.IsNullOrWhiteSpace(botao)) return false;
+
+            return string.Equals(resposta?.Trim(), botao.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool EhViolacaoDeIndiceUnico(Exception ex)
@@ -359,6 +393,12 @@ namespace ProjetoMetaMensagem.Servico.Flow
                         }
                     }
                 }
+
+                // Variavel que nunca foi preenchida nao pode chegar crua no cliente ("Oi,
+                // {{nome}}!"). Acontece de verdade quando a ramificacao pula a etapa que
+                // capturava aquele dado. Some com o marcador e limpa o espaco/virgula que
+                // sobra antes dele, pra frase continuar lendo bem.
+                mensagem = Regex.Replace(mensagem, @",?\s*\{\{\w+\}\}", string.Empty);
 
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaId);
                 // Responde pelo mesmo numero que recebeu a mensagem (phoneNumberIdOrigem) --
