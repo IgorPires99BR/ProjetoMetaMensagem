@@ -4,6 +4,7 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.AssumirConversa;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.DevolverAoBot;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos;
 using ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaMensagemRecebida;
@@ -128,6 +129,47 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Chat
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.MarcarComoLida"), tipo = "Servico" });
             }
         }
+        // POST /api/chat/assumir
+        // Pausa o robo nesta conversa sem precisar mandar mensagem: antes o unico jeito de
+        // assumir era responder, entao nao dava pra travar o bot e ler a conversa com calma.
+        [HttpPost("assumir")]
+        public async Task<IActionResult> Assumir([FromBody] DevolverAoBotRequest request)
+        {
+            if (request == null || request.EmpresaId == Guid.Empty || request.ContatoId == Guid.Empty)
+            {
+                return BadRequest(new { mensagem = "EmpresaId e ContatoId inválidos.", tipo = "Negocio" });
+            }
+
+            var usuarioId = this.UsuarioIdDoEscopo();
+            if (usuarioId == null)
+            {
+                return BadRequest(new { mensagem = "Não foi possível identificar o usuário logado.", tipo = "Negocio" });
+            }
+
+            try
+            {
+                var command = new AssumirConversaCommand
+                {
+                    EmpresaId = request.EmpresaId,
+                    ContatoId = request.ContatoId,
+                    UsuarioId = usuarioId.Value
+                };
+
+                var resultado = await _mediator.Send(command);
+
+                if (resultado == null || resultado.Erros.Count > 0)
+                {
+                    return BadRequest(new { mensagem = "Não foi possível assumir a conversa.", tipo = "Negocio" });
+                }
+
+                return Ok(new { sucesso = true, assumida = resultado.Value?.Assumida ?? false });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ChatController.Assumir"), tipo = "Servico" });
+            }
+        }
+
         // POST /api/chat/devolver-ao-bot
         // Reativa o flow automatico numa conversa que um vendedor tinha assumido manualmente
         [HttpPost("devolver-ao-bot")]
