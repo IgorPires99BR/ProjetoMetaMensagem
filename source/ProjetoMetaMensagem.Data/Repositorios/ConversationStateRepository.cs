@@ -31,18 +31,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<ConversationState?> ObterAtivaParaAtualizacao(Guid empresaId, Guid contatoId)
         {
-            // UPDLOCK segura a linha ate o commit: duas mensagens do mesmo cliente chegando
-            // juntas viram duas requisicoes que, sem isto, liam a mesma etapa atual e mandavam
-            // a mesma resposta duas vezes. ROWLOCK evita escalar pra lock de tabela e travar
-            // conversa de outro contato.
-            var sql = $@"
-                SELECT * FROM {Tabela} WITH (UPDLOCK, ROWLOCK)
-                WHERE {nameof(ConversationState.EmpresaId)} = @EmpresaId
-                  AND {nameof(ConversationState.ContatoId)} = @ContatoId
-                  AND {nameof(ConversationState.Finalizado)} = 0;";
-
-            return await _session.Connection.QueryFirstOrDefaultAsync<ConversationState>(
-                sql, new { EmpresaId = empresaId, ContatoId = contatoId }, transaction: _session.Transaction);
+            // Aqui havia um WITH (UPDLOCK, ROWLOCK) pra serializar mensagens simultaneas do
+            // mesmo cliente. Foi REVERTIDO: no teste local a primeira mensagem de uma conversa
+            // nova travava a transacao (o SELECT sem resultado segurava o intervalo do indice
+            // filtrado UX_EstadoConversa_Ativa e o INSERT seguinte ficava esperando), e a
+            // conexao so liberava ao derrubar a API. Chat travado e pior do que resposta
+            // repetida, entao a trava saiu ate existir uma forma comprovadamente segura.
+            return await ObterPorEmpresaEContato(empresaId, contatoId);
         }
 
         public async Task Incluir(ConversationState state)
