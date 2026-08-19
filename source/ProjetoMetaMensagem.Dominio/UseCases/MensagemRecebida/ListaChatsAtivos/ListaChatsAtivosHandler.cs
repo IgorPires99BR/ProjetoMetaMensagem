@@ -92,21 +92,34 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                     .ToList();
 
                 var contatos = await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, idsContatos);
+
+                // GroupBy + First em vez de ToDictionary direto: esta e a tela mais acessada do
+                // sistema e ela NAO pode cair por causa do formato do dado. ToDictionary estoura
+                // com chave repetida, e foi exatamente assim que a tela quebrou (500) quando o
+                // banco tinha conversa duplicada pro mesmo contato. O indice unico (BD/34) evita
+                // a duplicata na origem; isto aqui garante que, mesmo se algo escapar, a tela
+                // continua carregando em vez de derrubar o atendimento inteiro.
                 var nomePorContato = contatos
                     .Where(c => !string.IsNullOrWhiteSpace(c.Nome))
-                    .ToDictionary(c => c.Id, c => c.Nome!);
+                    .GroupBy(c => c.Id)
+                    .ToDictionary(g => g.Key, g => g.First().Nome!);
 
                 // Estado de flow ativo por contato (bot vs vendedor), buscado em lote pelo mesmo
                 // motivo do ObterPorIds acima: evitar N+1 na tela mais acessada do sistema.
                 var estadosAtivos = await _unitOfWork.ConversationState.ObterAtivasPorEmpresaEContatos(command.IdEmpresa, idsContatos);
-                var estadoPorContato = estadosAtivos.ToDictionary(e => e.ContatoId, e => e);
+                var estadoPorContato = estadosAtivos
+                    .GroupBy(e => e.ContatoId)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.DataAtualizacao).First());
 
                 var resultFinal = new ListaChatsAtivosResult();
 
                 // Alimenta a lista do Result diretamente
                 resultFinal.Chats = itensRecebidos
                  .Concat(itensEnviados)
-                 .GroupBy(m => m.ContatoId)
+                 // Quem ainda nao virou contato entra com ContatoId vazio; agrupar so por ele
+                 // jogava TODOS esses numeros diferentes numa unica linha de conversa. Sem
+                 // contato cadastrado, o telefone e que identifica a conversa.
+                 .GroupBy(m => m.ContatoId != Guid.Empty ? m.ContatoId.ToString() : "tel:" + m.Telefone)
                  .Select(grupo =>
                  {
                      // Ordena para pegar a mensagem mais recente do grupo
@@ -115,12 +128,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                      // Conta quantas mensagens deste contato específico estão não lidas
                      var naoLidas = grupo.Count(m => m.NaoLida);
 
-                     estadoPorContato.TryGetValue(grupo.Key, out var estado);
+                     var contatoId = maisRecente.ContatoId;
+                     estadoPorContato.TryGetValue(contatoId, out var estado);
 
                      return new ChatAtivoObjeto
                      {
-                         ContatoId = grupo.Key,
-                         NomeContato = nomePorContato.TryGetValue(grupo.Key, out var nome) ? nome : "Contato " + maisRecente.Telefone,
+                         ContatoId = contatoId,
+                         NomeContato = nomePorContato.TryGetValue(contatoId, out var nome) ? nome : "Contato " + maisRecente.Telefone,
                          Telefone = maisRecente.Telefone,
                          UltimaMensagem = maisRecente.Conteudo,
                          DataUltimaMensagem = maisRecente.Data,

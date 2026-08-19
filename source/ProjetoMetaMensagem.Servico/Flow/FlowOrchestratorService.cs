@@ -48,8 +48,11 @@ namespace ProjetoMetaMensagem.Servico.Flow
             {
                 _unitOfWork.BeginTransaction();
 
-                // 1. Verifica se ja existe uma conversa ativa para este contato
-                var estadoAtual = await _unitOfWork.ConversationState.ObterPorEmpresaEContato(empresaId, contatoId);
+                // 1. Verifica se ja existe uma conversa ativa para este contato, travando a
+                // linha ate o fim da transacao -- sem isso, cliente mandando varias mensagens
+                // seguidas recebia a mesma resposta do bot repetida (todas as requisicoes liam
+                // a mesma etapa atual antes de qualquer uma avancar).
+                var estadoAtual = await _unitOfWork.ConversationState.ObterAtivaParaAtualizacao(empresaId, contatoId);
 
                 // Vendedor assumiu essa conversa manualmente pelo chat -- o flow fica pausado
                 // (etapa/variaveis preservadas) ate ser devolvido ao bot.
