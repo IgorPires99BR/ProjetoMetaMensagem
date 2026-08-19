@@ -152,5 +152,82 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 horaServidor = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             });
         }
+
+        // Aplica as migrations que ainda faltam, usando SQL fixo do codigo
+        // (MigrationsPendentes) -- nunca comando vindo da requisicao.
+        //
+        // Existe porque aplicar migration dependia de alguem com acesso direto ao banco, e isso
+        // travou o deploy varias vezes: firewall do Azure bloqueando o IP de quem ia rodar,
+        // senha pendente de rotacao, ou simplesmente a pessoa nao estar disponivel. A API ja
+        // alcanca o banco de dentro do Render, entao ela mesma resolve.
+        //
+        // Cada item so roda se a coluna/tabela ainda nao existir: chamar duas vezes e inofensivo.
+        [HttpPost("api/health/aplicar-schema")]
+        public async Task<IActionResult> AplicarSchema()
+        {
+            if (!this.EhAdminDaPlataforma())
+            {
+                return StatusCode(403, new { mensagem = "Acesso restrito à operação da plataforma.", tipo = "Negocio" });
+            }
+
+            DbSession session;
+            List<ObjetoDoBanco> existentes;
+            try
+            {
+                session = _serviceProvider.GetRequiredService<DbSession>();
+
+                var sql = @"
+                    SELECT t.name AS Tabela, c.name AS Coluna
+                    FROM sys.tables t
+                    LEFT JOIN sys.columns c ON c.object_id = t.object_id";
+
+                existentes = (await session.Connection.QueryAsync<ObjetoDoBanco>(sql)).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Aplicacao de schema: falha ao consultar o banco");
+                return StatusCode(503, new { banco = "indisponivel", tipo = "Servico" });
+            }
+
+            var tabelas = new HashSet<string>(existentes.Select(e => e.Tabela), StringComparer.OrdinalIgnoreCase);
+            var colunas = new HashSet<string>(
+                existentes.Where(e => e.Coluna != null).Select(e => $"{e.Tabela}.{e.Coluna}"),
+                StringComparer.OrdinalIgnoreCase);
+
+            bool JaExiste(MigrationsPendentes.Item item) => item.Coluna == null
+                ? tabelas.Contains(item.Tabela)
+                : colunas.Contains($"{item.Tabela}.{item.Coluna}");
+
+            var aplicadas = new List<string>();
+            var jaEstavam = new List<string>();
+            var falhas = new List<object>();
+
+            foreach (var item in MigrationsPendentes.Itens)
+            {
+                var alvo = item.Coluna == null ? item.Tabela : $"{item.Tabela}.{item.Coluna}";
+
+                if (JaExiste(item))
+                {
+                    jaEstavam.Add($"{item.Migration} · {alvo}");
+                    continue;
+                }
+
+                try
+                {
+                    await session.Connection.ExecuteAsync(item.Sql);
+                    aplicadas.Add($"{item.Migration} · {alvo}");
+                    _logger.LogWarning("Schema alterado pelo endpoint: {Migration} em {Alvo}", item.Migration, alvo);
+                }
+                catch (Exception ex)
+                {
+                    // Uma migration que falha nao pode impedir as outras de rodar: elas sao
+                    // independentes entre si.
+                    _logger.LogError(ex, "Falha ao aplicar {Migration} em {Alvo}", item.Migration, alvo);
+                    falhas.Add(new { migration = item.Migration, alvo, erro = ex.Message });
+                }
+            }
+
+            return Ok(new { aplicadas, jaEstavam, falhas });
+        }
     }
 }
