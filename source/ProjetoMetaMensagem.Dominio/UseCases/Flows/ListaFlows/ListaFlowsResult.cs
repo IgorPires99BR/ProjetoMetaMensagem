@@ -35,7 +35,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
                         ProximaEtapaId = etapa.ProximaEtapaId,
                         VariavelSaida = etapa.VariavelSaida,
                         EhEtapaInicial = etapa.EhEtapaInicial,
-                        TemplateId = etapa.TemplateId
+                        TemplateId = etapa.TemplateId,
+                        // Sem devolver estes campos, a tela de Flows lia a etapa sem eles e os
+                        // mandava de volta vazios ao salvar: editar um flow pela tela apagava
+                        // silenciosamente os botoes e a ramificacao configurados.
+                        Botao1 = etapa.Botao1,
+                        Botao2 = etapa.Botao2,
+                        ProximaEtapaIdB = etapa.ProximaEtapaIdB
                     })
                     .ToList();
             }
@@ -63,5 +69,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
         public string? VariavelSaida { get; set; }
         public bool EhEtapaInicial { get; set; }
         public Guid? TemplateId { get; set; }
+        public string? Botao1 { get; set; }
+        public string? Botao2 { get; set; }
+        public Guid? ProximaEtapaIdB { get; set; }
     }
 }
