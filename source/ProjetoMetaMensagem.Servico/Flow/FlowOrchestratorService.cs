@@ -32,7 +32,15 @@ namespace ProjetoMetaMensagem.Servico.Flow
             _planosConfig = planosConfig.Value;
         }
 
-        public async Task<FlowOrchestrationResult> ProcessarMensagem(Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem = null, Guid? numeroId = null)
+        public async Task<FlowOrchestrationResult> ProcessarMensagem(
+            Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem = null, Guid? numeroId = null)
+            => await ProcessarMensagem(empresaId, contatoId, celular, mensagem, phoneNumberIdOrigem, numeroId, jaTentouNovamente: false);
+
+        // "jaTentouNovamente" so existe pra esse metodo poder chamar a si mesmo uma unica vez
+        // apos perder a corrida de criar a conversa (ver catch abaixo) -- nunca passar true de
+        // fora, e o parametro fica de fora da assinatura publica de proposito.
+        private async Task<FlowOrchestrationResult> ProcessarMensagem(
+            Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem, Guid? numeroId, bool jaTentouNovamente)
         {
             var resultado = new FlowOrchestrationResult();
 
@@ -250,13 +258,44 @@ namespace ProjetoMetaMensagem.Servico.Flow
 
                 _unitOfWork.Commit();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 _unitOfWork.Rollback();
+
+                // Duas mensagens do mesmo cliente quase juntas podem cair em requisicoes
+                // concorrentes que leem "nenhuma conversa ativa" ao mesmo tempo -- so uma
+                // consegue criar a EstadoConversa (UX_EstadoConversa_Ativa, BD/34), a outra
+                // recebe erro de constraint aqui. Em vez de derrubar a mensagem do cliente que
+                // perdeu a corrida, tenta de novo uma vez: agora a conversa ja existe, entao
+                // cai no caminho normal de "conversa ja ativa" e a resposta sai do mesmo jeito.
+                if (!jaTentouNovamente && EhViolacaoDeIndiceUnico(ex))
+                {
+                    _logger.LogInformation(
+                        "Corrida ao criar EstadoConversa para o contato {ContatoId} -- reprocessando contra a conversa que venceu",
+                        contatoId);
+                    return await ProcessarMensagem(empresaId, contatoId, celular, mensagem, phoneNumberIdOrigem, numeroId, jaTentouNovamente: true);
+                }
+
                 throw;
             }
 
             return resultado;
+        }
+
+        private static bool EhViolacaoDeIndiceUnico(Exception ex)
+        {
+            var atual = ex;
+            while (atual != null)
+            {
+                // 2601 = violacao de indice unico, 2627 = violacao de constraint unica --
+                // os dois numeros que o SQL Server usa pra essa mesma familia de erro.
+                if (atual is Microsoft.Data.SqlClient.SqlException sql && (sql.Number == 2601 || sql.Number == 2627))
+                    return true;
+
+                atual = atual.InnerException;
+            }
+
+            return false;
         }
 
         // Etapa de "Mensagem" e informativa: ela nao espera resposta, entao o flow deve seguir
