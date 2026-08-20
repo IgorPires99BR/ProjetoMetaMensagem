@@ -80,6 +80,16 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     return resultado;
                 }
 
+                // O bot ja desistiu desta conversa e avisou que chamaria uma pessoa. Sem esta
+                // saida ele reavaliaria cada mensagem seguinte e repetiria o mesmo aviso.
+                if (estadoAtual != null && estadoAtual.AguardandoAtendente)
+                {
+                    _unitOfWork.Commit();
+                    resultado.Sucesso = false;
+                    resultado.Mensagem = "Conversa aguardando atendente; flow nao processado.";
+                    return resultado;
+                }
+
                 if (estadoAtual == null)
                 {
                     // 2. Nao ha conversa ativa -> busca um flow cujo gatilho corresponda a mensagem.
@@ -202,6 +212,48 @@ namespace ProjetoMetaMensagem.Servico.Flow
                         resultado.Mensagem = "Etapa atual nao encontrada.";
                         return resultado;
                     }
+
+                    // 6.1 Etapa de botao onde a resposta nao casa com nenhum deles: o cliente
+                    // desconversou ou digitou outra coisa. Reperguntar eternamente irrita e
+                    // perde o lead, entao na segunda vez a conversa vai pra uma pessoa.
+                    if (TemBotoes(etapaAtual) && !RespostaCasaComAlgumBotao(mensagem, etapaAtual))
+                    {
+                        estadoAtual.TentativasNaEtapa++;
+                        estadoAtual.DataAtualizacao = DateTime.Now;
+
+                        var desistir = estadoAtual.TentativasNaEtapa >= TentativasAntesDeChamarHumano;
+
+                        if (desistir)
+                        {
+                            estadoAtual.AguardandoAtendente = true;
+                            await EnviarTextoAsync(empresaId, contatoId, celular, phoneNumberIdOrigem,
+                                "Acho melhor uma pessoa te ajudar com isso 🙋\n\n" +
+                                "Já avisei o time — em breve alguém entra na conversa por aqui.");
+
+                            _logger.LogInformation(
+                                "Conversa do contato {ContatoId} entregue a um atendente apos {Tentativas} respostas fora do esperado",
+                                contatoId, estadoAtual.TentativasNaEtapa);
+                        }
+                        else
+                        {
+                            // Repergunta a MESMA etapa (com os botoes), so que avisando que nao
+                            // entendeu -- reiniciar o flow faria a pessoa repetir tudo de novo.
+                            await ExecutarEtapa(etapaAtual, estadoAtual.Variaveis, estadoAtual, empresaId, celular, phoneNumberIdOrigem,
+                                prefixo: "Não entendi 😅 Toque em uma das opções abaixo:\n\n");
+                        }
+
+                        await _unitOfWork.ConversationState.Atualizar(estadoAtual);
+                        _unitOfWork.Commit();
+
+                        resultado.Sucesso = true;
+                        resultado.Mensagem = desistir
+                            ? "Conversa entregue a um atendente."
+                            : "Resposta fora do esperado; etapa reenviada.";
+                        return resultado;
+                    }
+
+                    // Acertou: zera a contagem pra uma confusao futura comecar do zero.
+                    estadoAtual.TentativasNaEtapa = 0;
 
                     // 7. Se a etapa atual captura input, salva a resposta como variavel
                     if (etapaAtual.NomeEtapa == "Capturar Input")
@@ -344,6 +396,39 @@ namespace ProjetoMetaMensagem.Servico.Flow
             return NomeiaPlano(etapa.Botao1) && NomeiaPlano(etapa.Botao2);
         }
 
+        // Quantas respostas fora do esperado o bot tolera antes de chamar uma pessoa. Duas, e
+        // nao tres: na terceira insistencia a pessoa ja desistiu, e na segunda ainda da pra
+        // salvar o atendimento.
+        private const int TentativasAntesDeChamarHumano = 2;
+
+        private static bool TemBotoes(FlowEtapa etapa) =>
+            !string.IsNullOrWhiteSpace(etapa.Botao1) && !string.IsNullOrWhiteSpace(etapa.Botao2);
+
+        private static bool RespostaCasaComAlgumBotao(string resposta, FlowEtapa etapa) =>
+            RespostaCasaComBotao(resposta, etapa.Botao1) || RespostaCasaComBotao(resposta, etapa.Botao2);
+
+        // Envia um texto avulso pro cliente (fora do conteudo de uma etapa) e registra no
+        // historico, pra mensagem aparecer no Chats como qualquer outra do bot.
+        private async Task EnviarTextoAsync(Guid empresaId, Guid contatoId, string celular, string? phoneNumberIdOrigem, string texto)
+        {
+            var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaId);
+            var phoneNumberId = phoneNumberIdOrigem ?? await _unitOfWork.Empresa.ObterPhoneNumberId(empresaId);
+
+            var wamid = await _metaService.EnviarTextoLivreAsync(celular, texto, token!, phoneNumberId!);
+
+            await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
+            {
+                EmpresaId = empresaId,
+                ContatoId = contatoId,
+                TipoDisparo = "Flow",
+                Conteudo = texto,
+                WamidMeta = wamid,
+                DataEnvio = DateTime.Now
+            });
+
+            await _notificadorChat.NotificarMensagemEnviadaAsync(empresaId, contatoId, texto, wamid);
+        }
+
         // O cliente pode tocar o botao (chega o titulo exato) ou digitar algo parecido. Compara
         // sem diferenciar maiuscula/acento de espaco sobrando, senao quem digita "quanto custa"
         // em vez de tocar o botao cai no caminho errado.
@@ -413,7 +498,9 @@ namespace ProjetoMetaMensagem.Servico.Flow
             return atual;
         }
 
-        private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual, Guid empresaId, string celular, string? phoneNumberIdOrigem = null)
+        // "prefixo" so e usado ao REPERGUNTAR uma etapa que o cliente respondeu fora do
+        // esperado: entra antes do texto original ("Nao entendi... " + a pergunta de novo).
+        private async Task ExecutarEtapa(FlowEtapa etapa, string? variaveisJson, ConversationState? estadoAtual, Guid empresaId, string celular, string? phoneNumberIdOrigem = null, string? prefixo = null)
         {
             // "Capturar Input" tambem envia o texto dela: a tela de Flows pede a pergunta nessa
             // etapa ("Qual seu nome?") e ela simplesmente nunca era enviada -- so etapa do tipo
@@ -443,6 +530,8 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 // capturava aquele dado. Some com o marcador e limpa o espaco/virgula que
                 // sobra antes dele, pra frase continuar lendo bem.
                 mensagem = Regex.Replace(mensagem, @",?\s*\{\{\w+\}\}", string.Empty);
+
+                if (!string.IsNullOrEmpty(prefixo)) mensagem = prefixo + mensagem;
 
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(empresaId);
                 // Responde pelo mesmo numero que recebeu a mensagem (phoneNumberIdOrigem) --

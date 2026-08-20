@@ -139,8 +139,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                          UltimaMensagem = maisRecente.Conteudo,
                          DataUltimaMensagem = maisRecente.Data,
                          QuantidadeNaoLidas = naoLidas,
-                         RespondendoPorFlow = estado != null && estado.AssumidoPorUsuarioId == null,
-                         FlowAssumido = estado != null && estado.AssumidoPorUsuarioId != null
+                         // Aguardando atendente NAO conta como "respondendo por flow": o bot
+                         // parou de conduzir, entao a tela nao pode sugerir que esta coberto.
+                         RespondendoPorFlow = estado != null && estado.AssumidoPorUsuarioId == null && !estado.AguardandoAtendente,
+                         FlowAssumido = estado != null && estado.AssumidoPorUsuarioId != null,
+                         AguardandoAtendente = estado != null && estado.AguardandoAtendente && estado.AssumidoPorUsuarioId == null
                      };
                  })
                  // Sem isso a lista saia na ordem "de agrupamento" (basicamente aleatoria),

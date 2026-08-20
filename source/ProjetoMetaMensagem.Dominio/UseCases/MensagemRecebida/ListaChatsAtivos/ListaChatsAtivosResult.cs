@@ -25,5 +25,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
         public bool RespondendoPorFlow { get; set; }
         // true = havia um flow ativo mas um vendedor assumiu manualmente (pode "devolver ao flow")
         public bool FlowAssumido { get; set; }
+
+        // true = o bot desistiu (cliente respondeu fora do esperado duas vezes) e a conversa
+        // esta esperando uma pessoa. A tela usa isto pra destacar quem precisa de atendimento.
+        public bool AguardandoAtendente { get; set; }
     }
 }

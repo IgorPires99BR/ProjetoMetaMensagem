@@ -27,5 +27,12 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // estiver no futuro, outra mensagem do mesmo cliente e ignorada pelo Flow -- e assim que
         // o bot responde uma vez so quando a pessoa manda varias mensagens seguidas.
         public DateTime? ProcessandoAte { get; set; }
+
+        // Quantas vezes seguidas o cliente respondeu algo que a etapa atual nao esperava.
+        // Zera sempre que ele acerta e o flow avanca.
+        public int TentativasNaEtapa { get; set; }
+
+        // O bot desistiu de conduzir esta conversa e passou pra uma pessoa.
+        public bool AguardandoAtendente { get; set; }
     }
 }

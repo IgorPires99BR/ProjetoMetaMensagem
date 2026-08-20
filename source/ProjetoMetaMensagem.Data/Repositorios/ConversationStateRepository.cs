@@ -110,7 +110,9 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(ConversationState.EtapaAtualId)} = @EtapaAtualId,
                     {nameof(ConversationState.Variaveis)} = @Variaveis,
                     {nameof(ConversationState.DataAtualizacao)} = @DataAtualizacao,
-                    {nameof(ConversationState.Finalizado)} = @Finalizado
+                    {nameof(ConversationState.Finalizado)} = @Finalizado,
+                    {nameof(ConversationState.TentativasNaEtapa)} = @TentativasNaEtapa,
+                    {nameof(ConversationState.AguardandoAtendente)} = @AguardandoAtendente
                 WHERE {nameof(ConversationState.Id)} = @Id;";
 
             await _session.Connection.ExecuteAsync(sql, state, transaction: _session.Transaction);
@@ -169,7 +171,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var sql = $@"
                 UPDATE {Tabela} SET
                     {nameof(ConversationState.AssumidoPorUsuarioId)} = NULL,
-                    {nameof(ConversationState.DataAssumido)} = NULL
+                    {nameof(ConversationState.DataAssumido)} = NULL,
+                    -- Zera a contagem junto: sem isso o bot volta ja no limite e desiste de
+                    -- novo na primeira resposta fora do esperado, devolvendo pro atendente.
+                    {nameof(ConversationState.TentativasNaEtapa)} = 0,
+                    {nameof(ConversationState.AguardandoAtendente)} = 0
                 WHERE {nameof(ConversationState.Id)} = @Id;";
 
             await _session.Connection.ExecuteAsync(sql, new { Id = id }, transaction: _session.Transaction);

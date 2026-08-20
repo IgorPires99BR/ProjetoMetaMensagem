@@ -84,6 +84,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/36", "EstadoConversa", "ProcessandoAte"),
 
             new("BD/37", "Numero", "TokenExpiraEm"),
+
+            new("BD/38", "EstadoConversa", "TentativasNaEtapa"),
+            new("BD/38", "EstadoConversa", "AguardandoAtendente"),
         };
     }
 }
