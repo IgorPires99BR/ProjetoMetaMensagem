@@ -1,6 +1,7 @@
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -17,6 +18,16 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
         // Embedded Signup: troca o "code" de autorização retornado pelo SDK JS da Meta por um token de sistema
         Task<string> TrocarCodeEmbeddedSignupAsync(string code);
+
+        // Troca um token short-lived (o que TrocarCodeEmbeddedSignupAsync devolve) por um
+        // long-lived (~60 dias) via GET oauth/access_token?grant_type=fb_exchange_token.
+        // Sem isso o token do Embedded Signup expira rapido e o numero "desconecta" sozinho.
+        Task<(string Token, DateTime? ExpiraEm)> TrocarTokenLongLivedAsync(string shortLivedToken);
+
+        // Assina o nosso App aos webhooks do WABA do cliente (POST /{waba-id}/subscribed_apps).
+        // Passo obrigatorio pos-Embedded-Signup: sem ele a Meta nunca entrega eventos (mensagens
+        // recebidas, status) desse WABA no nosso webhook, mesmo com o numero "conectado" no banco.
+        Task<bool> AssinarAppNoWabaAsync(string wabaId, string accessToken);
 
         // CoEx: habilita a coexistência entre o app WhatsApp Business e a Cloud API para o phone_number_id informado
         Task<ResultadoCoexistencia> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken, string pin);

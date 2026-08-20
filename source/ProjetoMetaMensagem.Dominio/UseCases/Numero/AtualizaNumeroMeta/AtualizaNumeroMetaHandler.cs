@@ -54,6 +54,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
                     return response;
                 }
 
+                // E por WABA, nao por numero -- chamar uma vez aqui (nao dentro do foreach de
+                // numeros abaixo). Tambem serve de retry pro caso da assinatura ter falhado no
+                // Embedded Signup original: o usuario clicando em "Sincronizar Meta" tenta de novo.
+                var appAssinado = await _metaService.AssinarAppNoWabaAsync(wabaId, token);
+                if (!appAssinado)
+                {
+                    _logger.LogWarning("Falha ao assinar o app no WABA {WabaId} durante sincronizacao manual. Empresa {IdEmpresa}", wabaId, command.IdEmpresa);
+                }
+
                 var numerosNoBanco = await _unitOfWork.Numero
                     .ObterPorUsuario(command.IdUsuario);
 

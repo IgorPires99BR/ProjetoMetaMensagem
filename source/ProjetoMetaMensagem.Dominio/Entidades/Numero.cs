@@ -69,5 +69,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         [MaxLength(100)]
         public string? WabaId { get; set; }
         public DateTime? DataUltimaSincronizacao { get; set; }
+
+        // Quando o SystemUserToken foi trocado por long-lived (~60 dias), guarda a validade
+        // devolvida pela Meta. NULL = token sem expiracao conhecida (ex: numeros antigos,
+        // cadastrados antes dessa troca existir).
+        public DateTime? TokenExpiraEm { get; set; }
     }
 }

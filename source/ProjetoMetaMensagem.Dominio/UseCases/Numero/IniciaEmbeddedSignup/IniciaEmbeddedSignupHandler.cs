@@ -55,14 +55,30 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
                     return response;
                 }
 
-                // Troca o "code" do Embedded Signup pelo token de sistema
-                var systemUserToken = await _metaService.TrocarCodeEmbeddedSignupAsync(command.Code);
+                // Troca o "code" do Embedded Signup pelo token de sistema (short-lived)
+                var shortLivedToken = await _metaService.TrocarCodeEmbeddedSignupAsync(command.Code);
 
-                if (string.IsNullOrEmpty(systemUserToken))
+                if (string.IsNullOrEmpty(shortLivedToken))
                 {
                     response.AddErro("A Meta aceitou a requisição, mas não retornou um token de sistema válido.");
                     _unitOfWork.Rollback();
                     return response;
+                }
+
+                // Sem essa troca o token expira rapido (short-lived) e o numero "desconecta"
+                // sozinho pouco tempo depois do onboarding. Falha aqui nao deve travar o
+                // cadastro: cai pro token curto mesmo, e fica pendente de renovacao.
+                var systemUserToken = shortLivedToken;
+                DateTime? tokenExpiraEm = null;
+                try
+                {
+                    var longLived = await _metaService.TrocarTokenLongLivedAsync(shortLivedToken);
+                    systemUserToken = longLived.Token;
+                    tokenExpiraEm = longLived.ExpiraEm;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha ao trocar token do Embedded Signup por long-lived, mantendo o token curto. Empresa {IdEmpresa}", command.IdEmpresa);
                 }
 
                 var wabaId = command.WabaId ?? await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
@@ -79,6 +95,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
                     InstanciaId = command.PhoneNumberId,
                     WabaId = wabaId,
                     SystemUserToken = systemUserToken,
+                    TokenExpiraEm = tokenExpiraEm,
                     TipoConexao = TipoConexaoNumero.ApiOficial,
                     StatusConexao = "Conectado",
                     StatusMeta = "PENDING",
@@ -89,10 +106,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup
                 await _unitOfWork.Numero.Incluir(novoNumero);
                 _unitOfWork.Commit();
 
+                // Assina o app nos webhooks do WABA depois do commit: e um efeito colateral na
+                // Meta, nao no nosso banco, entao uma falha aqui nao deve derrubar o cadastro
+                // que ja foi persistido -- so fica pendente de retry via "Sincronizar Meta"
+                // (AtualizaNumeroMetaHandler tambem chama isso a cada sincronizacao).
+                var appAssinado = !string.IsNullOrEmpty(wabaId) && await _metaService.AssinarAppNoWabaAsync(wabaId, systemUserToken);
+                if (!appAssinado)
+                {
+                    _logger.LogWarning("Falha ao assinar o app no WABA {WabaId} apos Embedded Signup. Numero {NumeroId} ficara sem receber mensagens ate uma sincronizacao bem sucedida.", wabaId, novoNumero.Id);
+                }
+
                 response.AddValue(new IniciaEmbeddedSignupResult
                 {
                     NumeroId = novoNumero.Id,
-                    StatusConexao = novoNumero.StatusConexao
+                    StatusConexao = novoNumero.StatusConexao,
+                    AppAssinado = appAssinado
                 });
             }
             catch (Exception ex)

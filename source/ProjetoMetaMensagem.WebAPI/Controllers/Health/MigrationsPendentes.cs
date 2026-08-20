@@ -32,6 +32,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/36", "EstadoConversa", "ProcessandoAte",
                 "ALTER TABLE EstadoConversa ADD ProcessandoAte DATETIME NULL;"),
+
+            new("BD/37", "Numero", "TokenExpiraEm",
+                "ALTER TABLE Numero ADD TokenExpiraEm DATETIME NULL;"),
         };
     }
 }

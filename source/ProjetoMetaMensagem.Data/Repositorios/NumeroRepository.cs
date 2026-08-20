@@ -33,10 +33,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Numero.StatusConexao)},
                     {nameof(Numero.SystemUserToken)},
                     {nameof(Numero.WabaId)},
-                    {nameof(Numero.DataUltimaSincronizacao)}
+                    {nameof(Numero.DataUltimaSincronizacao)},
+                    {nameof(Numero.TokenExpiraEm)}
                 )
                 VALUES (@UsuarioId, @Telefone, @Descricao, @InstanciaId,@StatusMeta,@QualidadeMeta, @DataCriacao,
-                    @TipoConexao, @StatusConexao, @SystemUserToken, @WabaId, @DataUltimaSincronizacao);
+                    @TipoConexao, @StatusConexao, @SystemUserToken, @WabaId, @DataUltimaSincronizacao, @TokenExpiraEm);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             await _session.Connection.ExecuteAsync(sql, numero, transaction: _session.Transaction);
@@ -64,7 +65,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Numero.SystemUserToken)} = @SystemUserToken,
                     {nameof(Numero.WabaId)} = @WabaId,
                     {nameof(Numero.DataUltimaSincronizacao)} = @DataUltimaSincronizacao,
-                    {nameof(Numero.DataAtualizacao)} = @DataAtualizacao
+                    {nameof(Numero.DataAtualizacao)} = @DataAtualizacao,
+                    {nameof(Numero.TokenExpiraEm)} = @TokenExpiraEm
                 WHERE {nameof(Numero.Id)} = @Id
                 {RecorteDaEmpresa}";
 
@@ -83,6 +85,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     numero.WabaId,
                     numero.DataUltimaSincronizacao,
                     numero.DataAtualizacao,
+                    numero.TokenExpiraEm,
                     EmpresaIdSolicitante = empresaIdSolicitante
                 },
                 transaction: _session.Transaction);

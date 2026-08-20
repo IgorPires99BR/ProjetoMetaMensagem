@@ -190,6 +190,63 @@ namespace ProjetoMetaMensagem.Servico.MetaService
             }
         }
 
+        public async Task<(string Token, DateTime? ExpiraEm)> TrocarTokenLongLivedAsync(string shortLivedToken)
+        {
+            var endpoint = $"oauth/access_token?grant_type=fb_exchange_token&client_id={_configuration.AppId}&client_secret={_configuration.AppSecret}&fb_exchange_token={shortLivedToken}";
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Erro ao trocar token por long-lived: {responseContent}");
+                }
+
+                var metaResponse = JsonConvert.DeserializeObject<TrocaTokenLongLivedResponse>(responseContent);
+
+                if (metaResponse == null || string.IsNullOrEmpty(metaResponse.AccessToken))
+                {
+                    throw new Exception($"Resposta inesperada da Meta ao trocar token por long-lived: {responseContent}");
+                }
+
+                var expiraEm = metaResponse.ExpiresIn.HasValue
+                    ? DateTime.Now.AddSeconds(metaResponse.ExpiresIn.Value)
+                    : (DateTime?)null;
+
+                return (metaResponse.AccessToken, expiraEm);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Falha ao trocar token por long-lived na Meta: {ex.Message}");
+            }
+        }
+
+        // Sem body relevante: a Meta aceita POST vazio nesse endpoint (o WABA a assinar vem na
+        // propria URL). Segue o mesmo estilo de AtivarCoexistenciaAsync -- nao lanca excecao em
+        // erro HTTP, devolve false e deixa o caller decidir (logar/retry), pra uma falha aqui
+        // nao derrubar o cadastro do numero que ja foi persistido.
+        public async Task<bool> AssinarAppNoWabaAsync(string wabaId, string accessToken)
+        {
+            var endpoint = $"{wabaId}/subscribed_apps";
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public async Task<ResultadoCoexistencia> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken, string pin)
         {
             var endpoint = $"{phoneNumberId}/register";
