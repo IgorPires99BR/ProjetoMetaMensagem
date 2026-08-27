@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
@@ -22,6 +23,24 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
         {
             _mediator = mediator;
             _logger = logger;
+        }
+
+        [HttpPost("api/v2/empresa/criar-conta-cliente")]
+        public async Task<IActionResult> CriarContaCliente([FromBody] CriaContaClienteCommand command)
+        {
+            try
+            {
+                // Do token, nunca do corpo: senao qualquer admin de qualquer empresa cliente
+                // se declararia conta de operacao e criaria tenants novos.
+                command.SolicitanteEhAdminDaPlataforma = this.EhAdminDaPlataforma();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.CriarContaCliente"), tipo = "Servico" });
+            }
         }
 
         [HttpPost("api/v2/empresa/incluir")]

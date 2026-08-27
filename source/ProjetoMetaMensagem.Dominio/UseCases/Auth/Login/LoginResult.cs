@@ -31,8 +31,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             }
         }
 
-        public LoginResult(Entidades.Usuario usuario, string? token = null)
+        public LoginResult(Entidades.Usuario usuario, string? token = null, bool ehAdminDaPlataforma = false)
         {
+            EhAdminDaPlataforma = ehAdminDaPlataforma;
             IdEmpresa = usuario.EmpresaId;
             IdUsuario = usuario.Id;
             Email = usuario.Email;
@@ -59,5 +60,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
 
         [JsonProperty("token")]
         public string? Token { get; set; }
+
+        // A claim isAdminPlataforma ja existia no token, mas a tela nao tinha como ler o token.
+        // Sem isto, a tela de Empresas mostrava "Nova conta de cliente" para o admin de uma
+        // empresa cliente, que so descobriria pelo erro da API que aquilo nao era para ele.
+        [JsonProperty("ehAdminDaPlataforma")]
+        public bool EhAdminDaPlataforma { get; set; }
     }
 }

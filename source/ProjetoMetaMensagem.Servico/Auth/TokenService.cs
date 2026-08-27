@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System.IdentityModel.Tokens.Jwt;
@@ -53,5 +53,7 @@ namespace ProjetoMetaMensagem.Servico.Auth
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-    }
+    
+        public bool EhAdminDaPlataforma(string? email) => AdminsDaPlataforma.Contem(_configuration, email);
+}
 }

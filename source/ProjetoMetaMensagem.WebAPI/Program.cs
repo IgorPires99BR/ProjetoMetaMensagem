@@ -1,4 +1,4 @@
-using ProjetoMetaMensagem.WebAPI.Common;
+﻿using ProjetoMetaMensagem.WebAPI.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -272,6 +272,9 @@ builder.Services.AddSingleton<IConfiguracaoOfertasCakto, ProjetoMetaMensagem.Ser
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.PlanosConfiguration>(
     builder.Configuration.GetSection("PlanosConfiguration"));
 builder.Services.AddScoped<IOnboardingComercialService, ProjetoMetaMensagem.Servico.Cobranca.OnboardingComercialService>();
+// Sequencia de nascer uma conta de cliente, compartilhada pelo webhook da Cakto e pelo
+// cadastro interno feito pela equipe.
+builder.Services.AddScoped<ICriacaoDeContaDeCliente, ProjetoMetaMensagem.Dominio.Servicos.CriacaoDeContaDeCliente>();
 
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();

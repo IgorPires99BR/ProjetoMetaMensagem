@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Helpers;
@@ -46,7 +46,7 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             _logger = logger;
         }
 
-        public async Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente, string? plano = null)
+        public async Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente, string? plano = null, bool avisarPagamentoConfirmado = true)
         {
             var empresaOperacaoId = LerEmpresaOperacao();
 
@@ -68,7 +68,14 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             {
                 var contatoId = await GarantirContatoAsync(empresaOperacaoId, nomeComprador, telefone, emailComprador);
                 await EnviarBoasVindasWhatsAppAsync(empresaOperacaoId, contatoId, nomeComprador, telefone);
-                await EnviarAvisoAtendenteAsync(empresaOperacaoId, contatoId, nomeComprador, telefone, plano);
+
+                // O aviso de "pagamento confirmado, um atendente vai ligar" so faz sentido
+                // quando houve pagamento. Numa conta cadastrada pela equipe antes de o cliente
+                // pagar, essa mensagem seria mentira -- e mentira logo no primeiro contato.
+                if (avisarPagamentoConfirmado)
+                {
+                    await EnviarAvisoAtendenteAsync(empresaOperacaoId, contatoId, nomeComprador, telefone, plano);
+                }
             }
             catch (Exception ex)
             {

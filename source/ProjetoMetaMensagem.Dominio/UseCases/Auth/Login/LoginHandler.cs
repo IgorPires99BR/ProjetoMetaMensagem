@@ -54,7 +54,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
 
                 var token = _tokenService.GerarToken(usuario.Id.ToString(), usuario.Email, usuario.Nome, usuario.EmpresaId.ToString(), usuario.IsAdmin?.ToString() ?? "false");
 
-                response.AddValue(new LoginResult(usuario, token));
+                response.AddValue(new LoginResult(usuario, token, _tokenService.EhAdminDaPlataforma(usuario.Email)));
             }
             catch (Exception ex)
             {

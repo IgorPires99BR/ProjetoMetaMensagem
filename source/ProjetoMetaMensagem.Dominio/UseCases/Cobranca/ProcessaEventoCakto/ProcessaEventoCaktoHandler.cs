@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Help.Error;
@@ -19,7 +19,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
         private readonly IConfiguracaoOfertasCakto _configuracaoOfertas;
-        private readonly IOnboardingComercialService _onboarding;
+        private readonly ICriacaoDeContaDeCliente _criacaoDeConta;
         private readonly IConversoesMetaService _conversoesMeta;
         private readonly ILogger<ProcessaEventoCaktoHandler> _logger;
 
@@ -27,14 +27,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             IUnitOfWork unitOfWork,
             IEmailService emailService,
             IConfiguracaoOfertasCakto configuracaoOfertas,
-            IOnboardingComercialService onboarding,
+            ICriacaoDeContaDeCliente criacaoDeConta,
             IConversoesMetaService conversoesMeta,
             ILogger<ProcessaEventoCaktoHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _emailService = emailService;
             _configuracaoOfertas = configuracaoOfertas;
-            _onboarding = onboarding;
+            _criacaoDeConta = criacaoDeConta;
             _conversoesMeta = conversoesMeta;
             _logger = logger;
         }
@@ -246,46 +246,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
         private async Task<Guid> CriarContaAsync(ProcessaEventoCaktoCommand command, string email)
         {
             var dados = command.Dados!;
-            var nomeComprador = string.IsNullOrWhiteSpace(dados.Comprador?.Nome) ? email : dados.Comprador!.Nome!;
 
-            var empresa = new Entidades.Empresa
+            // A sequencia de nascer uma conta (empresa, admin, senha, e-mail, contato) mora no
+            // CriacaoDeContaDeCliente, compartilhada com o cadastro interno feito pela equipe.
+            // Assim uma conta criada pela equipe e identica a uma conta comprada.
+            var conta = await _criacaoDeConta.CriarAsync(new DadosDaContaDeCliente
             {
-                Id = Guid.NewGuid(),
-                Nome = nomeComprador,
+                Nome = string.IsNullOrWhiteSpace(dados.Comprador?.Nome) ? email : dados.Comprador!.Nome!,
                 Email = email,
-                Cnpj = dados.Comprador?.Documento ?? string.Empty,
                 Telefone = dados.Comprador?.Telefone,
-                StatusConta = "Ativo",
-                PlanoId = MapearPlano(dados),
-                DataCriacao = DateTime.Now
-            };
-
-            var empresaId = await _unitOfWork.Empresa.Incluir(empresa);
-            if (empresaId == Guid.Empty) empresaId = empresa.Id;
-
-            var senhaProvisoria = GerarSenhaProvisoria();
-
-            await _unitOfWork.Usuario.Incluir(new Entidades.Usuario
-            {
-                Id = Guid.NewGuid(),
-                EmpresaId = empresaId,
-                Nome = nomeComprador,
-                Email = email,
-                SenhaHash = BCrypt.Net.BCrypt.HashPassword(senhaProvisoria),
-                IsAdmin = true,
-                DataCriacao = DateTime.Now
+                Cnpj = dados.Comprador?.Documento,
+                Plano = MapearPlano(dados),
+                PagamentoJaConfirmado = true
             });
 
-            // O e-mail sai fora da transação de propósito: falha de SMTP não pode desfazer uma
-            // conta já paga. Se não chegar, o cliente usa "esqueci minha senha".
-            await EnviarBoasVindasAsync(email, nomeComprador, senhaProvisoria);
-
-            // Mesmo raciocínio: quem comprou vira contato na nossa própria conta e recebe o
-            // WhatsApp de boas-vindas. O serviço engole as próprias falhas -- nada aqui pode
-            // derrubar uma venda que já entrou.
-            await _onboarding.ReceberNovoClienteAsync(nomeComprador, dados.Comprador?.Telefone, email, empresaId, empresa.PlanoId);
-
-            return empresaId;
+            return conta.EmpresaId;
         }
 
         // Junta os identificadores que temos do comprador: o ctwa_clid (quando ele veio de um
@@ -337,18 +312,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             if (!string.IsNullOrWhiteSpace(plano)) empresa.PlanoId = plano;
 
             await _unitOfWork.Empresa.Alterar(empresa);
-        }
-
-        private async Task EnviarBoasVindasAsync(string email, string nomeCliente, string senhaProvisoria)
-        {
-            try
-            {
-                await _emailService.EnviarBoasVindasAsync(email, nomeCliente, senhaProvisoria);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Cakto: conta criada para {Email}, mas o e-mail de acesso falhou", email);
-            }
         }
 
         // --- Apoio ---
@@ -449,15 +412,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Cobranca.ProcessaEventoCakto
             return DateTime.TryParse(valor, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var data)
                 ? data.ToLocalTime()
                 : null;
-        }
-
-        // Senha só serve para o primeiro acesso; o usuário troca depois.
-        private static string GerarSenhaProvisoria()
-        {
-            const string alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-            var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(12);
-
-            return new string(bytes.Select(b => alfabeto[b % alfabeto.Length]).ToArray());
         }
 
         private enum TipoEventoCakto

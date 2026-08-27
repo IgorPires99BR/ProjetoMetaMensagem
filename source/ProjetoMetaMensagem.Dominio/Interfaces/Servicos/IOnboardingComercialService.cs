@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
@@ -10,6 +10,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     // rede não pode desfazer um cliente pagante.
     public interface IOnboardingComercialService
     {
-        Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente, string? plano = null);
+        // avisarPagamentoConfirmado=false para conta cadastrada pela equipe antes do pagamento:
+        // avisar de um pagamento que nao aconteceu confunde quem recebe.
+        Task ReceberNovoClienteAsync(string nomeComprador, string? telefoneComprador, string emailComprador, Guid empresaDoCliente, string? plano = null, bool avisarPagamentoConfirmado = true);
     }
 }
