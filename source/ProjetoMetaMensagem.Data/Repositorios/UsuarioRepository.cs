@@ -86,6 +86,20 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 transaction: _session.Transaction);
         }
 
+        public async Task<int> AlterarSenha(Guid usuarioId, string senhaHash)
+        {
+            var sql = $@"
+                UPDATE {nameof(Usuario)}
+                SET {nameof(Usuario.SenhaHash)} = @SenhaHash
+                WHERE {nameof(Usuario.Id)} = @Id";
+
+            // Sem recorte por empresa de proposito: quem troca a senha e o proprio dono dela,
+            // identificado pelo token, e o handler ja conferiu a senha atual antes de chegar aqui.
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = usuarioId, SenhaHash = senhaHash },
+                transaction: _session.Transaction);
+        }
+
         public async Task<Usuario?> ObterPorEmail(string email)
         {
             var sql = $@"

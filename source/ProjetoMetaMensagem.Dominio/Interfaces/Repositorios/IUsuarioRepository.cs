@@ -19,6 +19,12 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // Passe null explicitamente quando nao houver usuario logado (processo de fundo).
         Task<int> Alterar(Usuario usuario, Guid? empresaIdSolicitante);
 
+        // Troca so o hash da senha. Existe separado do Alterar porque a troca de senha nao
+        // deve nem poder encostar em Nome, Email ou IsAdmin: o comando que vem da tela so
+        // carrega senhas, e montar um Usuario inteiro so para atualizar um campo abriria a
+        // porta para sobrescrever os outros com valor vazio.
+        Task<int> AlterarSenha(Guid usuarioId, string senhaHash);
+
         Task<Usuario?> ObterPorEmail(string email);
         Task<Usuario?> Logar(string email, string senhaHash);
 
