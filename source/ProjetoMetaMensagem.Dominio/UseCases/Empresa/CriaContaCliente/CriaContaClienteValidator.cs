@@ -1,4 +1,7 @@
 using FluentValidation;
+using ProjetoMetaMensagem.Dominio.Entidades;
+using System;
+using System.Linq;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente
 {
@@ -17,8 +20,25 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente
                 .EmailAddress().WithMessage("Informe um e-mail válido.")
                 .MaximumLength(255).WithMessage("O e-mail deve ter no máximo 255 caracteres.");
 
+            // Sem esta lista, um plano digitado errado (ou mandado direto na API) era gravado
+            // como se existisse, e a conta ficava com um plano que nenhuma regra reconhece.
+            // A tela usa um select, entao isto protege quem chama a API por fora.
             RuleFor(x => x.Plano)
-                .NotEmpty().WithMessage("Escolha o plano do cliente.");
+                .NotEmpty().WithMessage("Escolha o plano do cliente.")
+                // ApplyConditionTo.CurrentValidator porque, sem ele, o When vale para a cadeia
+                // inteira e desliga tambem o NotEmpty acima -- plano vazio passaria a ser aceito.
+                .Must(SerPlanoConhecido).WithMessage($"Plano inválido. Use um destes: {string.Join(", ", PlanosAceitos)}.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Plano), ApplyConditionTo.CurrentValidator);
         }
+
+        private static readonly string[] PlanosAceitos =
+        {
+            PlanoAssinatura.Starter,
+            PlanoAssinatura.Pro,
+            PlanoAssinatura.Enterprise
+        };
+
+        private static bool SerPlanoConhecido(string? plano) =>
+            PlanosAceitos.Any(p => string.Equals(p, plano, StringComparison.OrdinalIgnoreCase));
     }
 }

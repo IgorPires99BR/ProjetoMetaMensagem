@@ -6,6 +6,10 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     public interface ICriacaoDeContaDeCliente
     {
         Task<ContaDeClienteCriada> CriarAsync(DadosDaContaDeCliente dados);
+
+        // Empresa ja cadastrada que nunca teve usuario: da o acesso a ela em vez de criar uma
+        // empresa duplicada ao lado.
+        Task<ContaDeClienteCriada> CriarAcessoParaEmpresaExistenteAsync(Guid empresaId, DadosDaContaDeCliente dados);
     }
 
     public class DadosDaContaDeCliente

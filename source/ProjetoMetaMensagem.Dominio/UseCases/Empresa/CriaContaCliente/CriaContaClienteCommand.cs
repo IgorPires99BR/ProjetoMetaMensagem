@@ -17,6 +17,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente
 
         public string Plano { get; set; } = string.Empty;
 
+        // Preenchido para dar acesso a uma empresa que JA existe e nunca teve usuario. Vazio
+        // cria empresa nova. Serve para empresas cadastradas antes de este fluxo existir, que
+        // sem usuario sao peso morto: ninguem entra nelas.
+        public Guid? EmpresaId { get; set; }
+
         // Marcar quando o cliente ja pagou por fora (PIX, transferencia, venda no balcao):
         // so entao ele recebe o WhatsApp dizendo que um atendente vai ligar.
         public bool PagamentoJaConfirmado { get; set; }

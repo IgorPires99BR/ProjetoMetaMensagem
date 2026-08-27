@@ -53,6 +53,36 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             var empresaId = await _unitOfWork.Empresa.Incluir(empresa);
             if (empresaId == Guid.Empty) empresaId = empresa.Id;
 
+            return await CriarAcessoAsync(empresaId, nome, dados);
+        }
+
+        // Empresa que ja existe no banco mas nunca teve usuario -- cadastrada numa importacao,
+        // num teste, ou antes de a integracao de pagamento existir. Sem usuario ela e peso
+        // morto: ninguem entra nela e ela nao aparece para ninguem. Isto da o acesso a ela sem
+        // criar uma empresa duplicada ao lado.
+        public async Task<ContaDeClienteCriada> CriarAcessoParaEmpresaExistenteAsync(Guid empresaId, DadosDaContaDeCliente dados)
+        {
+            var nome = string.IsNullOrWhiteSpace(dados.Nome) ? dados.Email : dados.Nome;
+
+            var empresa = await _unitOfWork.Empresa.ObterPorId(empresaId);
+            if (empresa != null)
+            {
+                // A empresa manda no proprio cadastro: so preenche o que estava em branco, e
+                // atualiza o plano quando quem cadastrou escolheu um.
+                empresa.StatusConta = "Ativo";
+                if (!string.IsNullOrWhiteSpace(dados.Plano)) empresa.PlanoId = dados.Plano;
+                if (string.IsNullOrWhiteSpace(empresa.Email)) empresa.Email = dados.Email;
+                if (string.IsNullOrWhiteSpace(empresa.Telefone)) empresa.Telefone = dados.Telefone;
+
+                await _unitOfWork.Empresa.Alterar(empresa);
+            }
+
+            return await CriarAcessoAsync(empresaId, nome, dados);
+        }
+
+        // Parte comum aos dois caminhos: o usuario dono, a senha, o e-mail e o WhatsApp.
+        private async Task<ContaDeClienteCriada> CriarAcessoAsync(Guid empresaId, string nome, DadosDaContaDeCliente dados)
+        {
             var senhaProvisoria = GerarSenhaProvisoria();
 
             await _unitOfWork.Usuario.Incluir(new Usuario

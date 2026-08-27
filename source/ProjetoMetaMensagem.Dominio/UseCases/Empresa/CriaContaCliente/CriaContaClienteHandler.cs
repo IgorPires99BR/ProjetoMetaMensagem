@@ -5,6 +5,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente
@@ -65,9 +66,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente
                     return response;
                 }
 
-                _unitOfWork.BeginTransaction();
-
-                var conta = await _criacaoDeConta.CriarAsync(new DadosDaContaDeCliente
+                var dados = new DadosDaContaDeCliente
                 {
                     Nome = command.Nome.Trim(),
                     Email = email,
@@ -75,7 +74,33 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente
                     Cnpj = command.Cnpj,
                     Plano = command.Plano,
                     PagamentoJaConfirmado = command.PagamentoJaConfirmado
-                });
+                };
+
+                // Dar acesso a uma empresa existente so vale enquanto ela nao tem ninguem. Se
+                // ja tem, criar "o dono" de novo produziria dois admins disputando a mesma
+                // conta -- para adicionar gente ao time existe a tela de Usuarios.
+                if (command.EmpresaId.HasValue)
+                {
+                    var empresa = await _unitOfWork.Empresa.ObterPorId(command.EmpresaId.Value);
+                    if (empresa == null)
+                    {
+                        response.AddErro("Empresa não encontrada.");
+                        return response;
+                    }
+
+                    var jaTemUsuario = await _unitOfWork.Usuario.ObterPorEmpresa(command.EmpresaId.Value);
+                    if (jaTemUsuario.Any())
+                    {
+                        response.AddErro("Esta empresa já tem acesso criado. Para adicionar mais pessoas, use a tela de Usuários.");
+                        return response;
+                    }
+                }
+
+                _unitOfWork.BeginTransaction();
+
+                var conta = command.EmpresaId.HasValue
+                    ? await _criacaoDeConta.CriarAcessoParaEmpresaExistenteAsync(command.EmpresaId.Value, dados)
+                    : await _criacaoDeConta.CriarAsync(dados);
 
                 _unitOfWork.Commit();
 
