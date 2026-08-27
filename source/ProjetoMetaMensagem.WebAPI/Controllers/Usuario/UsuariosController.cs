@@ -1,4 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario;
@@ -27,6 +27,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
         {
             try
             {
+                // Escopo vem do token, nunca do corpo (mesmo motivo do Deletar logo abaixo):
+                // sem isso, qualquer usuario autenticado podia criar um usuario dentro de OUTRA
+                // empresa mandando o empresaId dela no JSON.
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+                command.SolicitanteEhAdmin = this.EhAdmin() || this.EhAdminDaPlataforma();
+
                 var resultado = await _mediator.Send(command);
                 return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
             }
@@ -63,6 +69,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
             {
                 // Escopo vem do token, nunca do corpo: senao o proprio atacante o escolheria.
                 command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+                command.SolicitanteEhAdmin = this.EhAdmin() || this.EhAdminDaPlataforma();
 
                 var resultado = await _mediator.Send(command);
                 return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);

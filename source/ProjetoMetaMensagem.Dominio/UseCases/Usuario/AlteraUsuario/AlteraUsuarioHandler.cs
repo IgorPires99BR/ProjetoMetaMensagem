@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -29,6 +29,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
 
             try
             {
+                // So admin concede admin -- mesma regra da criacao, senao a promocao seria
+                // so uma edicao com "perfil": "admin" no corpo.
+                if (Entidades.Usuario.EhPerfilAdmin(command.Perfil) && !command.SolicitanteEhAdmin)
+                {
+                    response.AddErro("Apenas um administrador pode conceder acesso de administrador.");
+                    return response;
+                }
+
                 _unitOfWork.BeginTransaction();
                 var validator = new AlteraUsuarioValidator();
                 var validateResult = validator.Validate(command);

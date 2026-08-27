@@ -1,4 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
@@ -25,6 +25,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario
 
             try
             {
+                // Empresa vem do escopo do token (null so pra conta de plataforma, que pode
+                // criar usuario em qualquer empresa). Se viesse do corpo, um usuario de uma
+                // empresa criaria usuarios dentro de outra.
+                if (command.EmpresaIdSolicitante.HasValue)
+                {
+                    command.EmpresaId = command.EmpresaIdSolicitante.Value;
+                }
+
+                // So admin concede admin: senao um operador se promoveria mandando
+                // "perfil": "admin" no JSON, sem passar pela tela.
+                if (Entidades.Usuario.EhPerfilAdmin(command.Perfil) && !command.SolicitanteEhAdmin)
+                {
+                    response.AddErro("Apenas um administrador pode criar outro administrador.");
+                    return response;
+                }
+
                 _unitOfWork.BeginTransaction();
                 var validator = new CriaUsuarioValidator();
                 var validateResult = validator.Validate(command);

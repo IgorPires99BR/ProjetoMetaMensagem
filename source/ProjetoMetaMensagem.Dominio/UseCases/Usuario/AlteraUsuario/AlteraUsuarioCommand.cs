@@ -1,4 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
 using System.Collections.Generic;
@@ -18,6 +18,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
         public string? Email { get; set; }
 
         public string? SenhaHash { get; set; }
+
+        // Ver CriaUsuarioCommand.Perfil: o valor da tela era descartado tambem na edicao.
+        public string? Perfil { get; set; }
+
+        public bool SolicitanteEhAdmin { get; set; }
 
         // Preenchido pelo controller a partir do JWT (null = administrador). Nao confundir com
         // EmpresaId, que vem do corpo e por isso o atacante escolhe. Sem esse escopo o UPDATE

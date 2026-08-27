@@ -66,7 +66,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 SET
                     {nameof(Usuario.Nome)} = @Nome,
                     {nameof(Usuario.Email)} = @Email,
-                    {nameof(Usuario.SenhaHash)} = @SenhaHash
+                    {nameof(Usuario.SenhaHash)} = @SenhaHash,
+                    -- COALESCE porque IsAdmin nulo quer dizer manter o perfil atual: a
+                    -- redefinicao de senha passa por aqui e nao pode rebaixar um admin.
+                    {nameof(Usuario.IsAdmin)} = COALESCE(@IsAdmin, {nameof(Usuario.IsAdmin)})
                 WHERE {nameof(Usuario.Id)} = @Id
                 {RecorteDaEmpresa}";
 
@@ -77,6 +80,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     usuario.Nome,
                     usuario.Email,
                     usuario.SenhaHash,
+                    usuario.IsAdmin,
                     EmpresaIdSolicitante = empresaIdSolicitante
                 },
                 transaction: _session.Transaction);
