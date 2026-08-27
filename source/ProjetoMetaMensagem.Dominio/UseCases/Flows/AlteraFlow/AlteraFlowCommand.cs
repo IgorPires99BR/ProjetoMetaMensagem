@@ -34,6 +34,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
 
     public class AlteraFlowEtapaDto
     {
+        // Id da etapa que ja existe no banco. Preenchido = atualiza aquela etapa mantendo o Id;
+        // vazio = etapa nova. Manter o Id e o que permite editar um flow com conversa em
+        // andamento: a conversa aponta pro Id da etapa atual, e antes a edicao recriava tudo
+        // com Ids novos, deixando o ponteiro orfao.
+        public Guid? Id { get; set; }
+
         public int Ordem { get; set; }
         public string? TipoStep { get; set; } // "Mensagem", "Capturar Input"
         public string? MensagemPergunta { get; set; }

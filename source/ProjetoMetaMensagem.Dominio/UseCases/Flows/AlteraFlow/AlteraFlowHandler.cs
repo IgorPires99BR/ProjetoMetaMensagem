@@ -44,13 +44,34 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                 return response;
             }
 
-            // Editar recria TODAS as etapas com Guids novos (passo 3 abaixo). Uma conversa em
-            // andamento guarda o Guid da etapa ANTIGA em EtapaAtualId -- se deixar editar, ela
-            // fica apontando pra uma etapa que nao existe mais assim que o cliente responder.
+            // Editar preserva o Id das etapas que ja existiam, entao conversa em andamento
+            // continua valendo -- ela aponta pro Id da etapa atual, e esse Id nao muda mais.
+            //
+            // Antes a edicao apagava e recriava tudo com Ids novos, e por isso qualquer
+            // conversa aberta bloqueava a edicao inteira. Na pratica isso significou encerrar
+            // 22 conversas de leads a forca so pra poder mexer no texto de uma etapa.
             var conversasDoFlow = await _unitOfWork.ConversationState.ObterPorFlow(flowExistente.Id);
-            if (conversasDoFlow.Any(c => !c.Finalizado))
+            var etapasNoBanco = await _unitOfWork.Flow.ObterEtapasPorFlow(flowExistente.Id);
+
+            // O unico caso que ainda quebra conversa em andamento e REMOVER a etapa onde ela
+            // esta parada. Bloqueia so isso, com o motivo especifico, em vez de proibir toda
+            // edicao por precaucao.
+            var idsQueVaoFicar = command.Etapas
+                .Where(e => e.Id.HasValue)
+                .Select(e => e.Id!.Value)
+                .ToHashSet();
+
+            var conversaOrfa = conversasDoFlow.FirstOrDefault(c =>
+                !c.Finalizado &&
+                c.EtapaAtualId.HasValue &&
+                etapasNoBanco.Any(e => e.Id == c.EtapaAtualId.Value) &&
+                !idsQueVaoFicar.Contains(c.EtapaAtualId.Value));
+
+            if (conversaOrfa != null)
             {
-                response.AddErro("Este fluxo tem conversas em andamento e não pode ser editado. Aguarde finalizarem antes de alterar as etapas.");
+                response.AddErro(
+                    "Há uma conversa em andamento parada exatamente na etapa que você está removendo. " +
+                    "Remova essa etapa depois que a conversa terminar, ou assuma a conversa pelo Chat antes.");
                 return response;
             }
 
@@ -71,11 +92,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
             {
                 var dto = passosOrdenados[i];
 
+                // Reaproveita o Id de quem ja existe no banco; so etapa realmente nova ganha
+                // Guid novo. E o que mantem valido o ponteiro das conversas em andamento.
+                var jaExiste = dto.Id.HasValue && etapasNoBanco.Any(e => e.Id == dto.Id.Value);
+
                 var novaEtapa = new FlowEtapa
                 {
-                    // Mesmo bug do CriaFlowHandler: sem Id explicito, toda etapa nascia
-                    // com Guid.Empty e a segunda etapa violava a PK ao salvar.
-                    Id = Guid.NewGuid(),
+                    // Sem Id explicito toda etapa nasceria com Guid.Empty e a segunda violaria
+                    // a PK ao salvar (bug historico, mesmo do CriaFlowHandler).
+                    Id = jaExiste ? dto.Id!.Value : Guid.NewGuid(),
                     FlowId = flowExistente.Id,
                     NomeEtapa = dto.TipoStep,
                     ConteudoLivre = dto.MensagemPergunta,
@@ -132,24 +157,46 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
                     return response;
                 }
 
-                // Conversas ja finalizadas nao bloqueiam a edicao (checado acima), mas a LINHA
-                // continua no banco apontando (FK) pra uma FlowEtapa que esta prestes a ser
-                // apagada. Sem limpar isso, todo flow que ja rodou uma conversa - mesmo ja
-                // encerrada - fica travado pra sempre: o DELETE das etapas abaixo comecava a
-                // falhar com violacao de FK assim que o primeiro cliente terminava o fluxo.
-                foreach (var conversaFinalizada in conversasDoFlow)
+                // A gravacao acontece em tres passos por causa da FK auto-referenciada
+                // (ProximaEtapaId aponta pra outra FluxoEtapa): so da pra apontar pra uma
+                // etapa que ja exista.
+                var idsNoBanco = etapasNoBanco.Select(e => e.Id).ToHashSet();
+
+                // 1) Cria as etapas novas SEM ponteiro. O destino delas pode ser outra etapa
+                //    nova que ainda nao existe -- gravar o ponteiro agora violaria a FK.
+                foreach (var etapa in novasEtapas.Where(e => !idsNoBanco.Contains(e.Id)))
                 {
-                    await _unitOfWork.ConversationState.Excluir(conversaFinalizada.Id);
+                    var proximaId = etapa.ProximaEtapaId;
+                    var proximaIdB = etapa.ProximaEtapaIdB;
+
+                    etapa.ProximaEtapaId = null;
+                    etapa.ProximaEtapaIdB = null;
+                    await _unitOfWork.Flow.IncluirEtapa(etapa);
+
+                    etapa.ProximaEtapaId = proximaId;
+                    etapa.ProximaEtapaIdB = proximaIdB;
                 }
 
-                // Remove todas as etapas antigas do banco para limpar o Grafo anterior
-                await _unitOfWork.Flow.ExcluirEtapasPorFlowId(flowExistente.Id, command.EmpresaIdSolicitante);
-
-                // Insere a nova arvore de etapas atualizada -- de tras pra frente, mesmo motivo
-                // do CriaFlowHandler (ProximaEtapaId e uma FK auto-referenciada em FlowEtapa)
-                for (int i = novasEtapas.Count - 1; i >= 0; i--)
+                // 2) Agora que todas existem, grava conteudo e ponteiros de todas -- inclusive
+                //    das que acabaram de ser criadas.
+                foreach (var etapa in novasEtapas)
                 {
-                    await _unitOfWork.Flow.IncluirEtapa(novasEtapas[i]);
+                    await _unitOfWork.Flow.AlterarEtapa(etapa);
+                }
+
+                // 3) Remove o que o usuario tirou do flow. Vem por ultimo: no passo 2 ninguem
+                //    mais aponta pra elas, entao a FK nao barra a exclusao.
+                var idsQueFicaram = novasEtapas.Select(e => e.Id).ToHashSet();
+                foreach (var removida in etapasNoBanco.Where(e => !idsQueFicaram.Contains(e.Id)))
+                {
+                    // Conversa ja encerrada continua apontando (FK) pra etapa removida. A
+                    // conversa em andamento nessa etapa ja foi barrada la em cima.
+                    foreach (var conversa in conversasDoFlow.Where(c => c.EtapaAtualId == removida.Id))
+                    {
+                        await _unitOfWork.ConversationState.Excluir(conversa.Id);
+                    }
+
+                    await _unitOfWork.Flow.ExcluirEtapa(removida.Id);
                 }
 
                 // 5. Integração com a Meta

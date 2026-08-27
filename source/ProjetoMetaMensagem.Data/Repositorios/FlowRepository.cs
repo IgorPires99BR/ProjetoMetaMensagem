@@ -212,6 +212,43 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
         }
 
+        public async Task<int> AlterarEtapa(FlowEtapa etapa)
+        {
+            var sql = $@"
+                UPDATE {TabelaFluxoEtapa} SET
+                    {nameof(etapa.NomeEtapa)} = @{nameof(etapa.NomeEtapa)},
+                    {nameof(etapa.ConteudoLivre)} = @{nameof(etapa.ConteudoLivre)},
+                    {nameof(etapa.GatilhoResposta)} = @{nameof(etapa.GatilhoResposta)},
+                    {nameof(etapa.ProximaEtapaId)} = @{nameof(etapa.ProximaEtapaId)},
+                    {nameof(etapa.EhEtapaInicial)} = @{nameof(etapa.EhEtapaInicial)},
+                    {nameof(etapa.VariavelSaida)} = @{nameof(etapa.VariavelSaida)},
+                    {nameof(etapa.TemplateId)} = @{nameof(etapa.TemplateId)},
+                    {nameof(etapa.Botao1)} = @{nameof(etapa.Botao1)},
+                    {nameof(etapa.Botao2)} = @{nameof(etapa.Botao2)},
+                    {nameof(etapa.ProximaEtapaIdB)} = @{nameof(etapa.ProximaEtapaIdB)}
+                WHERE {nameof(etapa.Id)} = @{nameof(etapa.Id)};";
+
+            return await _session.Connection.ExecuteAsync(sql, etapa, transaction: _session.Transaction);
+        }
+
+        public async Task<List<FlowEtapa>> ObterEtapasPorFlow(Guid flowId)
+        {
+            var sql = $@"
+                SELECT * FROM {TabelaFluxoEtapa}
+                WHERE {nameof(FlowEtapa.FlowId)} = @FlowId;";
+
+            var resultado = await _session.Connection.QueryAsync<FlowEtapa>(
+                sql, new { FlowId = flowId }, transaction: _session.Transaction);
+
+            return resultado.ToList();
+        }
+
+        public async Task<int> ExcluirEtapa(Guid etapaId)
+        {
+            var sql = $"DELETE FROM {TabelaFluxoEtapa} WHERE {nameof(FlowEtapa.Id)} = @Id;";
+            return await _session.Connection.ExecuteAsync(sql, new { Id = etapaId }, transaction: _session.Transaction);
+        }
+
         // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
         // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar fluxo de outra empresa.
         private const string RecorteDaEmpresa = @"

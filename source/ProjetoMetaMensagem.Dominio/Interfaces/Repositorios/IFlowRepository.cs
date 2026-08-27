@@ -26,6 +26,18 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // null = administrador (sem restricao). Flow tem EmpresaId proprio; FlowEtapa nao,
         // e chega na empresa pelo Flow.
         Task<int> ExcluirEtapasPorFlowId(Guid flowId, Guid? empresaIdSolicitante);
+
+        // Atualiza uma etapa mantendo o Id. E o que permite editar um flow sem recriar tudo:
+        // conversa em andamento guarda o Id da etapa atual, e recriar a etapa com Id novo
+        // deixava esse ponteiro apontando pra algo que nao existe mais.
+        Task<int> AlterarEtapa(FlowEtapa etapa);
+
+        // Etapas de um flow, sem carregar o flow inteiro. Usado na edicao pra saber o que ja
+        // existe e decidir entre atualizar, incluir ou excluir cada etapa.
+        Task<List<FlowEtapa>> ObterEtapasPorFlow(Guid flowId);
+
+        // Exclui uma etapa especifica (a que o usuario removeu do flow na edicao).
+        Task<int> ExcluirEtapa(Guid etapaId);
         Task<int> Alterar(Flow flow, Guid? empresaIdSolicitante);
         Task<int> Excluir(Guid id, Guid? empresaIdSolicitante);
     }
