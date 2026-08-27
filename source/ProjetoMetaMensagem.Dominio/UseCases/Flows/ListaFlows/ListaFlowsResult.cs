@@ -21,6 +21,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
             GatilhoPalavraChave = flow.GatilhoInicial;
             Ativo = flow.Ativo;
             NumeroId = flow.NumeroId;
+            SourceIdAnuncio = flow.SourceIdAnuncio;
 
             // Mapeia a lista de etapas internas caso elas tenham sido carregadas pelo repositório
             if (flow.Etapas != null)
@@ -54,6 +55,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.ListaFlows
         public string GatilhoPalavraChave { get; set; }
         public bool Ativo { get; set; }
         public Guid? NumeroId { get; set; }
+
+        // Sem devolver isto, a tela leria o flow sem o vinculo com o anuncio e o mandaria de
+        // volta vazio ao salvar -- editar pela tela desfaria o roteamento silenciosamente.
+        public string? SourceIdAnuncio { get; set; }
 
         // Mapeia diretamente o array para o front-end ler como 'etapas'
         public List<ListaFlowsEtapaDto> Etapas { get; set; } = new List<ListaFlowsEtapaDto>();

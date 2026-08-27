@@ -159,7 +159,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(flow.GatilhoInicial)},
                     {nameof(flow.Ativo)},
                     {nameof(flow.DataCriacao)},
-                    {nameof(flow.NumeroId)}
+                    {nameof(flow.NumeroId)},
+                    {nameof(flow.SourceIdAnuncio)}
                 )
                 VALUES (
                     @{nameof(flow.Id)},
@@ -169,7 +170,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(flow.GatilhoInicial)},
                     @{nameof(flow.Ativo)},
                     @{nameof(flow.DataCriacao)},
-                    @{nameof(flow.NumeroId)}
+                    @{nameof(flow.NumeroId)},
+                    @{nameof(flow.SourceIdAnuncio)}
                 );";
 
             await _session.Connection.ExecuteAsync(sql, flow, transaction: _session.Transaction);
@@ -241,7 +243,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(flow.Descricao)} = @{nameof(flow.Descricao)},
                     {nameof(flow.GatilhoInicial)} = @{nameof(flow.GatilhoInicial)},
                     {nameof(flow.Ativo)} = @{nameof(flow.Ativo)},
-                    {nameof(flow.NumeroId)} = @{nameof(flow.NumeroId)}
+                    {nameof(flow.NumeroId)} = @{nameof(flow.NumeroId)},
+                    {nameof(flow.SourceIdAnuncio)} = @{nameof(flow.SourceIdAnuncio)}
                 WHERE {nameof(flow.Id)} = @{nameof(flow.Id)}
                 {RecorteDaEmpresa};";
 
@@ -254,6 +257,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     flow.GatilhoInicial,
                     flow.Ativo,
                     flow.NumeroId,
+                    flow.SourceIdAnuncio,
                     EmpresaIdSolicitante = empresaIdSolicitante
                 },
                 transaction: _session.Transaction);

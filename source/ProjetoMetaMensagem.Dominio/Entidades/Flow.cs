@@ -24,6 +24,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             Ativo = true;
             GatilhoInicial = command.GatilhoPalavraChave; // Campo ideal para salvar o start do bot
             NumeroId = command.NumeroId;
+            SourceIdAnuncio = command.SourceIdAnuncio;
         }
 
         public Guid Id { get; set; }
@@ -36,6 +37,12 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // NULL = flow vale para todos os numeros da empresa. Preenchido = flow exclusivo
         // daquele numero (tem prioridade sobre um flow generico com o mesmo gatilho).
         public Guid? NumeroId { get; set; }
+
+        // Id do anuncio (source_id do referral) que leva a este flow. Quem chega por esse
+        // anuncio cai aqui direto, sem depender do texto que digitou -- o gatilho por texto
+        // quebra quando a pessoa apaga a mensagem sugerida e escreve outra coisa.
+        // NULL = flow escolhido pelo gatilho de texto, como sempre.
+        public string? SourceIdAnuncio { get; set; }
 
         // Propriedade de navegação para as etapas
         public List<FlowEtapa> Etapas { get; set; }

@@ -33,14 +33,14 @@ namespace ProjetoMetaMensagem.Servico.Flow
         }
 
         public async Task<FlowOrchestrationResult> ProcessarMensagem(
-            Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem = null, Guid? numeroId = null)
-            => await ProcessarMensagem(empresaId, contatoId, celular, mensagem, phoneNumberIdOrigem, numeroId, jaTentouNovamente: false);
+            Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem = null, Guid? numeroId = null, string? sourceIdAnuncio = null)
+            => await ProcessarMensagem(empresaId, contatoId, celular, mensagem, phoneNumberIdOrigem, numeroId, sourceIdAnuncio, jaTentouNovamente: false);
 
         // "jaTentouNovamente" so existe pra esse metodo poder chamar a si mesmo uma unica vez
         // apos perder a corrida de criar a conversa (ver catch abaixo) -- nunca passar true de
         // fora, e o parametro fica de fora da assinatura publica de proposito.
         private async Task<FlowOrchestrationResult> ProcessarMensagem(
-            Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem, Guid? numeroId, bool jaTentouNovamente)
+            Guid empresaId, Guid contatoId, string celular, string mensagem, string? phoneNumberIdOrigem, Guid? numeroId, string? sourceIdAnuncio, bool jaTentouNovamente)
         {
             var resultado = new FlowOrchestrationResult();
 
@@ -103,7 +103,27 @@ namespace ProjetoMetaMensagem.Servico.Flow
                         (f.GatilhoInicial ?? string.Empty)
                             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-                    var flowAtivado = flows
+                    // Veio de anuncio e algum flow esta amarrado a ele: esse ganha de tudo.
+                    // E a unica selecao que nao depende do que a pessoa digitou -- o texto
+                    // sugerido pelo anuncio ela pode apagar, o id do anuncio nao.
+                    Dominio.Entidades.Flow? flowAtivado = null;
+
+                    if (!string.IsNullOrWhiteSpace(sourceIdAnuncio))
+                    {
+                        flowAtivado = flows.FirstOrDefault(f =>
+                            f.Ativo &&
+                            !string.IsNullOrWhiteSpace(f.SourceIdAnuncio) &&
+                            f.SourceIdAnuncio.Trim() == sourceIdAnuncio.Trim());
+
+                        if (flowAtivado != null)
+                        {
+                            _logger.LogInformation(
+                                "Flow {FlowId} escolhido pelo anuncio {SourceId}, independente do texto da mensagem",
+                                flowAtivado.Id, sourceIdAnuncio);
+                        }
+                    }
+
+                    flowAtivado ??= flows
                         .Where(f =>
                             f.Ativo &&
                             !string.IsNullOrEmpty(f.GatilhoInicial) &&
@@ -357,7 +377,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     _logger.LogInformation(
                         "Corrida ao criar EstadoConversa para o contato {ContatoId} -- reprocessando contra a conversa que venceu",
                         contatoId);
-                    return await ProcessarMensagem(empresaId, contatoId, celular, mensagem, phoneNumberIdOrigem, numeroId, jaTentouNovamente: true);
+                    return await ProcessarMensagem(empresaId, contatoId, celular, mensagem, phoneNumberIdOrigem, numeroId, sourceIdAnuncio, jaTentouNovamente: true);
                 }
 
                 throw;

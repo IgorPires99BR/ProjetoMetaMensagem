@@ -17,6 +17,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.CriaFlow
         // NULL = flow vale para todos os numeros da empresa (comportamento padrao/legado).
         public Guid? NumeroId { get; set; }
 
+        // Id do anuncio (source_id) que leva a este flow. Quem chegar por ele cai aqui direto,
+        // sem depender do texto digitado. Null = flow escolhido pelo gatilho de texto.
+        public string? SourceIdAnuncio { get; set; }
+
         // Lista com os steps que o usuário montou na tela
         public List<CriaFlowEtapaDto> Etapas { get; set; } = new List<CriaFlowEtapaDto>();
     }

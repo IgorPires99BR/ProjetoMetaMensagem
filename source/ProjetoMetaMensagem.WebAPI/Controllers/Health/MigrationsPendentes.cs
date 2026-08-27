@@ -41,6 +41,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/38", "EstadoConversa", "AguardandoAtendente",
                 "ALTER TABLE EstadoConversa ADD AguardandoAtendente BIT NOT NULL DEFAULT 0;"),
+
+            new("BD/39", "Fluxo", "SourceIdAnuncio",
+                "ALTER TABLE Fluxo ADD SourceIdAnuncio NVARCHAR(60) NULL;"),
         };
     }
 }
