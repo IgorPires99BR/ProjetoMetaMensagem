@@ -19,6 +19,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Flows.AlteraFlow
         // NULL = flow vale para todos os numeros da empresa (comportamento padrao/legado).
         public Guid? NumeroId { get; set; }
 
+        // Id do anuncio (source_id) que leva a este flow. Quem chegar por ele cai aqui direto,
+        // sem depender do texto digitado. Null = flow escolhido pelo gatilho de texto.
+        public string? SourceIdAnuncio { get; set; }
+
         // Nova estrutura de etapas vinda da edição na tela
         public List<AlteraFlowEtapaDto> Etapas { get; set; } = new List<AlteraFlowEtapaDto>();
 

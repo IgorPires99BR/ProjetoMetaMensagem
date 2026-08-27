@@ -300,7 +300,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             {
                                 try
                                 {
-                                    await _flowOrchestratorService.ProcessarMensagem(empresaId.Value, contato.Id, msgMeta.From, novaMensagem.Conteudo, metadata.PhoneNumberId, numeroOrigem?.Id);
+                                    // O referral (e com ele o id do anuncio) so vem na PRIMEIRA
+                                    // mensagem de quem chega por Click-to-WhatsApp -- que e
+                                    // exatamente quando o flow precisa dele pra escolher certo.
+                                    await _flowOrchestratorService.ProcessarMensagem(
+                                        empresaId.Value, contato.Id, msgMeta.From, novaMensagem.Conteudo,
+                                        metadata.PhoneNumberId, numeroOrigem?.Id, msgMeta.Referral?.SourceId);
                                 }
                                 catch (Exception exFlow)
                                 {
