@@ -6,6 +6,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioFinanceiro;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemRelatorioEngajamento;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemPrecoCategoria;
 using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.AtualizaPrecoCategoria;
+using ProjetoMetaMensagem.Dominio.UseCases.Relatorio.ObtemFunilFlow;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System;
 using System.Net;
@@ -102,6 +103,30 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Relatorio
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.Engajamento"), tipo = "Servico" });
+            }
+        }
+
+        // GET /api/relatorio/funil-flow/{flowId}
+        // Em qual etapa do flow as conversas param -- presas, entregues a atendente, ou
+        // concluidas. Escopo por empresa vem do token, igual Engajamento acima.
+        [HttpGet("api/relatorio/funil-flow/{flowId}")]
+        public async Task<IActionResult> FunilFlow(Guid flowId)
+        {
+            try
+            {
+                var command = new ObtemFunilFlowCommand
+                {
+                    FlowId = flowId,
+                    SolicitanteEhAdmin = this.EhAdminDaPlataforma(),
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                };
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "RelatorioController.FunilFlow"), tipo = "Servico" });
             }
         }
 
