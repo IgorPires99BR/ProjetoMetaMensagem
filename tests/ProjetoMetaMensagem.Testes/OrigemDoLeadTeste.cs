@@ -11,14 +11,19 @@ namespace ProjetoMetaMensagem.Testes;
 //
 // O que este teste protege: quando o mesmo telefone tem mais de um registro de origem (a
 // pessoa reapareceu por um segundo anuncio depois que a conversa reiniciou), a origem mostrada
-// tem que continuar sendo a PRIMEIRA -- foi ela que teve o merito de trazer o lead.
+// tem que continuar sendo a PRIMEIRA -- foi ela que teve o merito de trazer o lead. E, ja que a
+// chave e composta (EmpresaId + Telefone, nao so o telefone): duas empresas diferentes com
+// lead no mesmo numero nunca podem se misturar. Essa segunda regra existe porque os dois
+// unicos usuarios reais da empresa que roda a campanha (Contact Solution) sao contas de
+// plataforma, que veem contato de TODAS as empresas numa lista so -- sem a chave composta, o
+// telefone de um lead de uma empresa poderia casar com a origem de outra.
 public class OrigemDoLeadTeste
 {
-    private static OrigemLead Origem(string telefone, DateTime dataPrimeiroContato, string headline) =>
+    private static OrigemLead Origem(Guid empresaId, string telefone, DateTime dataPrimeiroContato, string headline) =>
         new()
         {
             Id = Guid.NewGuid(),
-            EmpresaId = Guid.NewGuid(),
+            EmpresaId = empresaId,
             Telefone = telefone,
             DataPrimeiroContato = dataPrimeiroContato,
             Headline = headline,
@@ -27,43 +32,65 @@ public class OrigemDoLeadTeste
     [Fact]
     public void Telefone_com_uma_origem_so_aparece_direto()
     {
-        var origem = Origem("5511900000000", DateTime.Now, "Cansado de perder cliente por demorar a responder?");
+        var empresaId = Guid.NewGuid();
+        var origem = Origem(empresaId, "5511900000000", DateTime.Now, "Cansado de perder cliente por demorar a responder?");
 
-        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorTelefone(new[] { origem });
+        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorEmpresaETelefone(new[] { origem });
 
-        Assert.Same(origem, mapa["5511900000000"]);
+        Assert.Same(origem, mapa[(empresaId, "5511900000000")]);
     }
 
     [Fact]
-    public void Telefone_com_duas_origens_fica_com_a_mais_antiga()
+    public void Telefone_com_duas_origens_na_mesma_empresa_fica_com_a_mais_antiga()
     {
-        var primeira = Origem("5511900000000", new DateTime(2026, 8, 1), "Anuncio A - primeiro contato");
-        var segunda = Origem("5511900000000", new DateTime(2026, 8, 20), "Anuncio B - reapareceu depois");
+        var empresaId = Guid.NewGuid();
+        var primeira = Origem(empresaId, "5511900000000", new DateTime(2026, 8, 1), "Anuncio A - primeiro contato");
+        var segunda = Origem(empresaId, "5511900000000", new DateTime(2026, 8, 20), "Anuncio B - reapareceu depois");
 
         // Passadas fora de ordem de proposito -- a lista do banco nao vem ordenada do jeito
         // que o teste precisa.
-        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorTelefone(new[] { segunda, primeira });
+        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorEmpresaETelefone(new[] { segunda, primeira });
 
-        Assert.Same(primeira, mapa["5511900000000"]);
+        Assert.Same(primeira, mapa[(empresaId, "5511900000000")]);
     }
 
     [Fact]
     public void Telefones_diferentes_nao_se_misturam()
     {
-        var deA = Origem("5511900000001", DateTime.Now, "Anuncio A");
-        var deB = Origem("5511900000002", DateTime.Now, "Anuncio B");
+        var empresaId = Guid.NewGuid();
+        var deA = Origem(empresaId, "5511900000001", DateTime.Now, "Anuncio A");
+        var deB = Origem(empresaId, "5511900000002", DateTime.Now, "Anuncio B");
 
-        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorTelefone(new[] { deA, deB });
+        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorEmpresaETelefone(new[] { deA, deB });
 
         Assert.Equal(2, mapa.Count);
-        Assert.Same(deA, mapa["5511900000001"]);
-        Assert.Same(deB, mapa["5511900000002"]);
+        Assert.Same(deA, mapa[(empresaId, "5511900000001")]);
+        Assert.Same(deB, mapa[(empresaId, "5511900000002")]);
+    }
+
+    [Fact]
+    public void Mesmo_telefone_em_empresas_diferentes_nao_se_mistura()
+    {
+        // Cenario real do caminho de plataforma: a lista junta origem de varias empresas de
+        // uma vez, e duas empresas distintas podem, por coincidencia, ter um lead com o mesmo
+        // numero de telefone.
+        var empresaA = Guid.NewGuid();
+        var empresaB = Guid.NewGuid();
+        var mesmoTelefone = "5511900000000";
+        var origemDaA = Origem(empresaA, mesmoTelefone, DateTime.Now, "Anuncio da Empresa A");
+        var origemDaB = Origem(empresaB, mesmoTelefone, DateTime.Now, "Anuncio da Empresa B");
+
+        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorEmpresaETelefone(new[] { origemDaA, origemDaB });
+
+        Assert.Equal(2, mapa.Count);
+        Assert.Same(origemDaA, mapa[(empresaA, mesmoTelefone)]);
+        Assert.Same(origemDaB, mapa[(empresaB, mesmoTelefone)]);
     }
 
     [Fact]
     public void Sem_origem_nenhuma_o_mapa_fica_vazio_e_o_contato_nao_quebra()
     {
-        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorTelefone(Array.Empty<OrigemLead>());
+        var mapa = ObtemContatoHandler.AgruparOrigemMaisAntigaPorEmpresaETelefone(Array.Empty<OrigemLead>());
 
         Assert.Empty(mapa);
 
@@ -84,7 +111,7 @@ public class OrigemDoLeadTeste
     [Fact]
     public void Sem_headline_cai_no_SourceId()
     {
-        var origem = Origem("5511900000000", DateTime.Now, headline: null!);
+        var origem = Origem(Guid.NewGuid(), "5511900000000", DateTime.Now, headline: null!);
         origem.SourceId = "120210000000000";
 
         var resultado = new ObtemContatoResult(new Contato

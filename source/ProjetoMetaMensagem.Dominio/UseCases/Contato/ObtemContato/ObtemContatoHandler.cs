@@ -40,21 +40,45 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
                     return response;
                 }
 
-                var contatos = await _unitOfWork.Contato.ObterPorEmpresa(command.EmpresaIdSolicitante);
+                var contatos = (await _unitOfWork.Contato.ObterPorEmpresa(command.EmpresaIdSolicitante)).ToList();
 
-                // So busca origem se a empresa e conhecida (ObterPorEmpresa aceita null pra
-                // "todas as empresas", caminho de admin de plataforma -- ali nao ha um unico
-                // EmpresaId pra filtrar OrigemLead, e cruzar por telefone sem esse recorte
-                // misturaria lead de uma empresa com contato de outra que usa o mesmo numero).
-                var origens = command.EmpresaIdSolicitante.HasValue
-                    ? await _unitOfWork.OrigemLead.ListarPorEmpresa(command.EmpresaIdSolicitante.Value)
-                    : Enumerable.Empty<Entidades.OrigemLead>();
+                // usuarioParaEmpresa resolve a empresa de cada contato pelo dono dele (Contato
+                // nao guarda EmpresaId direto -- mesmo padrao do resto do dominio). So precisa
+                // ser montado no caminho de plataforma (EmpresaIdSolicitante nulo): no caminho
+                // comum, todo contato retornado ja e da mesma empresa conhecida.
+                Dictionary<Guid, Guid> usuarioParaEmpresa = command.EmpresaIdSolicitante.HasValue
+                    ? new Dictionary<Guid, Guid>()
+                    : (await _unitOfWork.Usuario.Obter()).ToDictionary(u => u.Id, u => u.EmpresaId);
 
-                var origensPorTelefone = AgruparOrigemMaisAntigaPorTelefone(origens);
+                Guid? EmpresaDoContato(Entidades.Contato c) =>
+                    command.EmpresaIdSolicitante ?? (usuarioParaEmpresa.TryGetValue(c.UsuarioId, out var e) ? e : null);
+
+                // ObterPorEmpresa(null) e o caminho da conta de plataforma: devolve contato de
+                // TODAS as empresas de uma vez -- e o unico jeito de mostrar origem pra quem
+                // realmente usa a tela de Contatos no dia a dia aqui, ja que os dois usuarios
+                // reais da empresa que roda a campanha (Contact Solution) sao contas de
+                // plataforma. Busca a origem empresa por empresa (nunca o conjunto inteiro sem
+                // filtro), pra um telefone de uma empresa nunca casar com o de outra que usa o
+                // mesmo numero.
+                var empresasAlvo = contatos.Select(EmpresaDoContato).Where(e => e.HasValue).Select(e => e!.Value).Distinct();
+
+                var origens = new List<Entidades.OrigemLead>();
+                foreach (var empresaId in empresasAlvo)
+                {
+                    origens.AddRange(await _unitOfWork.OrigemLead.ListarPorEmpresa(empresaId));
+                }
+
+                var origensPorEmpresaETelefone = AgruparOrigemMaisAntigaPorEmpresaETelefone(origens);
 
                 foreach (var contato in contatos)
                 {
-                    origensPorTelefone.TryGetValue(contato.Telefone, out var origem);
+                    var empresaId = EmpresaDoContato(contato);
+                    Entidades.OrigemLead? origem = null;
+                    if (empresaId.HasValue)
+                    {
+                        origensPorEmpresaETelefone.TryGetValue((empresaId.Value, contato.Telefone), out origem);
+                    }
+
                     listaContato.Add(new ObtemContatoResult(contato, origem));
                 }
 
@@ -68,14 +92,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             return response;
         }
 
-        // Separado do Handle pra poder ser testado sem banco. Um telefone pode ter mais de um
-        // registro de origem (reapareceu por um segundo anuncio depois de a conversa reiniciar)
-        // -- a primeira mensagem com anuncio e a que teve o merito de trazer o lead, entao ela
-        // e a que fica mostrada.
-        public static Dictionary<string, Entidades.OrigemLead> AgruparOrigemMaisAntigaPorTelefone(IEnumerable<Entidades.OrigemLead> origens)
+        // Separado do Handle pra poder ser testado sem banco. Chave composta (EmpresaId +
+        // Telefone), nunca so o telefone -- o caminho de plataforma junta origem de varias
+        // empresas na mesma lista, e so o telefone colidiria se duas empresas diferentes
+        // tivessem, por coincidencia, um lead com o mesmo numero.
+        //
+        // Um telefone pode ter mais de um registro de origem na mesma empresa (reapareceu por
+        // um segundo anuncio depois que a conversa reiniciou) -- a primeira mensagem com
+        // anuncio e a que teve o merito de trazer o lead, entao ela e a que fica mostrada.
+        public static Dictionary<(Guid EmpresaId, string Telefone), Entidades.OrigemLead> AgruparOrigemMaisAntigaPorEmpresaETelefone(IEnumerable<Entidades.OrigemLead> origens)
         {
             return origens
-                .GroupBy(o => o.Telefone)
+                .GroupBy(o => (o.EmpresaId, o.Telefone))
                 .ToDictionary(g => g.Key, g => g.OrderBy(o => o.DataPrimeiroContato).First());
         }
     }
