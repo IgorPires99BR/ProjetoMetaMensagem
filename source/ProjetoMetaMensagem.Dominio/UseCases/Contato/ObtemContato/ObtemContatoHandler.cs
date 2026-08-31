@@ -42,9 +42,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 
                 var contatos = await _unitOfWork.Contato.ObterPorEmpresa(command.EmpresaIdSolicitante);
 
+                // So busca origem se a empresa e conhecida (ObterPorEmpresa aceita null pra
+                // "todas as empresas", caminho de admin de plataforma -- ali nao ha um unico
+                // EmpresaId pra filtrar OrigemLead, e cruzar por telefone sem esse recorte
+                // misturaria lead de uma empresa com contato de outra que usa o mesmo numero).
+                var origens = command.EmpresaIdSolicitante.HasValue
+                    ? await _unitOfWork.OrigemLead.ListarPorEmpresa(command.EmpresaIdSolicitante.Value)
+                    : Enumerable.Empty<Entidades.OrigemLead>();
+
+                var origensPorTelefone = AgruparOrigemMaisAntigaPorTelefone(origens);
+
                 foreach (var contato in contatos)
                 {
-                    listaContato.Add(new ObtemContatoResult(contato));
+                    origensPorTelefone.TryGetValue(contato.Telefone, out var origem);
+                    listaContato.Add(new ObtemContatoResult(contato, origem));
                 }
 
                 response.AddValue(listaContato);
@@ -55,6 +66,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             }
 
             return response;
+        }
+
+        // Separado do Handle pra poder ser testado sem banco. Um telefone pode ter mais de um
+        // registro de origem (reapareceu por um segundo anuncio depois de a conversa reiniciar)
+        // -- a primeira mensagem com anuncio e a que teve o merito de trazer o lead, entao ela
+        // e a que fica mostrada.
+        public static Dictionary<string, Entidades.OrigemLead> AgruparOrigemMaisAntigaPorTelefone(IEnumerable<Entidades.OrigemLead> origens)
+        {
+            return origens
+                .GroupBy(o => o.Telefone)
+                .ToDictionary(g => g.Key, g => g.OrderBy(o => o.DataPrimeiroContato).First());
         }
     }
 }

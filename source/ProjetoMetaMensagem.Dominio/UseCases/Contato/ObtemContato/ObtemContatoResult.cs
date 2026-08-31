@@ -10,7 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 {
     public class ObtemContatoResult
     {
-        public ObtemContatoResult(Entidades.Contato contato)
+        public ObtemContatoResult(Entidades.Contato contato, Entidades.OrigemLead? origem = null)
         {
             Id = contato.Id;
             UsuarioId = contato.UsuarioId;
@@ -18,6 +18,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             Nome = contato.Nome;
             Email = contato.Email;
             DataCriacao = contato.DataCriacao;
+
+            // Origem gravada na primeira mensagem de quem chegou por um anuncio Click-to-
+            // WhatsApp (OrigemLead), mas nunca lida fora do momento da compra -- ate agora
+            // ninguem via de qual anuncio um lead vinha. Null pra quem foi cadastrado
+            // manualmente ou escreveu organicamente, sem passar por anuncio nenhum.
+            OrigemAnuncio = origem?.Headline ?? origem?.SourceId;
+            OrigemData = origem?.DataPrimeiroContato;
         }
         public Guid Id { get; set; }
         public Guid UsuarioId { get; set; }
@@ -25,5 +32,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
         public string? Nome { get; set; }
         public string? Email { get; set; }
         public DateTime DataCriacao { get; set; }
+        public string? OrigemAnuncio { get; set; }
+        public DateTime? OrigemData { get; set; }
     }
 }
