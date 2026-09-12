@@ -27,8 +27,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
             // Os parametros do corpo sao enviados a Meta sem nenhum filtro (diferente dos de botao,
             // que descartam os vazios), entao uma variavel em branco vira erro cru da Meta no disparo.
+            // So se aplica quando NAO ha personalizacao por telefone: com "Nome do contato"/"Telefone
+            // do contato" numa variavel, o front deixa esse slot vazio de proposito no ParametrosBody
+            // "global" (o valor real vai em ParametrosBodyPorTelefone) -- sem o When() essa regra
+            // barrava todo disparo personalizado mesmo com os valores efetivos completos.
             RuleForEach(x => x.ParametrosBody)
-                .NotEmpty().WithMessage("Preencha todas as variáveis do template antes de disparar.");
+                .NotEmpty().WithMessage("Preencha todas as variáveis do template antes de disparar.")
+                .When(x => x.ParametrosBodyPorTelefone == null || !x.ParametrosBodyPorTelefone.Any());
 
             // Com personalizacao por destinatario, os valores que valem sao os de cada telefone --
             // um contato sem nome cadastrado deixaria a variavel vazia e a Meta recusaria so aquele

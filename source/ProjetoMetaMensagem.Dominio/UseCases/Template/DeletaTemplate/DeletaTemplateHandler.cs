@@ -47,12 +47,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate
                     return response;
                 }
 
+                // Local primeiro, Meta depois: exclusao na Meta e irreversivel, e um template com
+                // HistoricoDisparo/FlowEtapa/Campanha vinculados barra no FK do DELETE local. Se a
+                // Meta fosse chamada antes, o template saia de la mas o DELETE local falhava e o
+                // rollback nao desfaz o lado da Meta -- o template ficava orfao (some da Meta mas
+                // continua no banco), quebrando a proxima sincronizacao. Delete local acontece dentro
+                // da transacao (nao commitado ainda), entao um erro aqui nunca chega a chamar a Meta.
+                await _unitOfWork.Template.Excluir(template.Id, request.EmpresaIdSolicitante);
+
                 var wabaId = await _unitOfWork.Empresa.ObterWabaId(template.EmpresaId);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(template.EmpresaId);
 
                 await _metaService.ExcluirTemplateMetaAsync(template.NomeTemplate, template.MetaTemplateId, wabaId, token);
-
-                await _unitOfWork.Template.Excluir(template.Id, request.EmpresaIdSolicitante);
 
                 response.AddValue(new DeletaTemplateResult(template));
                 _unitOfWork.Commit();

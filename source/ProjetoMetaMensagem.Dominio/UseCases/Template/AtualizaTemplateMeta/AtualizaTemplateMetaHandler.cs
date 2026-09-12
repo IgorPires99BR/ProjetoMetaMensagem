@@ -70,10 +70,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
 
                 foreach (var templateExcluir in templatesParaRemover)
                 {
-                    // Sincronizacao sempre restrita a empresa do comando, mesmo que a lista
-                    // de templates ja tenha vindo dela: assim um id de outra empresa que
-                    // escape pra ca nao chega a ser apagado.
-                    await _unitOfWork.Template.Excluir(templateExcluir.Id, command.IdEmpresa);
+                    try
+                    {
+                        // Sincronizacao sempre restrita a empresa do comando, mesmo que a lista
+                        // de templates ja tenha vindo dela: assim um id de outra empresa que
+                        // escape pra ca nao chega a ser apagado.
+                        await _unitOfWork.Template.Excluir(templateExcluir.Id, command.IdEmpresa);
+                    }
+                    catch (Exception exExclusao)
+                    {
+                        // Template com HistoricoDisparo/FlowEtapa/Campanha vinculados nao pode ser
+                        // apagado localmente (FK) mesmo tendo sumido da Meta. Sem esse try/catch a
+                        // excecao subia e abortava a sincronizacao inteira -- inclusive o upsert dos
+                        // templates que estao OK -- por causa de um unico orfao com vinculo. Continua
+                        // como esta no banco (fica com o status antigo) e segue sincronizando o resto.
+                        _logger.LogWarning(exExclusao, "Nao foi possivel remover o template orfao {TemplateId} ({NomeTemplate}) da empresa {IdEmpresa} durante a sincronizacao com a Meta -- provavelmente ha registros vinculados.", templateExcluir.Id, templateExcluir.NomeTemplate, command.IdEmpresa);
+                    }
                 }
 
                 var listaResultados = new List<AtualizaTemplateMetaResult>();

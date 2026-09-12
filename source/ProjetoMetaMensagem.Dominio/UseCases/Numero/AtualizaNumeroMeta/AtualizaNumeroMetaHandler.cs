@@ -73,10 +73,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Numero.AtualizaNumeroMeta
 
                 foreach (var numeroExcluir in numerosParaRemover)
                 {
-                    // Sincronizacao sempre restrita a empresa do comando, mesmo que a lista de
-                    // numeros ja tenha vindo do usuario dela: assim um id de outra empresa que
-                    // escape pra ca nao chega a ser apagado.
-                    await _unitOfWork.Numero.Excluir(numeroExcluir.Id, command.IdEmpresa);
+                    try
+                    {
+                        // Sincronizacao sempre restrita a empresa do comando, mesmo que a lista de
+                        // numeros ja tenha vindo do usuario dela: assim um id de outra empresa que
+                        // escape pra ca nao chega a ser apagado.
+                        await _unitOfWork.Numero.Excluir(numeroExcluir.Id, command.IdEmpresa);
+                    }
+                    catch (Exception exExclusao)
+                    {
+                        // Numero com Fluxo vinculado nao pode ser apagado localmente (FK) mesmo tendo
+                        // sumido da Meta. Sem esse try/catch a excecao subia e abortava a sincronizacao
+                        // inteira -- inclusive o upsert dos numeros que estao OK -- por causa de um
+                        // unico orfao com vinculo. Continua como esta no banco e segue sincronizando o
+                        // resto.
+                        _logger.LogWarning(exExclusao, "Nao foi possivel remover o numero orfao {NumeroId} ({InstanciaId}) da empresa {IdEmpresa} durante a sincronizacao com a Meta -- provavelmente ha um Fluxo vinculado.", numeroExcluir.Id, numeroExcluir.InstanciaId, command.IdEmpresa);
+                    }
                 }
                 foreach (var numeroApi in numerosMeta)
                 {

@@ -152,7 +152,9 @@ builder.Services.AddCors(options =>
             // AllowAnyOrigin() nao pode ser combinado com AllowCredentials() (a negociacao do
             // SignalR manda credenciais) — o navegador rejeita Access-Control-Allow-Origin: '*'
             // quando credentials mode e 'include'. Por isso a lista explicita + AllowCredentials.
-            policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "https://angularcontact.vercel.app", "https://contactsolution.com.br", "https://www.contactsolution.com.br")
+            // "127.0.0.1:4200" e distinto de "localhost:4200" pro navegador — o script
+            // "start" do AngularContact sobe com --host=127.0.0.1, entao precisa dos dois.
+            policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "http://127.0.0.1:4200", "https://angularcontact.vercel.app", "https://contactsolution.com.br", "https://www.contactsolution.com.br")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
