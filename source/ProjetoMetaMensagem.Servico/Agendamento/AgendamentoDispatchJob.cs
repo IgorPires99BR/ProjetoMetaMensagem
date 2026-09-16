@@ -37,8 +37,22 @@ namespace ProjetoMetaMensagem.Servico.Agendamento
             var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var agora = DateTime.Now;
-            var pendentes = await unitOfWork.Agendamento.ObterPendentes(agora);
+            // ObterPendentes ficava fora de qualquer try/catch: um erro ali (ex: schema de
+            // producao desatualizado) so aparecia como "Failed" no dashboard do HangFire, sem
+            // nenhum rastro no arquivo de log -- exatamente o que aconteceu quando a migration
+            // da tabela Agendamento nao tinha sido rodada em producao ainda.
+            IEnumerable<Dominio.Entidades.Agendamento> pendentes;
+            try
+            {
+                var agora = DateTime.Now;
+                pendentes = await unitOfWork.Agendamento.ObterPendentes(agora);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar agendamentos pendentes");
+                _fileLogger.ErroInesperado(Guid.Empty, ex);
+                throw; // Mantem o job visivel como "Failed" no dashboard do HangFire.
+            }
 
             foreach (var agendamento in pendentes)
             {

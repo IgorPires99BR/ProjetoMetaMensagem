@@ -80,6 +80,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Hangfire;
+using Hangfire.Dashboard;
 using ProjetoMetaMensagem.Servico.Agendamento;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -392,11 +393,13 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 // Fora do pipeline JWT/EmpresaAccessFilter de proposito: e uma pagina HTML acessada direto
-// no navegador (nao um endpoint MVC da SPA), protegida por Basic Auth propria -- ver
-// HangfireBasicAuthFilter.
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
+// no navegador (nao um endpoint MVC da SPA). Sem Basic Auth propria: a API ja fica atras da
+// protecao de rede da nuvem (decisao do Igor), e o filtro padrao do HangFire
+// (LocalRequestsOnlyAuthorizationFilter) bloquearia o acesso de fora -- por isso o array vazio,
+// que libera geral em vez de barrar tudo que nao for localhost.
+app.UseHangfireDashboard("/jobs", new DashboardOptions
 {
-    Authorization = new[] { new ProjetoMetaMensagem.WebAPI.Common.HangfireBasicAuthFilter(app.Configuration) }
+    Authorization = Array.Empty<IDashboardAuthorizationFilter>()
 });
 
 // Varre a tabela Agendamento a cada 5 minutos em busca de recorrencias devidas (ProximaExecucao
