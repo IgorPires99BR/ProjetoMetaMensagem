@@ -54,7 +54,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ObtemAgendamento
                     ProximaExecucao = agendamento.ProximaExecucao,
                     Ativo = agendamento.Ativo,
                     ContatoIds = contatoIds,
-                    Variaveis = agendamento.Variaveis
+                    Variaveis = agendamento.Variaveis,
+                    DiasSemana = agendamento.DiasSemanaLista,
+                    DiaDoMes = agendamento.DiaDoMes
                 });
             }
             catch (Exception ex)

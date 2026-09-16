@@ -89,6 +89,16 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/38", "EstadoConversa", "AguardandoAtendente"),
 
             new("BD/39", "Fluxo", "SourceIdAnuncio"),
+
+            // DataReferencia e VariaveisJson entraram direto no CREATE TABLE da migration 40
+            // numa revisao posterior (commit "Ajustada a tela e estrutura do Agendador"), sem
+            // ALTER incremental -- quem ja tinha rodado a 40 antes disso ficou pra tras, e o
+            // IF NOT EXISTS da CREATE TABLE nunca mais reaplicaria as colunas.
+            new("BD/40", "Agendamento", "DataReferencia"),
+            new("BD/40", "Agendamento", "VariaveisJson"),
+
+            new("BD/41", "Agendamento", "DiasSemana"),
+            new("BD/41", "Agendamento", "DiaDoMes"),
         };
     }
 }

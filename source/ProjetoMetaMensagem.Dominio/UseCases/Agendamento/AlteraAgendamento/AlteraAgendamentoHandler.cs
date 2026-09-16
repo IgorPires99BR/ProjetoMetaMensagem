@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Servicos;
 using System;
 using System.Linq;
 
@@ -49,12 +50,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
                     return response;
                 }
 
-                // So reinicia o ciclo de recorrencia se a data/hora de referencia ou o tipo
-                // mudaram -- editar so o nome/contatos nao deve adiantar nem atrasar o proximo disparo.
+                var novosDiasSemana = command.DiasSemana ?? new System.Collections.Generic.List<int>();
+
+                // So reinicia o ciclo de recorrencia se data/hora de referencia, tipo, dias da
+                // semana ou dia do mes mudaram -- editar so o nome/contatos nao deve adiantar
+                // nem atrasar o proximo disparo.
                 var proximaExecucao = existente.ProximaExecucao;
-                if (existente.DataReferencia != command.DataReferencia || existente.TipoRecorrencia != command.TipoRecorrencia)
+                var recorrenciaMudou = existente.DataReferencia != command.DataReferencia
+                    || existente.TipoRecorrencia != command.TipoRecorrencia
+                    || existente.DiaDoMes != command.DiaDoMes
+                    || !existente.DiasSemanaLista.OrderBy(d => d).SequenceEqual(novosDiasSemana.OrderBy(d => d));
+                if (recorrenciaMudou)
                 {
-                    proximaExecucao = command.DataReferencia;
+                    proximaExecucao = AgendamentoRecorrencia.CalcularPrimeiraExecucao(
+                        command.DataReferencia, command.TipoRecorrencia, novosDiasSemana);
                 }
 
                 _unitOfWork.BeginTransaction();
@@ -68,6 +77,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
                 existente.ProximaExecucao = proximaExecucao;
                 existente.DataAtualizacao = DateTime.Now;
                 existente.Variaveis = command.Variaveis ?? new System.Collections.Generic.List<Entidades.AgendamentoVariavelDto>();
+                existente.DiasSemanaLista = novosDiasSemana;
+                existente.DiaDoMes = command.DiaDoMes;
 
                 var linhasAfetadas = await _unitOfWork.Agendamento.Atualizar(existente, command.EmpresaIdSolicitante);
                 if (linhasAfetadas == 0)

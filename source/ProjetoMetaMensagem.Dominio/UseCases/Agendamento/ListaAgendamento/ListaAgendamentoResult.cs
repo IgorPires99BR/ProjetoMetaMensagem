@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ListaAgendamento
 {
@@ -14,5 +15,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ListaAgendamento
         public DateTime ProximaExecucao { get; set; }
         public bool Ativo { get; set; }
         public int TotalContatos { get; set; }
+        public List<int> DiasSemana { get; set; }
+        public int? DiaDoMes { get; set; }
     }
 }

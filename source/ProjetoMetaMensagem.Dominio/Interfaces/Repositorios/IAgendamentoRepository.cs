@@ -17,6 +17,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         public DateTime ProximaExecucao { get; set; }
         public bool Ativo { get; set; }
         public int TotalContatos { get; set; }
+        public string DiasSemana { get; set; }
+        public int? DiaDoMes { get; set; }
     }
 
     public interface IAgendamentoRepository

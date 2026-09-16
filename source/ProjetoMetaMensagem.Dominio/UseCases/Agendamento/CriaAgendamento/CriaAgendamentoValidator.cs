@@ -1,5 +1,6 @@
 using FluentValidation;
 using ProjetoMetaMensagem.Dominio.Entidades;
+using System.Linq;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.CriaAgendamento
 {
@@ -25,6 +26,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.CriaAgendamento
                 .LessThanOrEqualTo(x => x.DataFim!.Value).WithMessage("A data e hora de referência não pode ser posterior à data de término.")
                 .When(x => x.DataFim.HasValue);
             RuleFor(x => x.ContatoIds).NotEmpty().WithMessage("Selecione ao menos um contato para o agendamento.");
+            RuleFor(x => x.DiasSemana)
+                .Must(dias => dias.All(d => d >= 0 && d <= 6))
+                .WithMessage("Dia da semana inválido.")
+                .When(x => x.DiasSemana != null);
+            RuleFor(x => x.DiaDoMes)
+                .InclusiveBetween(1, 31).WithMessage("O dia do mês deve estar entre 1 e 31.")
+                .When(x => x.DiaDoMes.HasValue);
         }
     }
 }

@@ -47,7 +47,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ListaAgendamento
                     DataFim = a.DataFim,
                     ProximaExecucao = a.ProximaExecucao,
                     Ativo = a.Ativo,
-                    TotalContatos = a.TotalContatos
+                    TotalContatos = a.TotalContatos,
+                    DiasSemana = string.IsNullOrWhiteSpace(a.DiasSemana)
+                        ? new List<int>()
+                        : a.DiasSemana.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList(),
+                    DiaDoMes = a.DiaDoMes
                 }).ToList();
 
                 response.AddValue(listaResult);

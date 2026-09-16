@@ -21,5 +21,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.CriaAgendamento
         public List<Guid> ContatoIds { get; set; }
         public Guid? UsuarioCriacaoId { get; set; }
         public List<AgendamentoVariavelDto> Variaveis { get; set; }
+
+        // Dias da semana (0=Domingo...6=Sabado) em que o agendamento SEMANAL dispara -- ex:
+        // segunda/quarta/sexta. Vazio/null = repete a cada 7 dias no dia da DataReferencia.
+        public List<int> DiasSemana { get; set; }
+
+        // Dia do mes (1-31) em que o agendamento MENSAL dispara. Null = usa o dia da DataReferencia.
+        public int? DiaDoMes { get; set; }
     }
 }

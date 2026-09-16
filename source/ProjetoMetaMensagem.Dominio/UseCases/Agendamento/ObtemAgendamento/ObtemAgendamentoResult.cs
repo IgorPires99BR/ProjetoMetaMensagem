@@ -17,5 +17,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ObtemAgendamento
         public bool Ativo { get; set; }
         public List<Guid> ContatoIds { get; set; }
         public List<AgendamentoVariavelDto> Variaveis { get; set; }
+        public List<int> DiasSemana { get; set; }
+        public int? DiaDoMes { get; set; }
     }
 }

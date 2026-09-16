@@ -33,7 +33,9 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Agendamento.Ativo)},
                     {nameof(Agendamento.UsuarioCriacaoId)},
                     {nameof(Agendamento.DataCriacao)},
-                    {nameof(Agendamento.VariaveisJson)}
+                    {nameof(Agendamento.VariaveisJson)},
+                    {nameof(Agendamento.DiasSemana)},
+                    {nameof(Agendamento.DiaDoMes)}
                 ) VALUES (
                     @{nameof(Agendamento.Id)},
                     @{nameof(Agendamento.EmpresaId)},
@@ -47,7 +49,9 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(Agendamento.Ativo)},
                     @{nameof(Agendamento.UsuarioCriacaoId)},
                     @{nameof(Agendamento.DataCriacao)},
-                    @{nameof(Agendamento.VariaveisJson)}
+                    @{nameof(Agendamento.VariaveisJson)},
+                    @{nameof(Agendamento.DiasSemana)},
+                    @{nameof(Agendamento.DiaDoMes)}
                 );";
 
             await _session.Connection.ExecuteAsync(sql, agendamento, transaction: _session.Transaction);
@@ -106,6 +110,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     a.{nameof(Agendamento.DataFim)} AS {nameof(AgendamentoListItem.DataFim)},
                     a.{nameof(Agendamento.ProximaExecucao)} AS {nameof(AgendamentoListItem.ProximaExecucao)},
                     a.{nameof(Agendamento.Ativo)} AS {nameof(AgendamentoListItem.Ativo)},
+                    a.{nameof(Agendamento.DiasSemana)} AS {nameof(AgendamentoListItem.DiasSemana)},
+                    a.{nameof(Agendamento.DiaDoMes)} AS {nameof(AgendamentoListItem.DiaDoMes)},
                     (SELECT COUNT(*) FROM {nameof(AgendamentoContato)} ac
                         WHERE ac.{nameof(AgendamentoContato.AgendamentoId)} = a.{nameof(Agendamento.Id)})
                         AS {nameof(AgendamentoListItem.TotalContatos)}
@@ -152,7 +158,9 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Agendamento.DataReferencia)} = @{nameof(Agendamento.DataReferencia)},
                     {nameof(Agendamento.ProximaExecucao)} = @{nameof(Agendamento.ProximaExecucao)},
                     {nameof(Agendamento.DataAtualizacao)} = @{nameof(Agendamento.DataAtualizacao)},
-                    {nameof(Agendamento.VariaveisJson)} = @{nameof(Agendamento.VariaveisJson)}
+                    {nameof(Agendamento.VariaveisJson)} = @{nameof(Agendamento.VariaveisJson)},
+                    {nameof(Agendamento.DiasSemana)} = @{nameof(Agendamento.DiasSemana)},
+                    {nameof(Agendamento.DiaDoMes)} = @{nameof(Agendamento.DiaDoMes)}
                 WHERE {nameof(Agendamento.Id)} = @{nameof(Agendamento.Id)}
                   AND (@EmpresaIdSolicitante IS NULL
                        OR {nameof(Agendamento.EmpresaId)} = @EmpresaIdSolicitante);";

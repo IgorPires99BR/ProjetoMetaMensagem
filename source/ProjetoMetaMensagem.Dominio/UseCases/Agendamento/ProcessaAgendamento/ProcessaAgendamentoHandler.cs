@@ -1,4 +1,5 @@
 using ProjetoMetaMensagem.Dominio.Help.Error;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
@@ -8,6 +9,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLo
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
 {
@@ -17,13 +19,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
     public class ProcessaAgendamentoHandler : IRequestHandler<ProcessaAgendamentoCommand, Response<ProcessaAgendamentoResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMediator _mediator;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<ProcessaAgendamentoHandler> _logger;
 
-        public ProcessaAgendamentoHandler(IUnitOfWork unitOfWork, IMediator mediator, ILogger<ProcessaAgendamentoHandler> logger)
+        // Teto de agendamentos processados ao mesmo tempo numa mesma passada do job. Cada um
+        // roda em seu proprio escopo de DI (conexao de banco propria -- IUnitOfWork nao e
+        // thread-safe, ver ProcessarComEscopoProprio); o limite evita estourar o pool de
+        // conexoes quando o numero de agendamentos devidos crescer.
+        private const int GrauDeParalelismo = 4;
+
+        private readonly object _travaResultado = new();
+
+        public ProcessaAgendamentoHandler(
+            IUnitOfWork unitOfWork, IServiceScopeFactory serviceScopeFactory, ILogger<ProcessaAgendamentoHandler> logger)
         {
             _unitOfWork = unitOfWork;
-            _mediator = mediator;
+            _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
         }
 
@@ -52,40 +63,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
                     return response;
                 }
 
-                // Agrupado por empresa: uma unica tarefa cuida de todos os clientes, um de
-                // cada vez, em vez de precisar de uma chamada por agendamento.
-                var porEmpresa = pendentes.GroupBy(a => a.EmpresaId);
+                _logger.LogInformation("Varredura de agendamentos: {Total} pendente(s) de {Empresas} empresa(s).",
+                    pendentes.Count, pendentes.Select(a => a.EmpresaId).Distinct().Count());
 
-                foreach (var grupoEmpresa in porEmpresa)
-                {
-                    _logger.LogInformation("Empresa {EmpresaId}: {Total} agendamento(s) pendente(s).",
-                        grupoEmpresa.Key, grupoEmpresa.Count());
-
-                    foreach (var agendamento in grupoEmpresa)
-                    {
-                        resultado.TotalAgendamentos++;
-
-                        try
-                        {
-                            // Reserva por prazo: se outra passada ja pegou este agendamento
-                            // (deploy sobreposto, execucao atrasada), pula sem reenviar.
-                            var prazoProcessamento = DateTime.Now.AddMinutes(10);
-                            if (!await _unitOfWork.Agendamento.ReivindicarAgendamento(agendamento.Id, prazoProcessamento))
-                            {
-                                _logger.LogInformation("Agendamento {AgendamentoId} ja estava sendo processado por outra execucao; pulando.",
-                                    agendamento.Id);
-                                continue;
-                            }
-
-                            await ProcessarUmAgendamento(agendamento, resultado);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Erro ao processar agendamento {AgendamentoId} da empresa {EmpresaId}",
-                                agendamento.Id, agendamento.EmpresaId);
-                        }
-                    }
-                }
+                // Paralelo (com teto) em vez de um foreach sequencial: cada agendamento e
+                // independente (template e lista de contatos proprios), entao um disparo lento
+                // pra Meta nao precisa segurar os outros agendamentos devidos na mesma passada.
+                // A reserva via ReivindicarAgendamento continua sendo o que garante exclusividade
+                // entre execucoes concorrentes (paralelismo aqui dentro, outra instancia da API,
+                // ou uma passada atrasada) -- o grau de paralelismo so limita quanto rodamos ao
+                // mesmo tempo dentro desta mesma passada.
+                using var semaforo = new SemaphoreSlim(GrauDeParalelismo);
+                var tarefas = pendentes.Select(agendamento => ProcessarComLimite(agendamento.Id, semaforo, resultado));
+                await Task.WhenAll(tarefas);
 
                 response.AddValue(resultado);
             }
@@ -97,22 +87,75 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
             return response;
         }
 
-        private async Task ProcessarUmAgendamento(Entidades.Agendamento agendamento, ProcessaAgendamentoResult resultado)
+        private async Task ProcessarComLimite(Guid agendamentoId, SemaphoreSlim semaforo, ProcessaAgendamentoResult resultado)
         {
-            var contatoIds = (await _unitOfWork.Agendamento.ObterContatoIds(agendamento.Id)).Distinct().ToList();
+            await semaforo.WaitAsync();
+            try
+            {
+                await ProcessarComEscopoProprio(agendamentoId, resultado);
+            }
+            finally
+            {
+                semaforo.Release();
+            }
+        }
+
+        // Escopo de DI proprio por agendamento: IUnitOfWork encapsula uma unica SqlConnection
+        // (ver DbSession), entao rodar comandos concorrentes sobre a mesma instancia corromperia
+        // os resultados -- cada tarefa paralela precisa da sua propria conexao/transacao, mesmo
+        // padrao ja usado pelo CampanhaWorker (IServiceScopeFactory.CreateScope() por item).
+        private async Task ProcessarComEscopoProprio(Guid agendamentoId, ProcessaAgendamentoResult resultadoAgregado)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
+            lock (_travaResultado) { resultadoAgregado.TotalAgendamentos++; }
+
+            try
+            {
+                var agendamento = await unitOfWork.Agendamento.ObterPorId(agendamentoId, null);
+                if (agendamento == null)
+                {
+                    // Excluido entre a varredura (escopo externo) e este processamento.
+                    return;
+                }
+
+                // Reserva por prazo: se outra passada ja pegou este agendamento (deploy
+                // sobreposto, execucao atrasada), pula sem reenviar.
+                var prazoProcessamento = DateTime.Now.AddMinutes(10);
+                if (!await unitOfWork.Agendamento.ReivindicarAgendamento(agendamento.Id, prazoProcessamento))
+                {
+                    _logger.LogInformation("Agendamento {AgendamentoId} ja estava sendo processado por outra execucao; pulando.",
+                        agendamento.Id);
+                    return;
+                }
+
+                await ProcessarUmAgendamento(unitOfWork, mediator, agendamento, resultadoAgregado);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao processar agendamento {AgendamentoId}", agendamentoId);
+            }
+        }
+
+        private async Task ProcessarUmAgendamento(
+            IUnitOfWork unitOfWork, IMediator mediator, Entidades.Agendamento agendamento, ProcessaAgendamentoResult resultado)
+        {
+            var contatoIds = (await unitOfWork.Agendamento.ObterContatoIds(agendamento.Id)).Distinct().ToList();
 
             // Busca em lotes: o IN (@Ids) do ObterPorIds vira um parametro por id, e o SQL
             // Server corta em 2100 -- mesmo cuidado do CampanhaWorker.
             var contatos = new List<Entidades.Contato>();
             foreach (var lote in contatoIds.Chunk(1000))
             {
-                contatos.AddRange(await _unitOfWork.Contato.ObterPorIds(agendamento.EmpresaId, lote));
+                contatos.AddRange(await unitOfWork.Contato.ObterPorIds(agendamento.EmpresaId, lote));
             }
 
             _logger.LogInformation("Agendamento {AgendamentoId} ({Nome}): {Total} contato(s) para disparo.",
                 agendamento.Id, agendamento.Nome, contatos.Count);
 
-            var template = await _unitOfWork.Template.ObterPorIdEEmpresa(agendamento.TemplateId, agendamento.EmpresaId);
+            var template = await unitOfWork.Template.ObterPorIdEEmpresa(agendamento.TemplateId, agendamento.EmpresaId);
 
             var sucessos = 0;
             var falhas = 0;
@@ -142,7 +185,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
 
                 PreencherParametrosVariaveis(comandoLote, agendamento.Variaveis, contatos);
 
-                var resultadoEnvio = await _mediator.Send(comandoLote);
+                var resultadoEnvio = await mediator.Send(comandoLote);
 
                 if (resultadoEnvio is not null && !resultadoEnvio.HasValidations)
                 {
@@ -168,11 +211,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
                 }
             }
 
-            resultado.TotalContatos += contatos.Count;
-            resultado.Sucessos += sucessos;
-            resultado.Falhas += falhas;
+            lock (_travaResultado)
+            {
+                resultado.TotalContatos += contatos.Count;
+                resultado.Sucessos += sucessos;
+                resultado.Falhas += falhas;
+            }
 
-            await _unitOfWork.Agendamento.IncluirExecucao(new Entidades.AgendamentoExecucao
+            await unitOfWork.Agendamento.IncluirExecucao(new Entidades.AgendamentoExecucao
             {
                 AgendamentoId = agendamento.Id,
                 TotalContatos = contatos.Count,
@@ -182,13 +228,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
             });
 
             var proximaExecucao = AgendamentoRecorrencia.CalcularProximaExecucao(
-                agendamento.DataReferencia, agendamento.ProximaExecucao, agendamento.TipoRecorrencia);
+                agendamento.DataReferencia, agendamento.ProximaExecucao, agendamento.TipoRecorrencia,
+                agendamento.DiasSemanaLista, agendamento.DiaDoMes);
 
             // Passou da data de termino: desativa em vez de continuar agendando alem do que
             // o cliente pediu.
             var aindaAtivo = !agendamento.DataFim.HasValue || proximaExecucao <= agendamento.DataFim.Value;
 
-            await _unitOfWork.Agendamento.FinalizarExecucao(agendamento.Id, proximaExecucao, aindaAtivo);
+            await unitOfWork.Agendamento.FinalizarExecucao(agendamento.Id, proximaExecucao, aindaAtivo);
         }
 
         // Mesma logica da tela de Disparo em lote (DisparadorComponent.valorDaVariavel):

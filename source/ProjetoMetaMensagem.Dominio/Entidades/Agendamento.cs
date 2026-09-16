@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace ProjetoMetaMensagem.Dominio.Entidades
 {
@@ -69,5 +70,24 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
                 : JsonConvert.DeserializeObject<List<AgendamentoVariavelDto>>(VariaveisJson) ?? new List<AgendamentoVariavelDto>();
             set => VariaveisJson = JsonConvert.SerializeObject(value);
         }
+
+        // CSV de dias da semana (0=Domingo...6=Sabado, igual DayOfWeek do .NET), usado so quando
+        // TipoRecorrencia = SEMANAL. NULL/vazio = comportamento antigo (repete a cada 7 dias no
+        // dia da semana da DataReferencia). Ver AgendamentoRecorrencia.
+        [MaxLength(20)]
+        public string DiasSemana { get; set; }
+
+        [NotMapped]
+        public List<int> DiasSemanaLista
+        {
+            get => string.IsNullOrWhiteSpace(DiasSemana)
+                ? new List<int>()
+                : DiasSemana.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+            set => DiasSemana = (value == null || value.Count == 0) ? null : string.Join(",", value.Distinct().OrderBy(d => d));
+        }
+
+        // Dia do mes (1-31), usado so quando TipoRecorrencia = MENSAL. NULL = comportamento
+        // antigo (usa o dia da DataReferencia, clampado pro ultimo dia do mes quando for menor).
+        public int? DiaDoMes { get; set; }
     }
 }

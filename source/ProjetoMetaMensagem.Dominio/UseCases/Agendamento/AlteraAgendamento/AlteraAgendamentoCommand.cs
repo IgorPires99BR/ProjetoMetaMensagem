@@ -18,6 +18,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
         public List<Guid> ContatoIds { get; set; }
         public List<AgendamentoVariavelDto> Variaveis { get; set; }
 
+        // Dias da semana (0=Domingo...6=Sabado) em que o agendamento SEMANAL dispara -- ex:
+        // segunda/quarta/sexta. Vazio/null = repete a cada 7 dias no dia da DataReferencia.
+        public List<int> DiasSemana { get; set; }
+
+        // Dia do mes (1-31) em que o agendamento MENSAL dispara. Null = usa o dia da DataReferencia.
+        public int? DiaDoMes { get; set; }
+
         // Preenchido pelo controller a partir do JWT (null = administrador da plataforma).
         // A empresa "dona" do agendamento e sempre a carregada do banco pelo Id, nunca algo
         // que o cliente mande -- so esse valor decide se ele PODE editar o registro.

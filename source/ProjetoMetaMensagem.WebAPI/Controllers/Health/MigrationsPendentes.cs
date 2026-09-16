@@ -44,6 +44,27 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/39", "Fluxo", "SourceIdAnuncio",
                 "ALTER TABLE Fluxo ADD SourceIdAnuncio NVARCHAR(60) NULL;"),
+
+            // DataReferencia e VariaveisJson entraram direto no CREATE TABLE da migration 40
+            // numa revisao posterior, sem ALTER incremental -- ver EsquemaEsperado.cs.
+            // DataReferencia e NOT NULL: cria com default temporario, faz o backfill a partir
+            // de ProximaExecucao (mesma data/hora que ja funcionava como referencia antes desta
+            // coluna existir) e remove o default -- coluna nova some sem exigir um valor fixo
+            // artificial nem quebrar linha ja existente.
+            new("BD/40", "Agendamento", "DataReferencia",
+                @"ALTER TABLE Agendamento ADD DataReferencia DATETIME NOT NULL
+                    CONSTRAINT DF_Agendamento_DataReferencia DEFAULT ('19000101');
+                  UPDATE Agendamento SET DataReferencia = ProximaExecucao WHERE DataReferencia = '19000101';
+                  ALTER TABLE Agendamento DROP CONSTRAINT DF_Agendamento_DataReferencia;"),
+
+            new("BD/40", "Agendamento", "VariaveisJson",
+                "ALTER TABLE Agendamento ADD VariaveisJson NVARCHAR(MAX) NULL;"),
+
+            new("BD/41", "Agendamento", "DiasSemana",
+                "ALTER TABLE Agendamento ADD DiasSemana NVARCHAR(20) NULL;"),
+
+            new("BD/41", "Agendamento", "DiaDoMes",
+                "ALTER TABLE Agendamento ADD DiaDoMes INT NULL;"),
         };
     }
 }
