@@ -79,6 +79,8 @@ using ProjetoMetaMensagem.Servico.IA;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using Hangfire;
+using ProjetoMetaMensagem.Servico.Agendamento;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -232,6 +234,18 @@ builder.Services.AddScoped<IWebhookDispatcherService, ProjetoMetaMensagem.Servic
 // para sempre, sem nenhum processo rodando pra efetivamente enviar as mensagens.
 builder.Services.AddHostedService<CampanhaWorker>();
 
+// HangFire varre a tabela Agendamento (recorrencia diaria/semanal/mensal) via job recorrente
+// -- ver RecurringJob.AddOrUpdate mais abaixo, depois de app.Build(). Mesma connection string
+// escolhida pelo DbSession (DEBUG local vs producao).
+#if DEBUG
+var connectionStringHangfire = builder.Configuration.GetConnectionString("ContactSolutionDB");
+#else
+var connectionStringHangfire = builder.Configuration.GetConnectionString("ContactProdDB");
+#endif
+builder.Services.AddHangfire(config => config.UseSqlServerStorage(connectionStringHangfire));
+builder.Services.AddHangfireServer();
+builder.Services.AddSingleton<AgendamentoFileLogger>();
+
 //Configura��es
 
 builder.Services.Configure<GmailConfiguration>(
@@ -263,6 +277,7 @@ builder.Services.AddScoped<IMensagemRecebidaRepository, MensagemRecebidaReposito
 builder.Services.AddScoped<IRelatorioRepository, RelatorioRepository>();
 builder.Services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
 builder.Services.AddScoped<IOrigemLeadRepository, OrigemLeadRepository>();
+builder.Services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
 builder.Services.AddScoped<INotificadorChat, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorChat>();
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MetaConversoesConfiguration>(
     builder.Configuration.GetSection("MetaConversoesConfiguration"));
@@ -375,6 +390,20 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseRateLimiter();
+
+// Fora do pipeline JWT/EmpresaAccessFilter de proposito: e uma pagina HTML acessada direto
+// no navegador (nao um endpoint MVC da SPA), protegida por Basic Auth propria -- ver
+// HangfireBasicAuthFilter.
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new ProjetoMetaMensagem.WebAPI.Common.HangfireBasicAuthFilter(app.Configuration) }
+});
+
+// Varre a tabela Agendamento a cada 5 minutos em busca de recorrencias devidas (ProximaExecucao
+// <= agora). Job idempotente por linha (reserva via Agendamento.ProcessandoAte), entao rodar
+// atrasado ou reiniciar o servidor no meio nao duplica disparo.
+RecurringJob.AddOrUpdate<AgendamentoDispatchJob>(
+    "agendamento-scan", job => job.ExecutarAsync(), "*/5 * * * *");
 
 app.MapControllers();
 // O front conecta em `${environment.apiUrl}/hubs/chat`, e apiUrl ja inclui "/api" --
