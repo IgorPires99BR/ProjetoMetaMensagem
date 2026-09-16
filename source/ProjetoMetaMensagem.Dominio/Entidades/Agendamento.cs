@@ -1,5 +1,8 @@
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjetoMetaMensagem.Dominio.Entidades
 {
@@ -37,6 +40,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public DateTime? DataFim { get; set; }
 
+        // Data/hora do 1o disparo e ancora de horario da recorrencia (hora do dia, e no caso
+        // mensal tambem o dia do mes) -- DataInicio/DataFim sao so a janela de vigencia.
+        public DateTime DataReferencia { get; set; }
+
         public DateTime ProximaExecucao { get; set; }
 
         public bool Ativo { get; set; }
@@ -51,5 +58,16 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public DateTime DataCriacao { get; set; }
 
         public DateTime? DataAtualizacao { get; set; }
+
+        public string VariaveisJson { get; set; }
+
+        [NotMapped]
+        public List<AgendamentoVariavelDto> Variaveis
+        {
+            get => string.IsNullOrEmpty(VariaveisJson)
+                ? new List<AgendamentoVariavelDto>()
+                : JsonConvert.DeserializeObject<List<AgendamentoVariavelDto>>(VariaveisJson) ?? new List<AgendamentoVariavelDto>();
+            set => VariaveisJson = JsonConvert.SerializeObject(value);
+        }
     }
 }

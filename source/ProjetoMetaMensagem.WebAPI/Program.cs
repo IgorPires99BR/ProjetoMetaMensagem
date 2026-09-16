@@ -81,7 +81,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Hangfire;
 using Hangfire.Dashboard;
-using ProjetoMetaMensagem.Servico.Agendamento;
+using ProjetoMetaMensagem.WebAPI.Tarefas;
+using ProjetoMetaMensagem.Dominio.Interfaces.Tarefas;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -245,7 +246,9 @@ var connectionStringHangfire = builder.Configuration.GetConnectionString("Contac
 #endif
 builder.Services.AddHangfire(config => config.UseSqlServerStorage(connectionStringHangfire));
 builder.Services.AddHangfireServer();
-builder.Services.AddSingleton<AgendamentoFileLogger>();
+// Hangfire.AspNetCore cria um IServiceScope proprio por execucao (dispensa
+// IServiceScopeFactory manual); a tarefa so precisa estar registrada no container.
+builder.Services.AddScoped<IAgendamentoMensagemTarefa, AgendamentoMensagemTarefa>();
 
 //Configura��es
 
@@ -405,8 +408,8 @@ app.UseHangfireDashboard("/jobs", new DashboardOptions
 // Varre a tabela Agendamento a cada 5 minutos em busca de recorrencias devidas (ProximaExecucao
 // <= agora). Job idempotente por linha (reserva via Agendamento.ProcessandoAte), entao rodar
 // atrasado ou reiniciar o servidor no meio nao duplica disparo.
-RecurringJob.AddOrUpdate<AgendamentoDispatchJob>(
-    "agendamento-scan", job => job.ExecutarAsync(), "*/5 * * * *");
+RecurringJob.AddOrUpdate<AgendamentoMensagemTarefa>(
+    "agendamento-scan", job => job.Executar(), "*/5 * * * *");
 
 app.MapControllers();
 // O front conecta em `${environment.apiUrl}/hubs/chat`, e apiUrl ja inclui "/api" --

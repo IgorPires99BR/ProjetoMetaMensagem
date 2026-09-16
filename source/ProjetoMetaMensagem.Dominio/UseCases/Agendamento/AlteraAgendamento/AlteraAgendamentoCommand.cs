@@ -1,4 +1,5 @@
 using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
         public string TipoRecorrencia { get; set; }
         public DateTime DataInicio { get; set; }
         public DateTime? DataFim { get; set; }
+        public DateTime DataReferencia { get; set; }
         public List<Guid> ContatoIds { get; set; }
+        public List<AgendamentoVariavelDto> Variaveis { get; set; }
 
         // Preenchido pelo controller a partir do JWT (null = administrador da plataforma).
         // A empresa "dona" do agendamento e sempre a carregada do banco pelo Id, nunca algo

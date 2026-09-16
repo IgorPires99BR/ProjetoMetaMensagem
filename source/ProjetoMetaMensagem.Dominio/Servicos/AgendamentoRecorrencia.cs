@@ -4,11 +4,11 @@ using System;
 namespace ProjetoMetaMensagem.Dominio.Servicos
 {
     // Calculo da proxima execucao de um Agendamento. Usado tanto na criacao/edicao (define a
-    // 1a ProximaExecucao a partir de DataInicio) quanto pelo AgendamentoDispatchJob (calcula a
-    // proxima apos cada disparo).
+    // 1a ProximaExecucao a partir de DataReferencia) quanto pelo ProcessaAgendamentoHandler
+    // (calcula a proxima apos cada disparo).
     public static class AgendamentoRecorrencia
     {
-        public static DateTime CalcularProximaExecucao(DateTime dataInicio, DateTime referencia, string tipoRecorrencia)
+        public static DateTime CalcularProximaExecucao(DateTime dataReferencia, DateTime referencia, string tipoRecorrencia)
         {
             switch (tipoRecorrencia)
             {
@@ -19,14 +19,14 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                     return referencia.AddDays(7);
 
                 case Agendamento.Mensal:
-                    // Ancorado no dia/hora de DataInicio, nunca no dia ja clampado da
+                    // Ancorado no dia/hora de DataReferencia, nunca no dia ja clampado da
                     // referencia anterior -- senao um agendamento criado no dia 31 encolheria
                     // pra sempre depois de cair num fevereiro (31 -> 28 -> 28 -> 28...).
                     var proximoMes = referencia.AddMonths(1);
                     var ultimoDiaDoMes = DateTime.DaysInMonth(proximoMes.Year, proximoMes.Month);
-                    var dia = Math.Min(dataInicio.Day, ultimoDiaDoMes);
+                    var dia = Math.Min(dataReferencia.Day, ultimoDiaDoMes);
                     return new DateTime(proximoMes.Year, proximoMes.Month, dia,
-                        dataInicio.Hour, dataInicio.Minute, dataInicio.Second);
+                        dataReferencia.Hour, dataReferencia.Minute, dataReferencia.Second);
 
                 default:
                     throw new ArgumentException($"Tipo de recorrência inválido: {tipoRecorrencia}", nameof(tipoRecorrencia));

@@ -28,10 +28,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Agendamento.TipoRecorrencia)},
                     {nameof(Agendamento.DataInicio)},
                     {nameof(Agendamento.DataFim)},
+                    {nameof(Agendamento.DataReferencia)},
                     {nameof(Agendamento.ProximaExecucao)},
                     {nameof(Agendamento.Ativo)},
                     {nameof(Agendamento.UsuarioCriacaoId)},
-                    {nameof(Agendamento.DataCriacao)}
+                    {nameof(Agendamento.DataCriacao)},
+                    {nameof(Agendamento.VariaveisJson)}
                 ) VALUES (
                     @{nameof(Agendamento.Id)},
                     @{nameof(Agendamento.EmpresaId)},
@@ -40,10 +42,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(Agendamento.TipoRecorrencia)},
                     @{nameof(Agendamento.DataInicio)},
                     @{nameof(Agendamento.DataFim)},
+                    @{nameof(Agendamento.DataReferencia)},
                     @{nameof(Agendamento.ProximaExecucao)},
                     @{nameof(Agendamento.Ativo)},
                     @{nameof(Agendamento.UsuarioCriacaoId)},
-                    @{nameof(Agendamento.DataCriacao)}
+                    @{nameof(Agendamento.DataCriacao)},
+                    @{nameof(Agendamento.VariaveisJson)}
                 );";
 
             await _session.Connection.ExecuteAsync(sql, agendamento, transaction: _session.Transaction);
@@ -145,8 +149,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Agendamento.TipoRecorrencia)} = @{nameof(Agendamento.TipoRecorrencia)},
                     {nameof(Agendamento.DataInicio)} = @{nameof(Agendamento.DataInicio)},
                     {nameof(Agendamento.DataFim)} = @{nameof(Agendamento.DataFim)},
+                    {nameof(Agendamento.DataReferencia)} = @{nameof(Agendamento.DataReferencia)},
                     {nameof(Agendamento.ProximaExecucao)} = @{nameof(Agendamento.ProximaExecucao)},
-                    {nameof(Agendamento.DataAtualizacao)} = @{nameof(Agendamento.DataAtualizacao)}
+                    {nameof(Agendamento.DataAtualizacao)} = @{nameof(Agendamento.DataAtualizacao)},
+                    {nameof(Agendamento.VariaveisJson)} = @{nameof(Agendamento.VariaveisJson)}
                 WHERE {nameof(Agendamento.Id)} = @{nameof(Agendamento.Id)}
                   AND (@EmpresaIdSolicitante IS NULL
                        OR {nameof(Agendamento.EmpresaId)} = @EmpresaIdSolicitante);";

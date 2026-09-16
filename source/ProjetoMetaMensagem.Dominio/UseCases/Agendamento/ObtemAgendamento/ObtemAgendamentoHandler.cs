@@ -50,9 +50,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ObtemAgendamento
                     TipoRecorrencia = agendamento.TipoRecorrencia,
                     DataInicio = agendamento.DataInicio,
                     DataFim = agendamento.DataFim,
+                    DataReferencia = agendamento.DataReferencia,
                     ProximaExecucao = agendamento.ProximaExecucao,
                     Ativo = agendamento.Ativo,
-                    ContatoIds = contatoIds
+                    ContatoIds = contatoIds,
+                    Variaveis = agendamento.Variaveis
                 });
             }
             catch (Exception ex)

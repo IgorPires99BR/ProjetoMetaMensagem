@@ -49,12 +49,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
                     return response;
                 }
 
-                // So reinicia o ciclo de recorrencia se a data de inicio ou o tipo mudaram --
-                // editar so o nome/contatos nao deve adiantar nem atrasar o proximo disparo.
+                // So reinicia o ciclo de recorrencia se a data/hora de referencia ou o tipo
+                // mudaram -- editar so o nome/contatos nao deve adiantar nem atrasar o proximo disparo.
                 var proximaExecucao = existente.ProximaExecucao;
-                if (existente.DataInicio != command.DataInicio || existente.TipoRecorrencia != command.TipoRecorrencia)
+                if (existente.DataReferencia != command.DataReferencia || existente.TipoRecorrencia != command.TipoRecorrencia)
                 {
-                    proximaExecucao = command.DataInicio;
+                    proximaExecucao = command.DataReferencia;
                 }
 
                 _unitOfWork.BeginTransaction();
@@ -64,8 +64,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
                 existente.TipoRecorrencia = command.TipoRecorrencia;
                 existente.DataInicio = command.DataInicio;
                 existente.DataFim = command.DataFim;
+                existente.DataReferencia = command.DataReferencia;
                 existente.ProximaExecucao = proximaExecucao;
                 existente.DataAtualizacao = DateTime.Now;
+                existente.Variaveis = command.Variaveis ?? new System.Collections.Generic.List<Entidades.AgendamentoVariavelDto>();
 
                 var linhasAfetadas = await _unitOfWork.Agendamento.Atualizar(existente, command.EmpresaIdSolicitante);
                 if (linhasAfetadas == 0)

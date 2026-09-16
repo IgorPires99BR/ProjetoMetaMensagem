@@ -14,9 +14,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.CriaAgendamento
             RuleFor(x => x.TipoRecorrencia)
                 .Must(t => t == Entidades.Agendamento.Diaria || t == Entidades.Agendamento.Semanal || t == Entidades.Agendamento.Mensal)
                 .WithMessage("Informe uma recorrência válida (diária, semanal ou mensal).");
-            RuleFor(x => x.DataInicio).NotEmpty().WithMessage("Informe a data e hora de início do agendamento.");
+            RuleFor(x => x.DataInicio).NotEmpty().WithMessage("Informe a data de início da vigência do agendamento.");
             RuleFor(x => x.DataFim)
                 .GreaterThan(x => x.DataInicio).WithMessage("A data de término deve ser posterior à data de início.")
+                .When(x => x.DataFim.HasValue);
+            RuleFor(x => x.DataReferencia).NotEmpty().WithMessage("Informe a data e hora de referência do disparo.");
+            RuleFor(x => x.DataReferencia)
+                .GreaterThanOrEqualTo(x => x.DataInicio).WithMessage("A data e hora de referência não pode ser anterior à data de início.");
+            RuleFor(x => x.DataReferencia)
+                .LessThanOrEqualTo(x => x.DataFim!.Value).WithMessage("A data e hora de referência não pode ser posterior à data de término.")
                 .When(x => x.DataFim.HasValue);
             RuleFor(x => x.ContatoIds).NotEmpty().WithMessage("Selecione ao menos um contato para o agendamento.");
         }

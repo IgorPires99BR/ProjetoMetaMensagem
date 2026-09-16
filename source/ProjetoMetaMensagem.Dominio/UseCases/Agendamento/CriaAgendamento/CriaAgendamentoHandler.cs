@@ -54,8 +54,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.CriaAgendamento
                     TipoRecorrencia = command.TipoRecorrencia,
                     DataInicio = command.DataInicio,
                     DataFim = command.DataFim,
-                    ProximaExecucao = command.DataInicio,
-                    UsuarioCriacaoId = command.UsuarioCriacaoId
+                    DataReferencia = command.DataReferencia,
+                    ProximaExecucao = command.DataReferencia,
+                    UsuarioCriacaoId = command.UsuarioCriacaoId,
+                    Variaveis = command.Variaveis ?? new System.Collections.Generic.List<Entidades.AgendamentoVariavelDto>()
                 };
 
                 var agendamentoId = await _unitOfWork.Agendamento.Incluir(agendamento);

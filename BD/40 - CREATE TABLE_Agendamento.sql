@@ -17,6 +17,10 @@ BEGIN
         TipoRecorrencia NVARCHAR(20) NOT NULL,
         DataInicio DATETIME NOT NULL,
         DataFim DATETIME NULL,
+        -- Data/hora do 1o disparo e ancora de horario da recorrencia (hora do dia, e no caso
+        -- mensal tambem o dia do mes). DataInicio/DataFim viraram so a janela de vigencia
+        -- (datas), quem manda no "que horas sai a mensagem" e este campo, ver AgendamentoRecorrencia.cs.
+        DataReferencia DATETIME NOT NULL,
         ProximaExecucao DATETIME NOT NULL,
         Ativo BIT NOT NULL DEFAULT 1,
         -- Reserva de processamento por prazo, mesmo padrao de EstadoConversa.ProcessandoAte
@@ -27,6 +31,10 @@ BEGIN
         UsuarioCriacaoId UNIQUEIDENTIFIER NULL,
         DataCriacao DATETIME DEFAULT GETDATE(),
         DataAtualizacao DATETIME NULL,
+        -- JSON com a origem de cada variavel do corpo do template ({{1}}, {{2}}...): "nome"/
+        -- "telefone" (resolvido por contato a cada disparo) ou "fixo" (mesmo texto sempre).
+        -- NULL = template sem variavel. Ver Agendamento.Variaveis / AgendamentoVariavelDto.
+        VariaveisJson NVARCHAR(MAX) NULL,
         CONSTRAINT FK_Agendamento_Empresa FOREIGN KEY (EmpresaId) REFERENCES Empresa(Id),
         CONSTRAINT FK_Agendamento_Template FOREIGN KEY (TemplateId) REFERENCES Template(Id)
     );
