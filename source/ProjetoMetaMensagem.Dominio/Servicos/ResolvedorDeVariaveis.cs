@@ -103,7 +103,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             return new DateTime(hoje.Year, hoje.Month, dia).ToString("dd/MM/yyyy", Brasil);
         }
 
-        // Preenche ParametrosBody (valores iguais pra todos) e ParametrosBodyPorTelefone (valores
+        // Preenche ParametrosBody (valores iguais pra todos) e ParametrosBodyPorContato (valores
         // de cada destinatario) do comando a partir das definicoes de variavel. Mesmo formato
         // que a tela de Disparos ja montava a mao: o slot "global" de uma variavel que depende do
         // contato fica vazio de proposito, o valor real vai por telefone.
@@ -122,10 +122,14 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
 
             if (!variaveis.Any(v => DependeDoContato(v, parametros))) return;
 
+            // Por contato, nao por telefone: contatos diferentes podem dividir o mesmo numero e
+            // cada um precisa dos proprios valores (fatura, vencimento...). O mapa por telefone
+            // que o front antigo mandava e descartado pra nao vencer o do contato.
             comando.ParametrosBodyPorTelefone = new Dictionary<string, List<string>>();
-            foreach (var (telefone, contato) in destinatarios)
+            comando.ParametrosBodyPorContato = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (_, contato) in destinatarios)
             {
-                comando.ParametrosBodyPorTelefone[telefone] = variaveis
+                comando.ParametrosBodyPorContato[contato.Id.ToString()] = variaveis
                     .Select(v => Resolver(v, contato, parametros, hoje))
                     .ToList();
             }

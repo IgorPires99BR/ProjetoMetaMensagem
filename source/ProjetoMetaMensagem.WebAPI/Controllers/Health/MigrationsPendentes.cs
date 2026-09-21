@@ -15,6 +15,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
         public static readonly Item[] Itens =
         {
+            // Sem esta coluna a consulta unificada da conversa (MensagemRecebida + HistoricoDisparo)
+            // estoura "Invalid column name 'MotivoFalha'" e o chat nao carrega nenhuma mensagem.
+            new("BD/25", "HistoricoDisparo", "MotivoFalha",
+                "ALTER TABLE HistoricoDisparo ADD MotivoFalha NVARCHAR(500) NULL;"),
+
             new("BD/31", "FluxoEtapa", "VariavelSaida",
                 "ALTER TABLE FluxoEtapa ADD VariavelSaida NVARCHAR(100) NULL;"),
 

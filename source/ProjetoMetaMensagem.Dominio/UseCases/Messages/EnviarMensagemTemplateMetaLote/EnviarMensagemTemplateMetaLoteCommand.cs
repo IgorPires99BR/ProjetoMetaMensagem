@@ -36,17 +36,43 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         // e dataVencimento nao dependem de o front conhecer todos os dados do contato.
         public List<Entidades.AgendamentoVariavelDto> Variaveis { get; set; } = new List<Entidades.AgendamentoVariavelDto>();
 
-        // Valores efetivos para um destinatário: os dele, se houver, senão os globais.
-        public List<string> ParametrosBodyDe(string telefone)
+        // Mesma ideia, mas indexada pelo Id do contato. E a que vale quando a lista tem contatos
+        // que compartilham o mesmo telefone (uma pessoa que cuida de varias empresas): por
+        // telefone o valor do ultimo contato sobrescrevia o dos outros e todos recebiam a fatura
+        // errada. Preenchida por ResolvedorDeVariaveis; tem prioridade sobre ParametrosBodyPorTelefone.
+        public Dictionary<string, List<string>> ParametrosBodyPorContato { get; set; } =
+            new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        public bool TemValoresPorDestinatario =>
+            (ParametrosBodyPorContato?.Any() ?? false) || (ParametrosBodyPorTelefone?.Any() ?? false);
+
+        // Valores efetivos para um destinatário: os do contato, se houver; senão os do telefone
+        // (legado); senão os globais.
+        public List<string> ParametrosBodyDe(string telefone, string? contatoId = null)
         {
-            if (ParametrosBodyPorTelefone != null &&
-                ParametrosBodyPorTelefone.TryGetValue(telefone, out var doContato) &&
+            if (!string.IsNullOrEmpty(contatoId) && ParametrosBodyPorContato != null &&
+                ParametrosBodyPorContato.TryGetValue(contatoId, out var doContato) &&
                 doContato != null && doContato.Count > 0)
             {
                 return doContato;
             }
 
+            if (ParametrosBodyPorTelefone != null &&
+                ParametrosBodyPorTelefone.TryGetValue(telefone, out var doTelefone) &&
+                doTelefone != null && doTelefone.Count > 0)
+            {
+                return doTelefone;
+            }
+
             return ParametrosBody;
+        }
+
+        // Telefones e ContatosIds andam em paralelo pelo mesmo indice, entao o destinatario e
+        // identificado pela posicao -- nunca so pelo telefone, que pode se repetir na lista.
+        public List<string> ParametrosBodyDoDestinatario(int indice)
+        {
+            var contatoId = ContatosIds != null && indice < ContatosIds.Count ? ContatosIds[indice] : null;
+            return ParametrosBodyDe(Telefones[indice], contatoId);
         }
 
         // Sempre fixado por quem monta o command (controller ou worker) -- ver OrigemDisparo.

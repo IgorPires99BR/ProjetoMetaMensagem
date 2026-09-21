@@ -33,16 +33,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             // barrava todo disparo personalizado mesmo com os valores efetivos completos.
             RuleForEach(x => x.ParametrosBody)
                 .NotEmpty().WithMessage("Preencha todas as variáveis do template antes de disparar.")
-                .When(x => x.ParametrosBodyPorTelefone == null || !x.ParametrosBodyPorTelefone.Any());
+                .When(x => !x.TemValoresPorDestinatario);
 
             // Com personalizacao por destinatario, os valores que valem sao os de cada telefone --
             // um contato sem nome cadastrado deixaria a variavel vazia e a Meta recusaria so aquele
             // envio, no meio do lote.
             RuleFor(x => x)
-                .Must(command => (command.Telefones ?? new List<string>())
-                    .All(telefone => command.ParametrosBodyDe(telefone).All(valor => !string.IsNullOrWhiteSpace(valor))))
+                .Must(command => Enumerable.Range(0, (command.Telefones ?? new List<string>()).Count)
+                    .All(i => command.ParametrosBodyDoDestinatario(i).All(valor => !string.IsNullOrWhiteSpace(valor))))
                 .WithMessage("Há contato selecionado sem valor para alguma variável da mensagem. Preencha um valor fixo ou tire esse contato da lista.")
-                .When(x => x.ParametrosBodyPorTelefone != null && x.ParametrosBodyPorTelefone.Any());
+                .When(x => x.TemValoresPorDestinatario);
 
             // Telefones e ContatosIds sao percorridos em paralelo pelo mesmo indice. Se as listas
             // tiverem tamanhos diferentes, o historico do disparo e gravado com contato zerado.

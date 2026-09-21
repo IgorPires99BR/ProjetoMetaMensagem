@@ -1,17 +1,19 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote
 {
     public class EnviarMensagemTemplateMetaLoteResult
     {
+        // Por telefone (contrato com o front): um telefone que aparece em mais de um contato
+        // vira uma entrada so.
         public Dictionary<string, bool> RelatorioDisparos { get; set; } = new Dictionary<string, bool>();
         public Dictionary<string, string> RelatorioErros { get; set; } = new Dictionary<string, string>();
-        public int TotalProcessado => RelatorioDisparos?.Count ?? 0;
-        public int TotalSucesso => RelatorioDisparos?.Count(x => x.Value) ?? 0;
-        public int TotalFalha => RelatorioDisparos?.Count(x => !x.Value) ?? 0;
+
+        // Por destinatario. Nao derivam mais de RelatorioDisparos, porque o dicionario por
+        // telefone subconta quando dois contatos dividem o mesmo numero.
+        public int TotalProcessado { get; set; }
+        public int TotalSucesso { get; set; }
+        public int TotalFalha { get; set; }
     }
 }

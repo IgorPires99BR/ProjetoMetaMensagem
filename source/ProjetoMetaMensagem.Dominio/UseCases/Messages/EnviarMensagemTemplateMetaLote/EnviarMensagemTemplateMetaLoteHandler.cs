@@ -79,10 +79,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
                     : null;
 
-                foreach (var disparo in resultadoDisparos)
+                // Um resultado por destinatario, na ordem da lista: o indice diz de quem e cada
+                // um, mesmo quando dois contatos dividem o mesmo telefone.
+                for (var i = 0; i < resultadoDisparos.Count; i++)
                 {
-                    var telefone = disparo.Key;
-                    var respostaMeta = disparo.Value;
+                    var respostaMeta = resultadoDisparos[i];
 
                     if (respostaMeta.Sucesso)
                     {
@@ -100,7 +101,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                             Conteudo = TemplateTextoHelper.MontarTextoEnviado(
                                 templateEnviado?.Conteudo,
                                 command.NomeTemplate,
-                                command.ParametrosBodyDe(telefone)),
+                                command.ParametrosBodyDoDestinatario(i)),
                             PayloadEnvio = respostaMeta.JsonEnviado,
                             Origem = command.Origem
                         };
@@ -110,12 +111,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 }
 
                 // 3. Montagem do objeto de resultado mantendo o dicionário original [Telefone -> bool] para a View do CRM
+                // Os totais contam DESTINATARIOS; os relatorios continuam por telefone (contrato
+                // com o front), entao um telefone repetido so vale sucesso se todos os envios
+                // dele deram certo e junta os erros de quem falhou.
+                var porTelefone = resultadoDisparos.GroupBy(r => r.Telefone ?? string.Empty).ToList();
                 var resultadoLote = new EnviarMensagemTemplateMetaLoteResult
                 {
-                    RelatorioDisparos = resultadoDisparos.ToDictionary(x => x.Key, x => x.Value.Sucesso),
-                    RelatorioErros = resultadoDisparos
-                        .Where(x => !x.Value.Sucesso && !string.IsNullOrEmpty(x.Value.Erro))
-                        .ToDictionary(x => x.Key, x => x.Value.Erro)
+                    RelatorioDisparos = porTelefone.ToDictionary(g => g.Key, g => g.All(r => r.Sucesso)),
+                    RelatorioErros = porTelefone
+                        .Where(g => g.Any(r => !r.Sucesso && !string.IsNullOrEmpty(r.Erro)))
+                        .ToDictionary(g => g.Key, g => string.Join(" | ",
+                            g.Where(r => !r.Sucesso && !string.IsNullOrEmpty(r.Erro)).Select(r => r.Erro).Distinct())),
+                    TotalProcessado = resultadoDisparos.Count,
+                    TotalSucesso = resultadoDisparos.Count(r => r.Sucesso),
+                    TotalFalha = resultadoDisparos.Count(r => !r.Sucesso)
                 };
 
                 // Atribui o resultado de sucesso ao envelope da Response

@@ -580,10 +580,8 @@ namespace ProjetoMetaMensagem.Servico.MetaService
             return true;
         }
 
-        public async Task<Dictionary<string, ResultadoEnvioTemplate>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateMetaLoteCommand comandoLote, string phoneNumberId, string accessToken)
+        public async Task<List<ResultadoEnvioTemplate>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateMetaLoteCommand comandoLote, string phoneNumberId, string accessToken)
         {
-            var resultadoLote = new Dictionary<string, ResultadoEnvioTemplate>();
-
             var jsonSettings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
@@ -601,12 +599,13 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 // O template e montado por destinatario: quando o disparo personaliza as
                 // variaveis (nome de cada contato, por exemplo), cada um recebe os valores
                 // dele; sem personalizacao, ParametrosBodyDe devolve os valores globais e o
-                // payload sai identico ao de antes.
+                // payload sai identico ao de antes. Identificado pela posicao (contato), e nao
+                // so pelo telefone, que pode se repetir na lista.
                 var templateData = MontarTemplateData(
                     comandoLote.NomeTemplate,
                     comandoLote.Idioma,
                     comandoLote.ParametroHeaderMediaUrl,
-                    comandoLote.ParametrosBodyDe(telefone),
+                    comandoLote.ParametrosBodyDoDestinatario(index),
                     comandoLote.ParametrosButton);
 
                 var requestMeta = new EnviarMensagemTemplateRequest
@@ -619,36 +618,25 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 {
                     var resultadoIndividual = await EnviarTemplateWireAsync(requestMeta, phoneNumberId, accessToken);
                     resultadoIndividual.ContatoId = contatoId;
+                    resultadoIndividual.Telefone = telefone;
                     resultadoIndividual.JsonEnviado = JsonConvert.SerializeObject(templateData, jsonSettings);
 
-                    return new { Telefone = telefone, Resultado = resultadoIndividual };
+                    return resultadoIndividual;
                 }
                 catch (Exception ex)
                 {
-                    return new
+                    return new ResultadoEnvioTemplate
                     {
-                        Telefone = telefone,
-                        Resultado = new ResultadoEnvioTemplate
-                        {
-                            Sucesso = false,
-                            Erro = ex.Message,
-                            ContatoId = contatoId
-                        }
+                        Sucesso = false,
+                        Erro = ex.Message,
+                        ContatoId = contatoId,
+                        Telefone = telefone
                     };
                 }
             });
 
-            var respostas = await Task.WhenAll(tarefas);
-
-            foreach (var item in respostas)
-            {
-                if (!resultadoLote.ContainsKey(item.Telefone))
-                {
-                    resultadoLote.Add(item.Telefone, item.Resultado);
-                }
-            }
-
-            return resultadoLote;
+            // Task.WhenAll devolve na ordem das tarefas, ou seja, na ordem de Telefones.
+            return (await Task.WhenAll(tarefas)).ToList();
         }
 
         public async Task<(byte[] Bytes, string MimeType)> BaixarMidiaAsync(string mediaId, string accessToken)

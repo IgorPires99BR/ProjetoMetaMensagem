@@ -34,8 +34,10 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
 
         Task<ResultadoEnvioTemplate> EnviarTemplateAsync(EnviarMensagemTemplateMetaCommand command, string phoneNumberId, string accessToken);
 
-        // Retorno em Dictionary mapeando a resposta detalhada por telefone
-        Task<Dictionary<string, ResultadoEnvioTemplate>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateMetaLoteCommand comandoLote, string phoneNumberId, string accessToken);
+        // Um resultado por destinatario, NA MESMA ORDEM de comandoLote.Telefones. Antes era um
+        // Dictionary por telefone: dois contatos com o mesmo numero colapsavam em um e o segundo
+        // ficava sem historico nem contagem, embora a mensagem tivesse sido enviada.
+        Task<List<ResultadoEnvioTemplate>> EnviarTemplatesEmLoteAsync(EnviarMensagemTemplateMetaLoteCommand comandoLote, string phoneNumberId, string accessToken);
 
         Task<string> CriarTemplateMetaAsync(string nome, string idioma, string categoria, List<ComponenteTemplateEnvio> componentes, string wabaId, string accessToken);
 
