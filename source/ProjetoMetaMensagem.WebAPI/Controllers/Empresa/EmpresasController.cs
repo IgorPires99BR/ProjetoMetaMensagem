@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AlteraEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ConectaContaMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
@@ -113,6 +114,31 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.Obter"), tipo = "Servico" });
+            }
+        }
+
+        // Embedded Signup a nivel de Empresa: provisiona a empresa (cliente novo, cadastrado
+        // via "Cadastro rápido") com WabaId/PhoneNumberId/AccessToken proprios, pra ela deixar
+        // de compartilhar o numero da Contact Solution. So a conta de plataforma pode chamar --
+        // nao expor isso pra admin de empresa cliente, que nao tem "code" nenhum pra trocar
+        // (o botao nem aparece pra ele no front) e nao faz sentido reconectar a propria conta.
+        [HttpPost("api/v2/empresa/conectar-meta")]
+        public async Task<IActionResult> ConectarMeta([FromBody] ConectaContaMetaCommand command)
+        {
+            try
+            {
+                command.SolicitanteEhAdminDaPlataforma = this.EhAdminDaPlataforma();
+                if (!command.SolicitanteEhAdminDaPlataforma)
+                {
+                    return StatusCode(403, new { mensagem = "Apenas a conta de plataforma pode conectar uma empresa direto à Meta.", tipo = "Negocio" });
+                }
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.ConectarMeta"), tipo = "Servico" });
             }
         }
 

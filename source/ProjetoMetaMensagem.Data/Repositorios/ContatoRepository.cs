@@ -1,10 +1,9 @@
-﻿using Dapper;
+using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Data.Repositorios
@@ -31,22 +30,35 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 INSERT INTO {nameof(Contato)} (
                     {nameof(Contato.Id)},
                     {nameof(Contato.UsuarioId)},
+                    {nameof(Contato.EmpresaId)},
                     {nameof(Contato.Telefone)},
-                    {nameof(Contato.Nome)},
+                    {nameof(Contato.NomeContato)},
                     {nameof(Contato.Email)},
+                    {nameof(Contato.NomeCliente)},
+                    {nameof(Contato.DiaVencimento)},
+                    {nameof(Contato.TaxaJuros)},
+                    {nameof(Contato.TaxaJurosMensal)},
+                    {nameof(Contato.ValorFatura)},
                     {nameof(Contato.DataCriacao)}
                 )
                 VALUES (
-                    @Id, @UsuarioId, @Telefone, @Nome, @Email, @DataCriacao
+                    @Id, @UsuarioId, @EmpresaId, @Telefone, @NomeContato, @Email, @NomeCliente,
+                    @DiaVencimento, @TaxaJuros, @TaxaJurosMensal, @ValorFatura, @DataCriacao
                 );";
 
             var parameters = new
             {
                 contato.Id,
                 contato.UsuarioId,
+                contato.EmpresaId,
                 contato.Telefone,
-                contato.Nome,
+                contato.NomeContato,
                 contato.Email,
+                contato.NomeCliente,
+                contato.DiaVencimento,
+                contato.TaxaJuros,
+                contato.TaxaJurosMensal,
+                contato.ValorFatura,
                 DataCriacao = DateTimeOffset.Now
             };
 
@@ -55,10 +67,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         // Recorte de empresa aplicado direto no WHERE. Antes o UPDATE/DELETE casava so pelo Id,
         // entao bastava conhecer (ou adivinhar) o id pra alterar/apagar contato de outra empresa.
-        // Contato nao guarda EmpresaId: o vinculo passa por Usuario.
         private const string RecorteDaEmpresa = @"
-              AND (@EmpresaIdSolicitante IS NULL
-                   OR UsuarioId IN (SELECT Id FROM Usuario WHERE EmpresaId = @EmpresaIdSolicitante))";
+              AND (@EmpresaIdSolicitante IS NULL OR EmpresaId = @EmpresaIdSolicitante)";
 
         public async Task<int> Alterar(Contato contato, Guid? empresaIdSolicitante)
         {
@@ -66,8 +76,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 UPDATE {nameof(Contato)}
                 SET
                     {nameof(Contato.Telefone)} = @Telefone,
-                    {nameof(Contato.Nome)} = @Nome,
-                    {nameof(Contato.Email)} = @Email
+                    {nameof(Contato.NomeContato)} = @NomeContato,
+                    {nameof(Contato.Email)} = @Email,
+                    {nameof(Contato.NomeCliente)} = @NomeCliente,
+                    {nameof(Contato.DiaVencimento)} = @DiaVencimento,
+                    {nameof(Contato.TaxaJuros)} = @TaxaJuros,
+                    {nameof(Contato.TaxaJurosMensal)} = @TaxaJurosMensal,
+                    {nameof(Contato.ValorFatura)} = @ValorFatura
                 WHERE {nameof(Contato.Id)} = @Id
                 {RecorteDaEmpresa}";
 
@@ -76,8 +91,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 {
                     contato.Id,
                     contato.Telefone,
-                    contato.Nome,
+                    contato.NomeContato,
                     contato.Email,
+                    contato.NomeCliente,
+                    contato.DiaVencimento,
+                    contato.TaxaJuros,
+                    contato.TaxaJurosMensal,
+                    contato.ValorFatura,
                     EmpresaIdSolicitante = empresaIdSolicitante
                 },
                 transaction: _session.Transaction);
@@ -97,18 +117,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone)
         {
-            // Contato nao tem EmpresaId direto (so UsuarioId), entao o escopo por empresa
-            // precisa passar por Usuario. Sem esse JOIN/WHERE (como estava antes), a busca
-            // batia com QUALQUER contato de QUALQUER empresa que tivesse o mesmo telefone --
-            // um vazamento entre tenants, e a causa de mensagens do webhook nao encontrarem
-            // o contato certo (ou nenhum) quando havia telefone duplicado entre usuarios.
-            // Tambem normaliza os dois lados pra digitos apenas, ja que a Meta manda o "from"
-            // sempre sem "+"/espacos, mas o cadastro manual do Contato pode ter formatacao.
+            // Normaliza os dois lados pra digitos apenas, ja que a Meta manda o "from" sempre
+            // sem "+"/espacos, mas o cadastro manual do Contato pode ter formatacao.
             var sql = @"
-        SELECT c.* FROM Contato c
-        INNER JOIN Usuario u ON u.Id = c.UsuarioId
-        WHERE u.EmpresaId = @EmpresaId
-          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone";
+        SELECT * FROM Contato
+        WHERE EmpresaId = @EmpresaId
+          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone";
 
             var telefoneNormalizado = new string(telefone.Where(char.IsDigit).ToArray());
 
@@ -119,18 +133,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             );
         }
 
-
         public async Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId)
         {
-            // Contato nao tem EmpresaId direto, entao o escopo passa por Usuario -- mesmo
-            // padrao do ObterPorTelefone/ObterPorIds. Antes esta lista era filtrada por
-            // UsuarioId: um contato cadastrado por um vendedor nao aparecia pra outro vendedor
-            // da mesma empresa (nem no Disparador, que usa esta mesma consulta), embora a
-            // checagem de telefone repetido (ObterPorTelefone) ja fosse por empresa.
+            // null = conta de plataforma, ve contatos de todas as empresas de uma vez.
             var sql = @"
-                SELECT c.* FROM Contato c
-                INNER JOIN Usuario u ON u.Id = c.UsuarioId
-                WHERE (@EmpresaId IS NULL OR u.EmpresaId = @EmpresaId)";
+                SELECT * FROM Contato
+                WHERE (@EmpresaId IS NULL OR EmpresaId = @EmpresaId)";
 
             return await _session.Connection.QueryAsync<Contato>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
@@ -141,9 +149,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             if (idsLista.Count == 0) return Enumerable.Empty<Contato>();
 
             var sql = @"
-                SELECT c.* FROM Contato c
-                INNER JOIN Usuario u ON u.Id = c.UsuarioId
-                WHERE u.EmpresaId = @EmpresaId AND c.Id IN @Ids";
+                SELECT * FROM Contato
+                WHERE EmpresaId = @EmpresaId AND Id IN @Ids";
 
             return await _session.Connection.QueryAsync<Contato>(
                 sql,
@@ -152,4 +159,3 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         }
     }
 }
-

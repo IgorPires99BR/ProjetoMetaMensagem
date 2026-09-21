@@ -75,7 +75,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     Conteudo = TemplateTextoHelper.MontarTextoEnviado(
                         templateEnviado?.Conteudo,
                         command.NomeTemplate,
-                        command.ParametrosBody)
+                        command.ParametrosBody),
+                    Origem = command.Origem
                 };
 
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);

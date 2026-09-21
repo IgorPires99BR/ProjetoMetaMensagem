@@ -27,7 +27,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     ISNULL(c.Telefone, '') AS NumeroDestino,
                     h.Conteudo AS Conteudo,
                     h.DataEnvio AS DataHora,
-                    h.StatusEntrega AS Status
+                    h.StatusEntrega AS Status,
+                    h.Origem AS Origem
                 FROM HistoricoDisparo h
                 INNER JOIN Empresa e ON e.Id = h.EmpresaId
                 LEFT JOIN Contato c ON c.Id = h.ContatoId
@@ -43,7 +44,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     e.Telefone AS NumeroDestino,
                     m.Conteudo AS Conteudo,
                     m.DataRecebimento AS DataHora,
-                    NULL AS Status
+                    NULL AS Status,
+                    NULL AS Origem
                 FROM MensagemRecebida m
                 INNER JOIN Empresa e ON e.Id = m.EmpresaId
                 WHERE m.EmpresaId = @EmpresaId

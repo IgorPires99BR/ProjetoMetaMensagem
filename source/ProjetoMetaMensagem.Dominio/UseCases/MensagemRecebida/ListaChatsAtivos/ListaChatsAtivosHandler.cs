@@ -100,9 +100,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.MensagemRecebida.ListaChatsAtivos
                 // a duplicata na origem; isto aqui garante que, mesmo se algo escapar, a tela
                 // continua carregando em vez de derrubar o atendimento inteiro.
                 var nomePorContato = contatos
-                    .Where(c => !string.IsNullOrWhiteSpace(c.Nome))
+                    .Where(c => !string.IsNullOrWhiteSpace(c.NomeContato))
                     .GroupBy(c => c.Id)
-                    .ToDictionary(g => g.Key, g => g.First().Nome!);
+                    .ToDictionary(g => g.Key, g => g.First().NomeContato!);
 
                 // Estado de flow ativo por contato (bot vs vendedor), buscado em lote pelo mesmo
                 // motivo do ObterPorIds acima: evitar N+1 na tela mais acessada do sistema.

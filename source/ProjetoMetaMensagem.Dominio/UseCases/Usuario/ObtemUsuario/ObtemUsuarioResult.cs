@@ -18,15 +18,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
             // ficava em branco e a edicao voltava sempre com "Administrador" pre-selecionado --
             // que era justamente o valor errado, ja que o gravado era operador.
             Perfil = usuario.IsAdmin == true ? Entidades.Usuario.PerfilAdmin : Entidades.Usuario.PerfilOperador;
+            PerfilId = usuario.PerfilId;
             DataCriacao = usuario.DataCriacao;
 
         }
 
         public Guid Id { get; set; }
         public Guid EmpresaId { get; set; }
+
+        // So preenchido na listagem "todas as empresas" (ver ObtemUsuarioHandler) -- e um
+        // dado de outra empresa, so a conta de plataforma pode ver isso.
+        public string? NomeEmpresa { get; set; }
+
         public string Nome { get; set; }
         public string? Email { get; set; }
         public string Perfil { get; set; } = Entidades.Usuario.PerfilOperador;
+
+        // Estrutura de acesso modular -- ver Entidades.Usuario.PerfilId.
+        public Guid? PerfilId { get; set; }
 
         // O hash da senha NAO e exposto aqui de proposito: ele vazava no JSON de
         // listagem de usuarios, entregando o hash BCrypt de todo mundo pra qualquer

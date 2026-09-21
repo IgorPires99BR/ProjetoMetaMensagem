@@ -12,6 +12,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public const string Diaria = "DIARIA";
         public const string Semanal = "SEMANAL";
         public const string Mensal = "MENSAL";
+        // Verificado todo dia (igual Diaria), mas o disparo em si so alcanca, a cada passada,
+        // os contatos cujo Contato.DiaVencimento bate com o dia do mes de hoje (clampado pro
+        // ultimo dia do mes quando o vencimento for maior, ex: dia 31 num mes de 30) -- ver
+        // ProcessaAgendamentoHandler.FiltrarContatosDoDia. DiaDoMes/DiasSemana nao se aplicam.
+        public const string VencimentoContato = "VENCIMENTO_CONTATO";
 
         public Agendamento()
         {

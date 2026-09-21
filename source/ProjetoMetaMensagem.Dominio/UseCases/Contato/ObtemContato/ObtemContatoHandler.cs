@@ -42,16 +42,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 
                 var contatos = (await _unitOfWork.Contato.ObterPorEmpresa(command.EmpresaIdSolicitante)).ToList();
 
-                // usuarioParaEmpresa resolve a empresa de cada contato pelo dono dele (Contato
-                // nao guarda EmpresaId direto -- mesmo padrao do resto do dominio). So precisa
-                // ser montado no caminho de plataforma (EmpresaIdSolicitante nulo): no caminho
-                // comum, todo contato retornado ja e da mesma empresa conhecida.
-                Dictionary<Guid, Guid> usuarioParaEmpresa = command.EmpresaIdSolicitante.HasValue
-                    ? new Dictionary<Guid, Guid>()
-                    : (await _unitOfWork.Usuario.Obter()).ToDictionary(u => u.Id, u => u.EmpresaId);
-
-                Guid? EmpresaDoContato(Entidades.Contato c) =>
-                    command.EmpresaIdSolicitante ?? (usuarioParaEmpresa.TryGetValue(c.UsuarioId, out var e) ? e : null);
+                // Contato guarda EmpresaId direto (antes precisava resolver pelo dono/Usuario).
+                static Guid? EmpresaDoContato(Entidades.Contato c) => c.EmpresaId;
 
                 // ObterPorEmpresa(null) e o caminho da conta de plataforma: devolve contato de
                 // TODAS as empresas de uma vez -- e o unico jeito de mostrar origem pra quem

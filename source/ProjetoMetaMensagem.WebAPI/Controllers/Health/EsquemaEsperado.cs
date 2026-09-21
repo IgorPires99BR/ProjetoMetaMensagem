@@ -99,6 +99,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/41", "Agendamento", "DiasSemana"),
             new("BD/41", "Agendamento", "DiaDoMes"),
+
+            new("BD/46", "Parametro"),
         };
     }
 }

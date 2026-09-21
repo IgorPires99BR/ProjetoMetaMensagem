@@ -16,5 +16,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         public string? ParametroHeaderMediaUrl { get; set; }
         public List<string> ParametrosBody { get; set; } = new List<string>();
         public List<string> ParametrosButton { get; set; } = new List<string>();
+
+        // Sempre fixado por quem monta o command (controller, worker ou service) -- ver
+        // OrigemDisparo. Nao vem do corpo da requisicao nesta rota.
+        public string Origem { get; set; } = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.DisparadorDeMensagem;
     }
 }

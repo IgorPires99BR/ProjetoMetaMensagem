@@ -7,6 +7,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.WebAPI.Common;
 
 namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
@@ -31,6 +32,7 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             try
             {
                 command.UsuarioIdSolicitante = this.UsuarioIdDoEscopo();
+                command.Origem = OrigemDisparo.ResolverOuPadrao(command.Origem);
 
                 var resultado = await _mediator.Send(command);
 
@@ -68,6 +70,9 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
         {
             try
             {
+                // Rota exclusiva da tela Disparador -- nunca confiar em Origem vindo do corpo.
+                command.Origem = OrigemDisparo.DisparadorDeMensagem;
+
                 var resultado = await _mediator.Send(command);
 
                 if (resultado != null && resultado.Erros.Count == 0)
@@ -86,6 +91,9 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
         {
             try
             {
+                // Rota exclusiva da tela Disparador -- nunca confiar em Origem vindo do corpo.
+                command.Origem = OrigemDisparo.DisparadorDeMensagem;
+
                 var resultado = await _mediator.Send(command);
 
                 if (resultado != null && resultado.Erros.Count == 0)
@@ -105,7 +113,8 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             [FromForm] string? celular,
             [FromForm] Guid? empresaId,
             [FromForm] Guid? contatoId,
-            [FromForm] string? tipoMidia)
+            [FromForm] string? tipoMidia,
+            [FromForm] string? origem)
         {
             try
             {
@@ -138,7 +147,8 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
                     ContatoId = contatoId.Value,
                     Arquivo = bytes,
                     MimeType = string.IsNullOrEmpty(arquivo.ContentType) ? "application/octet-stream" : arquivo.ContentType,
-                    TipoMidia = tipoMidia
+                    TipoMidia = tipoMidia,
+                    Origem = OrigemDisparo.ResolverOuPadrao(origem)
                 };
 
                 var resultado = await _mediator.Send(command);

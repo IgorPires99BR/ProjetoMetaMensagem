@@ -33,6 +33,10 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             switch (tipoRecorrencia)
             {
                 case Agendamento.Diaria:
+                case Agendamento.VencimentoContato:
+                    // VencimentoContato precisa ser conferido todo dia (o dia que "vence" varia
+                    // por contato dentro da mesma lista) -- quem decide se dispara ou nao pra
+                    // cada um e o ProcessaAgendamentoHandler, nao esta funcao.
                     return referencia.AddDays(1);
 
                 case Agendamento.Semanal:

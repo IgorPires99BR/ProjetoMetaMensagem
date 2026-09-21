@@ -152,8 +152,31 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
                 contatos.AddRange(await unitOfWork.Contato.ObterPorIds(agendamento.EmpresaId, lote));
             }
 
-            _logger.LogInformation("Agendamento {AgendamentoId} ({Nome}): {Total} contato(s) para disparo.",
-                agendamento.Id, agendamento.Nome, contatos.Count);
+            // VencimentoContato: a lista do agendamento pode ter contato de qualquer dia de
+            // vencimento -- so quem "vence" hoje (com o mesmo clamp de fim de mes que a
+            // recorrencia Mensal ja usa pro DiaDoMes) recebe disparo nesta passada. Os demais
+            // ficam pra quando o dia deles chegar, sem precisar de agendamentos separados.
+            var totalDaLista = contatos.Count;
+            if (agendamento.TipoRecorrencia == Entidades.Agendamento.VencimentoContato)
+            {
+                contatos = contatos.Where(c => VenceHoje(c.DiaVencimento, DateTime.Now)).ToList();
+            }
+
+            _logger.LogInformation("Agendamento {AgendamentoId} ({Nome}): {Total} contato(s) para disparo{DoTotal}.",
+                agendamento.Id, agendamento.Nome, contatos.Count,
+                agendamento.TipoRecorrencia == Entidades.Agendamento.VencimentoContato ? $" de {totalDaLista} na lista" : "");
+
+            // Ninguem vence hoje: nao ha o que disparar, e registrar uma AgendamentoExecucao
+            // 0/0/0 toda santa noite so faria ruido no historico sem informar nada de util.
+            if (agendamento.TipoRecorrencia == Entidades.Agendamento.VencimentoContato && contatos.Count == 0)
+            {
+                var proximaChecagemSemDisparo = AgendamentoRecorrencia.CalcularProximaExecucao(
+                    agendamento.DataReferencia, agendamento.ProximaExecucao, agendamento.TipoRecorrencia,
+                    agendamento.DiasSemanaLista, agendamento.DiaDoMes);
+                var continuaAtivo = !agendamento.DataFim.HasValue || proximaChecagemSemDisparo <= agendamento.DataFim.Value;
+                await unitOfWork.Agendamento.FinalizarExecucao(agendamento.Id, proximaChecagemSemDisparo, continuaAtivo);
+                return;
+            }
 
             var template = await unitOfWork.Template.ObterPorIdEEmpresa(agendamento.TemplateId, agendamento.EmpresaId);
 
@@ -180,10 +203,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
                     NomeTemplate = template.NomeTemplate,
                     Idioma = template.Idioma ?? "pt_BR",
                     Telefones = contatos.Select(c => c.Telefone).ToList(),
-                    ContatosIds = contatos.Select(c => c.Id.ToString()).ToList()
+                    ContatosIds = contatos.Select(c => c.Id.ToString()).ToList(),
+                    Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.AgendadorAutomatico
                 };
 
-                PreencherParametrosVariaveis(comandoLote, agendamento.Variaveis, contatos);
+                // Sem os parametros o disparo em lote ia sem nenhum valor de variavel e a Meta
+                // recusava qualquer template com variavel no corpo. "hoje" fixa o mes usado
+                // por dataVencimento: o da execucao, nao o da criacao do agendamento.
+                var parametros = (await unitOfWork.Parametro.ObterPorEmpresa(agendamento.EmpresaId))
+                    .ToDictionary(p => p.Id);
+
+                ResolvedorDeVariaveis.Preencher(
+                    comandoLote, agendamento.Variaveis,
+                    contatos.Select(c => (c.Telefone, c)), parametros, DateTime.Now);
 
                 var resultadoEnvio = await mediator.Send(comandoLote);
 
@@ -238,40 +270,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
             await unitOfWork.Agendamento.FinalizarExecucao(agendamento.Id, proximaExecucao, aindaAtivo);
         }
 
-        // Mesma logica da tela de Disparo em lote (DisparadorComponent.valorDaVariavel):
-        // "nome"/"telefone" sao resolvidos por contato a cada execucao recorrente, "fixo" e o
-        // mesmo texto pra todo mundo. Sem isto, o disparo em lote ia sem nenhum parametro e a
-        // Meta recusava qualquer template com variavel no corpo.
-        private static void PreencherParametrosVariaveis(
-            EnviarMensagemTemplateMetaLoteCommand comandoLote,
-            List<Entidades.AgendamentoVariavelDto> variaveis,
-            List<Entidades.Contato> contatos)
+        // Contato "vence" hoje quando o dia dele bate com o dia do mes atual -- clampado pro
+        // ultimo dia do mes quando o vencimento (ex: 31) nao existir no mes corrente (ex:
+        // fevereiro), mesmo criterio que a recorrencia Mensal ja usa pro DiaDoMes fixo.
+        private static bool VenceHoje(int? diaVencimento, DateTime hoje)
         {
-            if (variaveis == null || variaveis.Count == 0) return;
+            if (!diaVencimento.HasValue) return false;
 
-            comandoLote.ParametrosBody = variaveis
-                .Select(v => v.Origem == "fixo" ? (v.ValorFixo ?? string.Empty).Trim() : string.Empty)
-                .ToList();
-
-            var personalizado = variaveis.Any(v => v.Origem != "fixo");
-            if (!personalizado) return;
-
-            foreach (var contato in contatos)
-            {
-                comandoLote.ParametrosBodyPorTelefone[contato.Telefone] = variaveis
-                    .Select(v => ResolverValorVariavel(v, contato))
-                    .ToList();
-            }
-        }
-
-        private static string ResolverValorVariavel(Entidades.AgendamentoVariavelDto variavel, Entidades.Contato contato)
-        {
-            return variavel.Origem switch
-            {
-                "nome" => contato.Nome ?? string.Empty,
-                "telefone" => contato.Telefone ?? string.Empty,
-                _ => (variavel.ValorFixo ?? string.Empty).Trim()
-            };
+            var ultimoDiaDoMes = DateTime.DaysInMonth(hoje.Year, hoje.Month);
+            var diaEfetivo = Math.Min(diaVencimento.Value, ultimoDiaDoMes);
+            return diaEfetivo == hoje.Day;
         }
     }
 }

@@ -103,7 +103,10 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                             IdEmpresa = campanha.EmpresaId,
                                             ContatoId = vinculo.ContatoId,
                                             Telefone = contato.Telefone,
-                                            TemplateId = campanha.TemplateId
+                                            TemplateId = campanha.TemplateId,
+                                            // Campanha e uma forma de disparo em massa iniciada pelo usuario --
+                                            // conta como Disparador de Mensagem (nao ha categoria propria pra ela).
+                                            Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.DisparadorDeMensagem
                                         };
 
                                         var resultado = await mediator.Send(enviarCommand);

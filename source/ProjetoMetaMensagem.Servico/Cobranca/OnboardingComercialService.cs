@@ -104,7 +104,8 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             {
                 Id = Guid.NewGuid(),
                 UsuarioId = dono.Id,
-                Nome = nome,
+                EmpresaId = empresaOperacaoId,
+                NomeContato = nome,
                 Telefone = telefone,
                 Email = email,
                 DataCriacao = DateTime.Now
@@ -172,7 +173,8 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                     TipoDisparo = "Onboarding",
                     WamidMeta = resultado.WamidMeta,
                     Conteudo = TemplateTextoHelper.MontarTextoEnviado(templateBoasVindas?.Conteudo, nomeTemplate, command.ParametrosBody),
-                    DataEnvio = DateTime.Now
+                    DataEnvio = DateTime.Now,
+                    Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.FlowAutomatico
                 });
 
                 _logger.LogInformation("Onboarding: boas-vindas enviadas no WhatsApp para {Telefone}", telefone);
@@ -225,7 +227,8 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                     TipoDisparo = "Onboarding",
                     WamidMeta = resultado.WamidMeta,
                     Conteudo = TemplateTextoHelper.MontarTextoEnviado(templateAviso?.Conteudo, NomeTemplateAtendenteLiga, command.ParametrosBody),
-                    DataEnvio = DateTime.Now
+                    DataEnvio = DateTime.Now,
+                    Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.FlowAutomatico
                 });
 
                 _logger.LogInformation("Onboarding: aviso de atendente enviado no WhatsApp para {Telefone}", telefone);

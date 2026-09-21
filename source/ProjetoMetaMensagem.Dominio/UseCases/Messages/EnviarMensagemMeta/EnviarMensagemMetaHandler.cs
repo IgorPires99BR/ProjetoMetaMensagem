@@ -57,7 +57,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
                     TipoDisparo = "Livre",
                     Conteudo = command.textoMensagem,
                     WamidMeta = wamid,
-                    DataEnvio = DateTime.Now
+                    DataEnvio = DateTime.Now,
+                    Origem = OrigemDisparo.ResolverOuPadrao(command.Origem)
                 };
 
 

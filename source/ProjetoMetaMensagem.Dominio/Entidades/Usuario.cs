@@ -24,6 +24,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             Email = command.Email;
             SenhaHash = command.SenhaHash;
             IsAdmin = EhPerfilAdmin(command.Perfil);
+            PerfilId = command.PerfilId;
             DataCriacao = DateTime.Now;
         }
 
@@ -38,6 +39,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             // redefinicao de senha e qualquer chamada parcial nao podem tirar o admin de
             // alguem sem querer. O UPDATE trata null como "manter o valor atual".
             IsAdmin = command.Perfil is null ? null : EhPerfilAdmin(command.Perfil);
+            PerfilId = command.PerfilId;
             DataCriacao = DateTime.Now;
         }
 
@@ -57,6 +59,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public bool? IsAdmin { get; set; }
 
         public string? SenhaHash { get; set; }
+
+        // Nao confundir com o "Perfil" string (admin/operador) do Command acima: este e o Id
+        // da estrutura de acesso modular (tabela Perfil/PerfilTela) que define quais telas do
+        // menu o usuario enxerga. Nulo = comportamento legado (ver menu.ts no front).
+        public Guid? PerfilId { get; set; }
 
         public DateTime DataCriacao { get; set; }
     }

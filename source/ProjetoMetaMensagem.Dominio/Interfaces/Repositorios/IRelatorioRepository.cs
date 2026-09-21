@@ -12,6 +12,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         public string Conteudo { get; set; } = string.Empty;
         public DateTime DataHora { get; set; }
         public string? Status { get; set; }
+        // De onde saiu o disparo (ver OrigemDisparo). Nulo pra mensagem "Recebida" -- nao ha
+        // origem de disparo pra uma mensagem que o contato mandou.
+        public string? Origem { get; set; }
     }
 
     public class GastoEmpresaMesDto

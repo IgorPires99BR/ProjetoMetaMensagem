@@ -7,6 +7,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
             var response = new Response<EnviarMensagemTemplateMetaLoteResult>();
 
+            try
+            {
+                // Antes da validacao: os parametros do corpo que ela confere sao os que sairam
+                // daqui. O Agendamento ja chega com tudo resolvido (Variaveis vazio).
+                if (command.Variaveis != null && command.Variaveis.Count > 0)
+                {
+                    var erro = await ResolverVariaveisPorContato(command);
+                    if (erro != null)
+                    {
+                        response.AddErro(erro);
+                        return response;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                response.AddErroServico(ex, _logger, nameof(EnviarMensagemTemplateMetaLoteHandler));
+                return response;
+            }
+
             var validator = new EnviarMensagemTemplateMetaLoteValidator();
             var validateResult = validator.Validate(command);
 
@@ -45,7 +66,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 return response;
             }
 
-            try 
+            try
             {
                 var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
@@ -80,7 +101,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                                 templateEnviado?.Conteudo,
                                 command.NomeTemplate,
                                 command.ParametrosBodyDe(telefone)),
-                            PayloadEnvio = respostaMeta.JsonEnviado
+                            PayloadEnvio = respostaMeta.JsonEnviado,
+                            Origem = command.Origem
                         };
 
                         await _unitOfWork.HistoricoDisparo.Incluir(historico);
@@ -108,6 +130,52 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
 
             return response;
+        }
+
+        // Devolve a mensagem de erro de negocio, ou null quando resolveu tudo. Os contatos vem
+        // sempre do banco e recortados pela empresa do disparo -- o front so diz QUAIS, nunca o
+        // que cada um tem (ex: valorFatura), senao daria pra forjar o valor cobrado.
+        private async Task<string?> ResolverVariaveisPorContato(EnviarMensagemTemplateMetaLoteCommand command)
+        {
+            var variaveis = command.Variaveis;
+
+            var origemInvalida = variaveis.FirstOrDefault(v => !ResolvedorDeVariaveis.OrigemValida(v.Origem));
+            if (origemInvalida != null)
+                return $"Origem de variável inválida: {origemInvalida.Origem}.";
+
+            if (variaveis.Any(v => v.Origem == ResolvedorDeVariaveis.ParametroCadastrado && !v.ParametroId.HasValue))
+                return "Selecione o parâmetro de cada variável que usa um parâmetro cadastrado.";
+
+            var telefones = command.Telefones ?? new List<string>();
+            var contatosIds = command.ContatosIds ?? new List<string>();
+            if (contatosIds.Count == 0 || contatosIds.Count != telefones.Count)
+                return "A lista de contatos selecionados está inconsistente. Refaça a seleção e tente novamente.";
+
+            var ids = contatosIds.Select(id => Guid.TryParse(id, out var g) ? g : Guid.Empty).ToList();
+            if (ids.Contains(Guid.Empty))
+                return "Há um contato selecionado com identificador inválido. Refaça a seleção e tente novamente.";
+
+            var contatos = new List<Entidades.Contato>();
+            foreach (var lote in ids.Distinct().Chunk(1000))
+            {
+                contatos.AddRange(await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, lote));
+            }
+            var contatoPorId = contatos.ToDictionary(c => c.Id);
+
+            if (ids.Any(id => !contatoPorId.ContainsKey(id)))
+                return "Há contato selecionado que não pertence a esta empresa.";
+
+            var parametros = (await _unitOfWork.Parametro.ObterPorEmpresa(command.IdEmpresa)).ToDictionary(p => p.Id);
+
+            var usadosInexistentes = variaveis.Any(v => v.Origem == ResolvedorDeVariaveis.ParametroCadastrado
+                && !parametros.ContainsKey(v.ParametroId!.Value));
+            if (usadosInexistentes)
+                return "Um dos parâmetros escolhidos não existe mais. Atualize a tela e selecione novamente.";
+
+            var destinatarios = telefones.Select((telefone, i) => (telefone, contatoPorId[ids[i]]));
+            ResolvedorDeVariaveis.Preencher(command, variaveis, destinatarios, parametros, DateTime.Now);
+
+            return null;
         }
     }
 }

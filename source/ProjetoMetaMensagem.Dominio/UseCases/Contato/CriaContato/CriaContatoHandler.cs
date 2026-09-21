@@ -1,11 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 
@@ -29,6 +27,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
 
             try
             {
+                // Empresa vem do escopo do token (null so pra conta de plataforma). O
+                // EmpresaAccessFilter ja garante que o EmpresaId do corpo bate com o token pra
+                // quem nao e admin de plataforma -- aqui so cobre o caso de admin de plataforma
+                // mandando um EmpresaId qualquer no corpo, que e esperado.
+                if (command.EmpresaIdSolicitante.HasValue)
+                {
+                    command.EmpresaId = command.EmpresaIdSolicitante.Value;
+                }
+
                 _unitOfWork.BeginTransaction();
                 var validator = new CriaContatoValidator();
                 var validateResult = validator.Validate(command);
@@ -39,14 +46,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
                     return response;
                 }
 
+                // UsuarioId precisa ser da mesma empresa do contato -- nao trava a operacao (e
+                // so metadado de "quem cadastrou"), mas evita gravar um dono inconsistente.
                 var usuario = await _unitOfWork.Usuario.ObterPorId(command.UsuarioId);
-
-                // Contato nao tem EmpresaId proprio: pertence a empresa do UsuarioId informado.
-                // Se quem chama nao e admin, esse usuario precisa ser da mesma empresa de quem
-                // esta autenticado -- senao o UsuarioId do corpo deixa qualquer um escolher em
-                // que empresa o contato cai.
-                if (command.EmpresaIdSolicitante.HasValue
-                    && (usuario == null || usuario.EmpresaId != command.EmpresaIdSolicitante.Value))
+                if (usuario == null || usuario.EmpresaId != command.EmpresaId)
                 {
                     response.AddErro("Usuário não encontrado.");
                     return response;
@@ -55,14 +58,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
                 // Evita duplicar contato com o mesmo telefone na mesma empresa (ja aconteceu
                 // com dados de teste e quebrava o agrupamento de mensagens no chat, deixando
                 // conversas do mesmo lead espalhadas em duas linhas diferentes).
-                if (usuario != null)
+                var existente = await _unitOfWork.Contato.ObterPorTelefone(command.EmpresaId, command.Telefone);
+                if (existente != null)
                 {
-                    var existente = await _unitOfWork.Contato.ObterPorTelefone(usuario.EmpresaId, command.Telefone);
-                    if (existente != null)
-                    {
-                        response.AddErro("Já existe um contato cadastrado com esse telefone.");
-                        return response;
-                    }
+                    response.AddErro("Já existe um contato cadastrado com esse telefone.");
+                    return response;
                 }
 
                 await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
@@ -73,7 +73,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
             catch (Exception ex)
             {
                     _unitOfWork.Rollback();
-                
+
                 response.AddErroServico(ex, _logger, nameof(CriaContatoHandler));
             }
 
@@ -81,4 +81,3 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
         }
     }
 }
-

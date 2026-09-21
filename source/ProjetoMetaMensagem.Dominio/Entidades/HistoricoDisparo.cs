@@ -35,6 +35,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? PayloadEnvio { get; set; }
         public string? MidiaId { get; set; }
         public string? TipoMidia { get; set; }
+        // De onde saiu o disparo (Disparador, Agendador, Flow, Chat) -- ver OrigemDisparo.
+        // Nulo em historico gravado antes desta coluna existir.
+        public string? Origem { get; set; }
     }
 
     // Usado apenas em listagens que precisam do telefone do contato sem consulta extra (ex: chats ativos)

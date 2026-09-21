@@ -37,7 +37,6 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             if (!Guid.TryParse(companyId, out var empresaId))
                 return new List<Conversations>();
 
-            // Contato nao tem EmpresaId: o vinculo e via Usuario, como no DashboardRepository.
             var sql = @"
                 SELECT
                     c.Id            AS id,
@@ -51,11 +50,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                         ELSE 'Sem conversa'
                     END             AS status,
                     ec.EtapaAtualId AS step,
-                    c.Nome          AS nome,
+                    c.NomeContato   AS nome,
                     c.Email         AS email,
                     COALESCE(ec.DataAtualizacao, c.DataAtualizacao, c.DataCriacao) AS updated_at
                 FROM Contato c
-                INNER JOIN Usuario u ON u.Id = c.UsuarioId
                 OUTER APPLY (
                     SELECT TOP 1 e.Id, e.Finalizado, e.AssumidoPorUsuarioId, e.EtapaAtualId, e.DataAtualizacao
                     FROM EstadoConversa e
@@ -69,7 +67,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     WHERE lp.ContatoId = c.Id AND lp.EmpresaId = @EmpresaId
                     ORDER BY lp.DataUltimaAlteracao DESC
                 ) pe
-                WHERE u.EmpresaId = @EmpresaId
+                WHERE c.EmpresaId = @EmpresaId
                 ORDER BY updated_at DESC";
 
             var parameters = new DynamicParameters();

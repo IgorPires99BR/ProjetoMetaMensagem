@@ -1,12 +1,6 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
 {
@@ -14,8 +8,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
     {
         public Guid UsuarioId { get; set; }
         public string Telefone { get; set; }
-        public string? Nome { get; set; }
+        public string? NomeContato { get; set; }
         public string? Email { get; set; }
+
+        // Dados financeiros (ver Contato.DiaVencimentoPadrao/TaxaJurosPadrao/etc): nulo aqui
+        // vira o padrao de negocio no Handler, nao no default do parametro, pra o front
+        // poder mandar explicitamente um valor diferente sem mexer no Command.
+        public string? NomeCliente { get; set; }
+        public int? DiaVencimento { get; set; }
+        public decimal? TaxaJuros { get; set; }
+        public decimal? TaxaJurosMensal { get; set; }
+        public decimal? ValorFatura { get; set; }
+
+        // Escopo vem do token (EmpresaAccessFilter exige que bata) -- nunca aceitar de uma
+        // empresa diferente da de quem esta logado (exceto conta de plataforma).
+        public Guid EmpresaId { get; set; }
 
         public DateTimeOffset DataCriacao { get; set; }
 

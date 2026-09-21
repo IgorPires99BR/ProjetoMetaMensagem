@@ -55,7 +55,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta
                     WamidMeta = wamid,
                     TipoMidia = command.TipoMidia,
                     MidiaId = mediaId,
-                    DataEnvio = DateTime.Now
+                    DataEnvio = DateTime.Now,
+                    Origem = OrigemDisparo.ResolverOuPadrao(command.Origem)
                 };
 
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);

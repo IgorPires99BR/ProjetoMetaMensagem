@@ -32,7 +32,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(historico.DataEnvio)},
                     {nameof(historico.MidiaId)},
                     {nameof(historico.TipoMidia)},
-                    {nameof(historico.PayloadEnvio)}
+                    {nameof(historico.PayloadEnvio)},
+                    {nameof(historico.Origem)}
                 )
                 VALUES (
                     @{nameof(historico.Id)},
@@ -45,7 +46,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(historico.DataEnvio)},
                     @{nameof(historico.MidiaId)},
                     @{nameof(historico.TipoMidia)},
-                    @{nameof(historico.PayloadEnvio)}
+                    @{nameof(historico.PayloadEnvio)},
+                    @{nameof(historico.Origem)}
                 );";
 
             // Garante que a data seja preenchida caso não tenha sido setada na entidade

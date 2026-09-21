@@ -19,6 +19,8 @@ namespace ProjetoMetaMensagem.Data
         public IEmpresaRepository Empresa { get; set; }
         public IUsuarioRepository Usuario { get; set; }
         public IContatoRepository Contato { get; set; }
+        public IPerfilRepository Perfil { get; set; }
+        public IParametroRepository Parametro { get; set; }
         public INumeroRepository Numero{ get; set; }
         public ITemplateRepository Template { get; set; }
         public IHistoricoDisparoRepository HistoricoDisparo { get; set; }
@@ -41,6 +43,8 @@ namespace ProjetoMetaMensagem.Data
             IEmpresaRepository empresaRepository,
             IUsuarioRepository usuarioRepository,
             IContatoRepository contatoRepository,
+            IPerfilRepository perfilRepository,
+            IParametroRepository parametroRepository,
             INumeroRepository numeroRepository,
             ITemplateRepository templateRepository,
             IHistoricoDisparoRepository historicoDisparo,
@@ -64,6 +68,8 @@ namespace ProjetoMetaMensagem.Data
             Empresa = empresaRepository;
             Usuario = usuarioRepository;
             Contato = contatoRepository;
+            Perfil = perfilRepository;
+            Parametro = parametroRepository;
             Numero = numeroRepository;
             Template = templateRepository;
             HistoricoDisparo = historicoDisparo;

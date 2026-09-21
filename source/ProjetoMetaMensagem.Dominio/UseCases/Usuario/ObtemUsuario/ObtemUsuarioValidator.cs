@@ -6,8 +6,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
     {
         public ObtemUsuarioValidator()
         {
-            RuleFor(x => x.IdUsuario)
-                .NotEmpty().WithMessage("Não foi possível identificar o usuário consultado.");
+            // IdEmpresa nulo e valido de proposito: e o sinal de "todas as empresas" (uso
+            // exclusivo da conta de plataforma, ver UsuariosController.ObterTodos).
         }
     }
 }

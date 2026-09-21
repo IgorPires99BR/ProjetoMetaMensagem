@@ -22,6 +22,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.AlteraUsuario
         // Ver CriaUsuarioCommand.Perfil: o valor da tela era descartado tambem na edicao.
         public string? Perfil { get; set; }
 
+        // Estrutura de acesso modular -- ver CriaUsuarioCommand.PerfilId. Diferente de IsAdmin,
+        // aqui nulo E "remover o perfil" (volta pro comportamento legado): o unico jeito de
+        // desatribuir um perfil e a propria tela de edicao de usuario mandar isso de proposito.
+        public Guid? PerfilId { get; set; }
+
         public bool SolicitanteEhAdmin { get; set; }
 
         // Preenchido pelo controller a partir do JWT (null = administrador). Nao confundir com

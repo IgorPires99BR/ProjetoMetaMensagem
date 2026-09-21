@@ -114,6 +114,23 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
         }
 
+        public async Task AtualizarCredenciaisMeta(Guid id, string? wabaId, string? phoneNumberId, string? metaAccessToken)
+        {
+            // COALESCE: so sobrescreve o que veio preenchido. O Embedded Signup as vezes nao
+            // devolve um dos dois ids (ver comentario em IniciaEmbeddedSignupCommand.PhoneNumberId),
+            // e gravar NULL por cima apagaria uma credencial que ja funcionava.
+            var sql = $@"
+                UPDATE {nameof(Empresa)}
+                SET {nameof(Empresa.WabaId)} = COALESCE(@WabaId, {nameof(Empresa.WabaId)}),
+                    {nameof(Empresa.PhoneNumberId)} = COALESCE(@PhoneNumberId, {nameof(Empresa.PhoneNumberId)}),
+                    {nameof(Empresa.MetaAccessToken)} = COALESCE(@MetaAccessToken, {nameof(Empresa.MetaAccessToken)})
+                WHERE {nameof(Empresa.Id)} = @Id";
+
+            await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, WabaId = wabaId, PhoneNumberId = phoneNumberId, MetaAccessToken = metaAccessToken },
+                transaction: _session.Transaction);
+        }
+
         public async Task<string?> ObterWabaId(Guid id)
         {
             var sql = $@"SELECT {nameof(Empresa.WabaId)} 

@@ -369,13 +369,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                 {
                     Id = Guid.NewGuid(),
                     UsuarioId = dono.Id,
+                    EmpresaId = empresaId,
                     Telefone = telefone,
-                    Nome = string.IsNullOrWhiteSpace(nomePerfil) ? telefone : nomePerfil,
+                    NomeContato = string.IsNullOrWhiteSpace(nomePerfil) ? telefone : nomePerfil,
                     DataCriacao = DateTime.Now
                 };
 
                 await _unitOfWork.Contato.Incluir(novoContato);
-                _logger.LogInformation("Contato criado automaticamente para {Telefone} ({Nome})", telefone, novoContato.Nome);
+                _logger.LogInformation("Contato criado automaticamente para {Telefone} ({Nome})", telefone, novoContato.NomeContato);
 
                 return novoContato;
             }

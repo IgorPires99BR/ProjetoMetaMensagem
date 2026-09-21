@@ -68,7 +68,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Pipeline.ObtemPipelineComEtapas
                         {
                             Id = l.Id,
                             ContatoId = l.ContatoId,
-                            NomeContato = contatos.TryGetValue(l.ContatoId, out var contato) ? contato.Nome ?? string.Empty : string.Empty,
+                            NomeContato = contatos.TryGetValue(l.ContatoId, out var contato) ? contato.NomeContato ?? string.Empty : string.Empty,
                             Telefone = contatos.TryGetValue(l.ContatoId, out var contatoTelefone) ? contatoTelefone.Telefone ?? string.Empty : string.Empty,
                             Valor = l.Valor,
                             Observacao = l.Observacao,

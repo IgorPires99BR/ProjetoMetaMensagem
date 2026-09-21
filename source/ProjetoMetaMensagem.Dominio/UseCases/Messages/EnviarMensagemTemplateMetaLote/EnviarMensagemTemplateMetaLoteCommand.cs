@@ -30,6 +30,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
         // caindo em ParametrosBody, que vale para todo mundo.
         public Dictionary<string, List<string>> ParametrosBodyPorTelefone { get; set; } = new Dictionary<string, List<string>>();
 
+        // Definicao de cada variavel do corpo (campo do contato, parametro cadastrado ou texto
+        // fixo). Quando informada, o handler resolve os valores POR CONTATO no servidor e
+        // sobrescreve ParametrosBody/ParametrosBodyPorTelefone -- assim campos como valorFatura
+        // e dataVencimento nao dependem de o front conhecer todos os dados do contato.
+        public List<Entidades.AgendamentoVariavelDto> Variaveis { get; set; } = new List<Entidades.AgendamentoVariavelDto>();
+
         // Valores efetivos para um destinatário: os dele, se houver, senão os globais.
         public List<string> ParametrosBodyDe(string telefone)
         {
@@ -42,5 +48,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
             return ParametrosBody;
         }
+
+        // Sempre fixado por quem monta o command (controller ou worker) -- ver OrigemDisparo.
+        // Nao vem do corpo da requisicao nesta rota.
+        public string Origem { get; set; } = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.DisparadorDeMensagem;
     }
 }

@@ -32,10 +32,11 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Usuario.Email)},
                     {nameof(Usuario.SenhaHash)},
                     {nameof(Usuario.IsAdmin)},
+                    {nameof(Usuario.PerfilId)},
                     {nameof(Usuario.DataCriacao)}
                 )
                 VALUES (
-                    @Id, @EmpresaId, @Nome, @Email, @SenhaHash, @IsAdmin, @DataCriacao
+                    @Id, @EmpresaId, @Nome, @Email, @SenhaHash, @IsAdmin, @PerfilId, @DataCriacao
                 )";
 
             var parameters = new DynamicParameters();
@@ -47,6 +48,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             // A coluna e NOT NULL com default 0; a entidade usa bool? porque nem todo caminho
             // de criacao informa o campo.
             parameters.Add("IsAdmin", usuario.IsAdmin ?? false);
+            parameters.Add("PerfilId", usuario.PerfilId);
             parameters.Add("DataCriacao", DateTimeOffset.Now);
 
             await _session.Connection.ExecuteAsync(sql, parameters, transaction: _session.Transaction);
@@ -69,7 +71,9 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Usuario.SenhaHash)} = @SenhaHash,
                     -- COALESCE porque IsAdmin nulo quer dizer manter o perfil atual: a
                     -- redefinicao de senha passa por aqui e nao pode rebaixar um admin.
-                    {nameof(Usuario.IsAdmin)} = COALESCE(@IsAdmin, {nameof(Usuario.IsAdmin)})
+                    {nameof(Usuario.IsAdmin)} = COALESCE(@IsAdmin, {nameof(Usuario.IsAdmin)}),
+                    -- Diferente de IsAdmin: aqui nulo E remover o perfil (ver AlteraUsuarioCommand.PerfilId).
+                    {nameof(Usuario.PerfilId)} = @PerfilId
                 WHERE {nameof(Usuario.Id)} = @Id
                 {RecorteDaEmpresa}";
 
@@ -81,6 +85,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     usuario.Email,
                     usuario.SenhaHash,
                     usuario.IsAdmin,
+                    usuario.PerfilId,
                     EmpresaIdSolicitante = empresaIdSolicitante
                 },
                 transaction: _session.Transaction);

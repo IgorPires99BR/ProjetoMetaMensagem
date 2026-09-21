@@ -26,6 +26,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.CriaUsuario
         // acesso de admin pra um socio -- e a tela dizia que tinha dado.
         public string? Perfil { get; set; }
 
+        // Estrutura de acesso modular (tabela Perfil/PerfilTela) -- nulo = usuario sem perfil
+        // atribuido, cai no comportamento legado (admin/operador) no front.
+        public Guid? PerfilId { get; set; }
+
         // Escopo do token, nunca do corpo: senao o proprio atacante escolheria a empresa
         // (e se promoveria a admin) na requisicao.
         public Guid? EmpresaIdSolicitante { get; set; }

@@ -19,5 +19,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemMeta
         // Preenchido pelo controller a partir do JWT (nunca do corpo). Usado para marcar a
         // conversa como assumida manualmente quando ha um flow ativo tocando pra esse contato.
         public Guid? UsuarioIdSolicitante { get; set; }
+
+        // Rota compartilhada entre a tela Disparador e o Chat manual -- vem do corpo da
+        // requisicao e e validada/normalizada em OrigemDisparo.ResolverOuPadrao antes de gravar.
+        public string? Origem { get; set; }
     }
 }

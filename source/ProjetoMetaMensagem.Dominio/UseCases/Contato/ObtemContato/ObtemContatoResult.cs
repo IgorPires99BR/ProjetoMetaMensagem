@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
 {
@@ -14,9 +8,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
         {
             Id = contato.Id;
             UsuarioId = contato.UsuarioId;
+            EmpresaId = contato.EmpresaId;
             Telefone = contato.Telefone;
-            Nome = contato.Nome;
+            NomeContato = contato.NomeContato;
             Email = contato.Email;
+            NomeCliente = contato.NomeCliente;
+            DiaVencimento = contato.DiaVencimento;
+            TaxaJuros = contato.TaxaJuros;
+            TaxaJurosMensal = contato.TaxaJurosMensal;
+            ValorFatura = contato.ValorFatura;
             DataCriacao = contato.DataCriacao;
 
             // Origem gravada na primeira mensagem de quem chegou por um anuncio Click-to-
@@ -28,9 +28,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
         }
         public Guid Id { get; set; }
         public Guid UsuarioId { get; set; }
+        public Guid EmpresaId { get; set; }
         public string Telefone { get; set; }
-        public string? Nome { get; set; }
+        public string? NomeContato { get; set; }
         public string? Email { get; set; }
+        public string? NomeCliente { get; set; }
+        public int? DiaVencimento { get; set; }
+        public decimal? TaxaJuros { get; set; }
+        public decimal? TaxaJurosMensal { get; set; }
+        public decimal? ValorFatura { get; set; }
         public DateTime DataCriacao { get; set; }
         public string? OrigemAnuncio { get; set; }
         public DateTime? OrigemData { get; set; }

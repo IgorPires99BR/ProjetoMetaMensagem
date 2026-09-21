@@ -1,11 +1,16 @@
+using System;
+
 namespace ProjetoMetaMensagem.Dominio.Entidades
 {
-    // Origem de uma variavel {{n}} do corpo do template num Agendamento: "nome"/"telefone"
-    // resolvido por contato a cada disparo recorrente, ou "fixo" (ValorFixo) igual pra todos.
-    // Mesmo desenho da tela de Disparo em lote, persistido para repetir em cada execucao.
+    // Definicao de UMA variavel do corpo do template (posicao = ordem da lista). Usado pelos
+    // Agendamentos (gravado em VariaveisJson) e pelo disparo em lote.
     public class AgendamentoVariavelDto
     {
+        // "fixo", "parametro" ou um campo do contato -- ver ResolvedorDeVariaveis.
         public string Origem { get; set; }
         public string ValorFixo { get; set; }
+
+        // So quando Origem = "parametro": o Parametro cadastrado da empresa que fornece o valor.
+        public Guid? ParametroId { get; set; }
     }
 }

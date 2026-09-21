@@ -16,6 +16,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
         IEmpresaRepository Empresa { get; }
         IUsuarioRepository Usuario { get; }
         IContatoRepository Contato { get; }
+        IPerfilRepository Perfil { get; }
+        IParametroRepository Parametro { get; }
         INumeroRepository Numero { get; }
         ITemplateRepository Template { get; }
         IHistoricoDisparoRepository HistoricoDisparo { get; }

@@ -112,5 +112,28 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Usuario
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "UsuariosController.ObterPorId"), tipo = "Servico" });
             }
         }
+
+        // Usuarios de TODAS as empresas, com o nome da empresa de cada um -- so a conta de
+        // plataforma pode enxergar isso (e a unica com usuarios em mais de uma empresa pra
+        // administrar). EmpresaAccessFilter nao protege esta rota (nao tem parametro de
+        // empresa nenhum), entao a checagem e feita aqui.
+        [HttpGet("api/usuario/obter-todos")]
+        public async Task<IActionResult> ObterTodos()
+        {
+            try
+            {
+                if (!this.EhAdminDaPlataforma())
+                {
+                    return StatusCode(403, new { mensagem = "Apenas a conta de plataforma pode listar usuários de todas as empresas.", tipo = "Negocio" });
+                }
+
+                var resultado = await _mediator.Send(new ObtemUsuarioCommand(null));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "UsuariosController.ObterTodos"), tipo = "Servico" });
+            }
+        }
     }
 }

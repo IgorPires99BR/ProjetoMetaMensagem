@@ -65,6 +65,19 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/41", "Agendamento", "DiaDoMes",
                 "ALTER TABLE Agendamento ADD DiaDoMes INT NULL;"),
+
+            new("BD/46", "Parametro", null,
+                @"CREATE TABLE Parametro (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                    EmpresaId UNIQUEIDENTIFIER NOT NULL,
+                    Nome NVARCHAR(100) NOT NULL,
+                    Descricao NVARCHAR(255) NULL,
+                    Tipo NVARCHAR(20) NOT NULL,
+                    Valor NVARCHAR(500) NOT NULL,
+                    DataCriacao DATETIME DEFAULT GETDATE(),
+                    CONSTRAINT FK_Parametro_Empresa FOREIGN KEY (EmpresaId) REFERENCES Empresa(Id),
+                    CONSTRAINT UQ_Parametro_Empresa_Nome UNIQUE (EmpresaId, Nome)
+                  );"),
         };
     }
 }

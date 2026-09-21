@@ -31,7 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             }
         }
 
-        public LoginResult(Entidades.Usuario usuario, string? token = null, bool ehAdminDaPlataforma = false)
+        public LoginResult(Entidades.Usuario usuario, string? token = null, bool ehAdminDaPlataforma = false, List<string>? telasPermitidas = null)
         {
             EhAdminDaPlataforma = ehAdminDaPlataforma;
             IdEmpresa = usuario.EmpresaId;
@@ -40,6 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
             Role = usuario.IsAdmin.HasValue && usuario.IsAdmin.Value ? "admin" : "operador";
             Status = "success";
             Token = token;
+            TelasPermitidas = telasPermitidas;
         }
 
         [JsonProperty("status")]
@@ -66,5 +67,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Auth.Login
         // empresa cliente, que so descobriria pelo erro da API que aquilo nao era para ele.
         [JsonProperty("ehAdminDaPlataforma")]
         public bool EhAdminDaPlataforma { get; set; }
+
+        // Telas que o usuario enxerga (estrutura de acesso modular, ver Perfil/PerfilTela).
+        // Nulo = sem perfil atribuido, o front cai no comportamento legado (menu.ts).
+        [JsonProperty("telasPermitidas")]
+        public List<string>? TelasPermitidas { get; set; }
     }
 }

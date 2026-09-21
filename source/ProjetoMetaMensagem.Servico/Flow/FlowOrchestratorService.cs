@@ -443,7 +443,8 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 TipoDisparo = "Flow",
                 Conteudo = texto,
                 WamidMeta = wamid,
-                DataEnvio = DateTime.Now
+                DataEnvio = DateTime.Now,
+                Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.FlowAutomatico
             });
 
             await _notificadorChat.NotificarMensagemEnviadaAsync(empresaId, contatoId, texto, wamid);
@@ -572,7 +573,8 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     TipoDisparo = "Flow",
                     Conteudo = mensagem,
                     WamidMeta = wamid,
-                    DataEnvio = DateTime.Now
+                    DataEnvio = DateTime.Now,
+                    Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.FlowAutomatico
                 });
 
                 // Avisa o painel na hora: sem isto, quem estava olhando o Chats via a mensagem do
@@ -637,7 +639,8 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     TipoDisparo = "Flow",
                     Conteudo = TemplateTextoHelper.MontarTextoEnviado(template.Conteudo, template.NomeTemplate, parametrosBody),
                     WamidMeta = resultadoEnvio.WamidMeta,
-                    DataEnvio = DateTime.Now
+                    DataEnvio = DateTime.Now,
+                    Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.FlowAutomatico
                 });
             }
         }

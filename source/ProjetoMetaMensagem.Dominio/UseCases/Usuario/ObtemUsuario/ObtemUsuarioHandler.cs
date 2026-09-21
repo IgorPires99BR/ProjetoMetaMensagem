@@ -1,13 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
-using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
@@ -30,8 +28,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
 
             try
             {
-                var listaUsuarios = new List<ObtemUsuarioResult>();
-
                 var validator = new ObtemUsuarioValidator();
                 var validateResult = validator.Validate(command);
 
@@ -41,14 +37,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
                     return response;
                 }
 
-                var usuariosBanco = await _unitOfWork.Usuario.ObterPorEmpresa(command.IdUsuario);
-
-                foreach (var usuario in usuariosBanco)
+                if (command.IdEmpresa.HasValue)
                 {
-                    listaUsuarios.Add(new ObtemUsuarioResult(usuario));
+                    var usuariosDaEmpresa = await _unitOfWork.Usuario.ObterPorEmpresa(command.IdEmpresa.Value);
+                    response.AddValue(usuariosDaEmpresa.Select(u => new ObtemUsuarioResult(u)).ToList());
+                    return response;
                 }
 
-                response.AddValue(listaUsuarios);
+                // IdEmpresa nulo = todas as empresas (so a conta de plataforma chega aqui --
+                // UsuariosController.ObterTodos garante isso antes de mandar o command).
+                var todosOsUsuarios = (await _unitOfWork.Usuario.Obter()).ToList();
+                var nomeDaEmpresa = (await _unitOfWork.Empresa.Obter()).ToDictionary(e => e.Id, e => e.Nome);
+
+                var listaComEmpresa = todosOsUsuarios.Select(u =>
+                {
+                    var resultado = new ObtemUsuarioResult(u);
+                    resultado.NomeEmpresa = nomeDaEmpresa.TryGetValue(u.EmpresaId, out var nome) ? nome : null;
+                    return resultado;
+                }).ToList();
+
+                response.AddValue(listaComEmpresa);
             }
             catch (Exception ex)
             {

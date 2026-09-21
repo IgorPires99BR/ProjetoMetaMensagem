@@ -1,20 +1,21 @@
-﻿using ProjetoMetaMensagem.Dominio.Common;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Usuario.ObtemUsuario
 {
     public class ObtemUsuarioCommand : IRequest<Response<List<ObtemUsuarioResult>>>
     {
-        public ObtemUsuarioCommand(Guid idUsuario)
+        // Nome historico do parametro (era "idUsuario", mas sempre guardou um EmpresaId --
+        // ver o antigo "ObterPorId(Guid idEmpresa)" no controller). Mantido pra nao quebrar
+        // quem ja chama isto, so ficou nullable: null = todas as empresas (so a conta de
+        // plataforma pode pedir isso -- o controller garante).
+        public ObtemUsuarioCommand(Guid? idEmpresa)
         {
-            IdUsuario = idUsuario;
+            IdEmpresa = idEmpresa;
         }
 
-        public Guid IdUsuario{ get; set; }
+        public Guid? IdEmpresa { get; set; }
     }
 }

@@ -59,7 +59,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote
                 var novoContato = new Entidades.Contato
                 {
                     UsuarioId = command.UsuarioId,
-                    Nome = item.Nome,
+                    EmpresaId = command.IdEmpresa,
+                    NomeContato = item.Nome,
                     Telefone = item.Telefone,
                     // Hora local, igual ao resto do sistema (a criacao de contato individual
                     // usa DateTime.Now): misturar os dois deixava a data do contato importado
