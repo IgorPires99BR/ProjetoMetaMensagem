@@ -101,6 +101,10 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/41", "Agendamento", "DiaDoMes"),
 
             new("BD/46", "Parametro"),
+
+            new("BD/47", "Template", "GeraCobranca"),
+
+            new("BD/48", "CobrancaCliente"),
         };
     }
 }

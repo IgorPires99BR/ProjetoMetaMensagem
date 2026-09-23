@@ -1,6 +1,7 @@
 ﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.AlteraFlagCobrancaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
@@ -114,6 +115,25 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.Editar"), tipo = "Servico" });
+            }
+        }
+
+        // Ligar/desligar cobranca e uma flag puramente local: funciona em template ja aprovado,
+        // sem reenviar nada pra Meta (diferente do PUT /api/template/{id}, que exige REJECTED).
+        [HttpPatch("api/template/{id}/gera-cobranca")]
+        public async Task<IActionResult> AlterarFlagCobranca(Guid id, [FromBody] AlteraFlagCobrancaTemplateCommand command)
+        {
+            try
+            {
+                command.TemplateId = id;
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.AlterarFlagCobranca"), tipo = "Servico" });
             }
         }
 

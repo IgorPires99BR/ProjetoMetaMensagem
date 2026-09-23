@@ -29,9 +29,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Template.ComponentesJson)},
                     {nameof(Template.Idioma)},
                     {nameof(Template.Status)},
-                    {nameof(Template.MetaTemplateId)}
+                    {nameof(Template.MetaTemplateId)},
+                    {nameof(Template.GeraCobranca)}
                 )
-                VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria,@ComponentesJson, @Idioma, @Status, @MetaTemplateId);
+                VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria,@ComponentesJson, @Idioma, @Status, @MetaTemplateId, @GeraCobranca);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             await _session.Connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
@@ -110,6 +111,19 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = $"SELECT * FROM {nameof(Template)} WHERE {nameof(Template.EmpresaId)} = @EmpresaId";
             return await _session.Connection.QueryAsync<Template>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
+        }
+
+        public async Task<int> AlterarFlagCobranca(Guid id, Guid? empresaIdSolicitante, bool geraCobranca)
+        {
+            var sql = $@"
+                UPDATE {nameof(Template)}
+                SET {nameof(Template.GeraCobranca)} = @GeraCobranca
+                WHERE {nameof(Template.Id)} = @Id
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, GeraCobranca = geraCobranca, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
         }
     }
 }

@@ -19,6 +19,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
                 Status = template.Status;
                 DataAtualizacao = template.DataAtualizacao;
                 ComponentesJson = template.ComponentesJson;
+                GeraCobranca = template.GeraCobranca;
             }
         }
 
@@ -31,5 +32,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
         public string Status { get; set; }
         public DateTime? DataAtualizacao { get; set; }
         public string? ComponentesJson { get; set; }
+        public bool GeraCobranca { get; set; }
     }
 }

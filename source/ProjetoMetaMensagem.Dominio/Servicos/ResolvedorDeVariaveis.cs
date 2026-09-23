@@ -95,12 +95,20 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         // Dia de vencimento do contato aplicado ao mes/ano de "hoje". Clampado pro ultimo dia do
         // mes quando o vencimento (ex: 31) nao existe no mes corrente -- mesmo criterio da
         // recorrencia Mensal e do VenceHoje do ProcessaAgendamentoHandler.
-        public static string DataDeVencimento(int? diaVencimento, DateTime hoje)
+        //
+        // Extraido em CalcularDataVencimento (devolve DateTime) porque o CobrancaClienteFactory
+        // tambem precisa desse clamp pra gravar CobrancaCliente.DataVencimento -- duplicar essa
+        // conta foi exatamente o tipo de bug que este arquivo existe pra evitar (ver comentario
+        // da classe).
+        public static string DataDeVencimento(int? diaVencimento, DateTime hoje) =>
+            CalcularDataVencimento(diaVencimento, hoje)?.ToString("dd/MM/yyyy", Brasil) ?? string.Empty;
+
+        public static DateTime? CalcularDataVencimento(int? diaVencimento, DateTime hoje)
         {
-            if (!diaVencimento.HasValue) return string.Empty;
+            if (!diaVencimento.HasValue) return null;
 
             var dia = Math.Min(diaVencimento.Value, DateTime.DaysInMonth(hoje.Year, hoje.Month));
-            return new DateTime(hoje.Year, hoje.Month, dia).ToString("dd/MM/yyyy", Brasil);
+            return new DateTime(hoje.Year, hoje.Month, dia);
         }
 
         // Preenche ParametrosBody (valores iguais pra todos) e ParametrosBodyPorContato (valores

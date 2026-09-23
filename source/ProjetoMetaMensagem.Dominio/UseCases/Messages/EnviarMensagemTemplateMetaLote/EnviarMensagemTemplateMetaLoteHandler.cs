@@ -79,6 +79,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
                     : null;
 
+                // Contatos de quem GeraCobranca vai precisar, buscados de uma vez so (nao um a
+                // um dentro do loop) -- so quando o template dispara cobranca, pra nao pagar
+                // essa consulta em todo disparo em lote comum.
+                Dictionary<Guid, Entidades.Contato>? contatoPorId = null;
+                if (templateEnviado != null && templateEnviado.GeraCobranca)
+                {
+                    var idsSucesso = resultadoDisparos
+                        .Where(r => r.Sucesso)
+                        .Select(r => Guid.TryParse(r.ContatoId, out var id) ? id : (Guid?)null)
+                        .Where(id => id.HasValue)
+                        .Select(id => id!.Value)
+                        .Distinct()
+                        .ToList();
+
+                    contatoPorId = (await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, idsSucesso))
+                        .ToDictionary(c => c.Id);
+                }
+
+                var agora = DateTime.Now;
+
                 // Um resultado por destinatario, na ordem da lista: o indice diz de quem e cada
                 // um, mesmo quando dois contatos dividem o mesmo telefone.
                 for (var i = 0; i < resultadoDisparos.Count; i++)
@@ -87,11 +107,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
                     if (respostaMeta.Sucesso)
                     {
+                        var contatoId = Guid.Parse(respostaMeta.ContatoId);
+
                         var historico = new HistoricoDisparo
                         {
                             EmpresaId = command.IdEmpresa,
                             // ✅ Recupera o ID específico e correto que mapeamos para este número de telefone
-                            ContatoId = Guid.Parse(respostaMeta.ContatoId),
+                            ContatoId = contatoId,
                             TemplateId = command.TemplateId,
                             TipoDisparo = "Template",
                             WamidMeta = respostaMeta.WamidMeta,
@@ -107,6 +129,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                         };
 
                         await _unitOfWork.HistoricoDisparo.Incluir(historico);
+
+                        // Mesma regra do envio individual (EnviarMensagemTemplateMetaHandler):
+                        // template com GeraCobranca abre uma CobrancaCliente por destinatario.
+                        if (contatoPorId != null && contatoPorId.TryGetValue(contatoId, out var contato))
+                        {
+                            var cobranca = CobrancaClienteFactory.Criar(contato, templateEnviado!.Id, historico.Id, agora);
+                            await _unitOfWork.CobrancaCliente.Incluir(cobranca);
+                        }
+                        else if (templateEnviado != null && templateEnviado.GeraCobranca)
+                        {
+                            _logger.LogWarning(
+                                "GeraCobranca: contato {ContatoId} nao encontrado ao abrir CobrancaCliente do disparo {HistoricoDisparoId}",
+                                contatoId, historico.Id);
+                        }
                     }
                 }
 

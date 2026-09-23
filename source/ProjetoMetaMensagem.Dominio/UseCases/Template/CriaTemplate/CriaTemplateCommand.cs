@@ -29,6 +29,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
         // Valores de exemplo para cada {{n}} do corpo, na ordem — a Meta exige isso
         // quando o Conteudo tem variáveis
         public List<string>? ExemplosBody { get; set; }
+
+        // Marca que disparar este template deve abrir uma CobrancaCliente. Puramente local (a
+        // Meta nao sabe disso) -- nao entra no payload de CriarTemplateMetaAsync.
+        public bool GeraCobranca { get; set; }
     }
 
     public class CriaTemplateBotaoCommand

@@ -23,6 +23,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
             Status = template.Status;
             DataCriacao = template.DataCriacao;
             DataAtualizacao = template.DataAtualizacao;
+            GeraCobranca = template.GeraCobranca;
         }
 
         public Guid Id { get; set; }
@@ -48,5 +49,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
         public string? ComponentesJson { get; set; }
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
+        public bool GeraCobranca { get; set; }
     }
 }

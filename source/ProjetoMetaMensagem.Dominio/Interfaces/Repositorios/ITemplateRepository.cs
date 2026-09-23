@@ -19,5 +19,10 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<Template?> ObterPorIdEEmpresa(Guid id, Guid? empresaIdSolicitante);
         Task<IEnumerable<Template>> Obter();
         Task<IEnumerable<Template>> ObterPorEmpresa(Guid empresaId);
+
+        // Update dedicado e minimo (so a coluna local GeraCobranca) -- nao passa por Alterar()
+        // porque esse reenvia o template pra Meta e exige status REJECTED, e ligar/desligar
+        // cobranca e uma flag puramente nossa, sem relacao com a analise do template.
+        Task<int> AlterarFlagCobranca(Guid id, Guid? empresaIdSolicitante, bool geraCobranca);
     }
 }

@@ -38,6 +38,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public string? ComponentesJson { get; set; }
 
+        // Marca que disparar este template deve abrir uma CobrancaCliente (cobranca do cliente
+        // FINAL de quem revende a plataforma, ex: Sebrecon) -- nao confundir com a Assinatura
+        // SaaS da propria Contact Solution, que e outra tabela/fluxo (Cakto).
+        public bool GeraCobranca { get; set; }
+
         [NotMapped]
         public List<TemplateComponenteDto> Componentes
         {

@@ -119,10 +119,27 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             // Normaliza os dois lados pra digitos apenas, ja que a Meta manda o "from" sempre
             // sem "+"/espacos, mas o cadastro manual do Contato pode ter formatacao.
+            //
+            // Varios contatos podem dividir o mesmo numero (uma pessoa que responde por varias
+            // empresas do cliente). Antes o TOP 1 implicito devolvia um deles sem criterio, e a
+            // resposta do cliente caia num contato qualquer. Agora vence, nesta ordem:
+            //  1. o contato com conversa de flow em andamento (nao se perde o fio do bot no meio
+            //     do atendimento so porque outro contato do mesmo numero recebeu uma cobranca);
+            //  2. o contato pra quem mais recentemente ENVIAMOS algo -- e a esse envio que o
+            //     cliente esta respondendo;
+            //  3. o cadastro mais antigo, so pra o resultado ser sempre o mesmo.
             var sql = @"
-        SELECT * FROM Contato
-        WHERE EmpresaId = @EmpresaId
-          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone";
+        SELECT TOP 1 c.* FROM Contato c
+        WHERE c.EmpresaId = @EmpresaId
+          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
+        ORDER BY
+          CASE WHEN EXISTS (SELECT 1 FROM EstadoConversa e
+                            WHERE e.EmpresaId = c.EmpresaId AND e.ContatoId = c.Id AND e.Finalizado = 0)
+               THEN 0 ELSE 1 END,
+          (SELECT MAX(h.DataEnvio) FROM HistoricoDisparo h
+           WHERE h.EmpresaId = c.EmpresaId AND h.ContatoId = c.Id) DESC,
+          c.DataCriacao ASC,
+          c.Id";
 
             var telefoneNormalizado = new string(telefone.Where(char.IsDigit).ToArray());
 

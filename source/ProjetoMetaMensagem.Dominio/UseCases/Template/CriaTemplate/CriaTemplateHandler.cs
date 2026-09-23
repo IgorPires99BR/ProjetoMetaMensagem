@@ -81,6 +81,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     Idioma = command.Idioma ?? "pt_BR",
                     Status = "PENDING",
                     MetaTemplateId = metaTemplateId,
+                    GeraCobranca = command.GeraCobranca,
                     DataCriacao = DateTime.Now
                 };
 

@@ -284,6 +284,7 @@ builder.Services.AddScoped<IRelatorioRepository, RelatorioRepository>();
 builder.Services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
 builder.Services.AddScoped<IOrigemLeadRepository, OrigemLeadRepository>();
 builder.Services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
+builder.Services.AddScoped<ICobrancaClienteRepository, CobrancaClienteRepository>();
 builder.Services.AddScoped<INotificadorChat, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorChat>();
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MetaConversoesConfiguration>(
     builder.Configuration.GetSection("MetaConversoesConfiguration"));

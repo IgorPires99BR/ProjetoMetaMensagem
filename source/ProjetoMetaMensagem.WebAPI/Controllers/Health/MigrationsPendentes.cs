@@ -83,6 +83,33 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                     CONSTRAINT FK_Parametro_Empresa FOREIGN KEY (EmpresaId) REFERENCES Empresa(Id),
                     CONSTRAINT UQ_Parametro_Empresa_Nome UNIQUE (EmpresaId, Nome)
                   );"),
+
+            new("BD/47", "Template", "GeraCobranca",
+                "ALTER TABLE Template ADD GeraCobranca BIT NOT NULL DEFAULT (0);"),
+
+            // CobrancaCliente depende de Contato/Template/HistoricoDisparo ja existirem -- todos
+            // anteriores a esta migration, entao a ordem do array e suficiente.
+            new("BD/48", "CobrancaCliente", null,
+                @"CREATE TABLE CobrancaCliente (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                    EmpresaId UNIQUEIDENTIFIER NOT NULL,
+                    ContatoId UNIQUEIDENTIFIER NOT NULL,
+                    TemplateId UNIQUEIDENTIFIER NOT NULL,
+                    HistoricoDisparoId UNIQUEIDENTIFIER NOT NULL,
+                    Valor DECIMAL(10,2) NOT NULL,
+                    DataVencimento DATETIME NOT NULL,
+                    Status NVARCHAR(20) NOT NULL DEFAULT ('PENDENTE'),
+                    DataPagamento DATETIME NULL,
+                    UtmContentCakto NVARCHAR(100) NULL,
+                    EventoIdCakto NVARCHAR(100) NULL,
+                    DataCriacao DATETIME NOT NULL DEFAULT (GETDATE()),
+                    DataAtualizacao DATETIME NULL,
+                    CONSTRAINT FK_CobrancaCliente_Empresa FOREIGN KEY (EmpresaId) REFERENCES Empresa(Id),
+                    CONSTRAINT FK_CobrancaCliente_Contato FOREIGN KEY (ContatoId) REFERENCES Contato(Id),
+                    CONSTRAINT FK_CobrancaCliente_Template FOREIGN KEY (TemplateId) REFERENCES Template(Id),
+                    CONSTRAINT FK_CobrancaCliente_HistoricoDisparo FOREIGN KEY (HistoricoDisparoId) REFERENCES HistoricoDisparo(Id)
+                  );
+                  CREATE INDEX IX_CobrancaCliente_Empresa_Status ON CobrancaCliente (EmpresaId, Status, DataVencimento);"),
         };
     }
 }

@@ -8,6 +8,8 @@ using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.Helpers;
 using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
+using ProjetoMetaMensagem.Dominio.Servicos;
+using System.Linq;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta
 {
@@ -80,6 +82,30 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 };
 
                 await _unitOfWork.HistoricoDisparo.Incluir(historico);
+
+                // Template marcado GeraCobranca (ex: aviso de cobranca da Sebrecon): abre a
+                // CobrancaCliente vinculada a este disparo. Snapshot do Contato no momento do
+                // envio -- ver CobrancaClienteFactory.
+                if (templateEnviado != null && templateEnviado.GeraCobranca)
+                {
+                    var contato = (await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, new[] { command.ContatoId }))
+                        .FirstOrDefault();
+
+                    if (contato != null)
+                    {
+                        var cobranca = CobrancaClienteFactory.Criar(contato, templateEnviado.Id, historico.Id, DateTime.Now);
+                        await _unitOfWork.CobrancaCliente.Incluir(cobranca);
+                    }
+                    else
+                    {
+                        // Nao devolve erro: a mensagem ja foi enviada de verdade, so nao ha como
+                        // rastrear a cobranca sem o cadastro do contato (nao deveria acontecer,
+                        // ja que o ContatoId vem do proprio destinatario do disparo).
+                        _logger.LogWarning(
+                            "GeraCobranca: contato {ContatoId} nao encontrado ao abrir CobrancaCliente do disparo {HistoricoDisparoId}",
+                            command.ContatoId, historico.Id);
+                    }
+                }
 
                 // 4. Montagem do resultado positivo
                 var resultado = new EnviarMensagemTemplateMetaResult

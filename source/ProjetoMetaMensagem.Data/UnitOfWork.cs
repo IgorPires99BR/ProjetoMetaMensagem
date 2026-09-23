@@ -35,6 +35,7 @@ namespace ProjetoMetaMensagem.Data
         public IAssinaturaRepository Assinatura { get; set; }
         public IOrigemLeadRepository OrigemLead { get; set; }
         public IAgendamentoRepository Agendamento { get; set; }
+        public ICobrancaClienteRepository CobrancaCliente { get; set; }
 
         public UnitOfWork(DbSession session,
             ICompaniesRepository companiesRepository,
@@ -59,7 +60,8 @@ namespace ProjetoMetaMensagem.Data
             IRelatorioRepository relatorioRepository,
             IAssinaturaRepository assinaturaRepository,
             IOrigemLeadRepository origemLeadRepository,
-            IAgendamentoRepository agendamentoRepository)
+            IAgendamentoRepository agendamentoRepository,
+            ICobrancaClienteRepository cobrancaClienteRepository)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
@@ -85,6 +87,7 @@ namespace ProjetoMetaMensagem.Data
             Assinatura = assinaturaRepository;
             OrigemLead = origemLeadRepository;
             Agendamento = agendamentoRepository;
+            CobrancaCliente = cobrancaClienteRepository;
         }
 
         public void Commit()
