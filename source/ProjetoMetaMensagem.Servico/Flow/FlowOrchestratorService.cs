@@ -5,6 +5,7 @@ using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using System.Text.RegularExpressions;
 
@@ -631,7 +632,7 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     return;
                 }
 
-                await _unitOfWork.HistoricoDisparo.Incluir(new HistoricoDisparo
+                var historico = new HistoricoDisparo
                 {
                     EmpresaId = empresaId,
                     ContatoId = estadoAtual?.ContatoId ?? Guid.Empty,
@@ -641,7 +642,32 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     WamidMeta = resultadoEnvio.WamidMeta,
                     DataEnvio = DateTime.Now,
                     Origem = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.FlowAutomatico
-                });
+                };
+
+                await _unitOfWork.HistoricoDisparo.Incluir(historico);
+
+                // Este caminho fala direto com o MetaService (nao passa pelo
+                // EnviarMensagemTemplateMetaHandler), entao a regra de GeraCobranca precisa ser
+                // repetida aqui -- senao template de cobranca enviado por flow nunca virava
+                // CobrancaCliente.
+                if (template.GeraCobranca)
+                {
+                    var contato = historico.ContatoId == Guid.Empty
+                        ? null
+                        : (await _unitOfWork.Contato.ObterPorIds(empresaId, new[] { historico.ContatoId })).FirstOrDefault();
+
+                    if (contato != null)
+                    {
+                        var cobranca = CobrancaClienteFactory.Criar(contato, template.Id, historico.Id, DateTime.Now);
+                        await _unitOfWork.CobrancaCliente.Incluir(cobranca);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "GeraCobranca: contato {ContatoId} nao encontrado ao abrir CobrancaCliente do disparo {HistoricoDisparoId} (Flow)",
+                            historico.ContatoId, historico.Id);
+                    }
+                }
             }
         }
 
