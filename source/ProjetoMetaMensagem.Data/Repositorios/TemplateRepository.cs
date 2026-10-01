@@ -24,6 +24,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 INSERT INTO {nameof(Template)} (
                     {nameof(Template.EmpresaId)},
                     {nameof(Template.NomeTemplate)},
+                    {nameof(Template.NomeExibicao)},
                     {nameof(Template.Conteudo)},
                     {nameof(Template.Categoria)},
                     {nameof(Template.ComponentesJson)},
@@ -32,7 +33,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Template.MetaTemplateId)},
                     {nameof(Template.GeraCobranca)}
                 )
-                VALUES (@EmpresaId, @NomeTemplate, @Conteudo, @Categoria,@ComponentesJson, @Idioma, @Status, @MetaTemplateId, @GeraCobranca);
+                VALUES (@EmpresaId, @NomeTemplate, @NomeExibicao, @Conteudo, @Categoria,@ComponentesJson, @Idioma, @Status, @MetaTemplateId, @GeraCobranca);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             await _session.Connection.ExecuteAsync(sql, template, transaction: _session.Transaction);
@@ -49,6 +50,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 UPDATE {nameof(Template)}
                 SET
                     {nameof(Template.NomeTemplate)} = @NomeTemplate,
+                    {nameof(Template.NomeExibicao)} = @NomeExibicao,
                     {nameof(Template.Conteudo)} = @Conteudo,
                     {nameof(Template.Categoria)} = @Categoria,
                     {nameof(Template.ComponentesJson)} = @ComponentesJson,
@@ -62,6 +64,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 {
                     template.Id,
                     template.NomeTemplate,
+                    template.NomeExibicao,
                     template.Conteudo,
                     template.Categoria,
                     template.ComponentesJson,
@@ -109,7 +112,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<IEnumerable<Template>> ObterPorEmpresa(Guid empresaId)
         {
-            var sql = $"SELECT * FROM {nameof(Template)} WHERE {nameof(Template.EmpresaId)} = @EmpresaId";
+            var sql = $"SELECT * FROM {nameof(Template)} WHERE {nameof(Template.EmpresaId)} = @EmpresaId ORDER BY COALESCE({nameof(Template.NomeExibicao)}, {nameof(Template.NomeTemplate)})";
             return await _session.Connection.QueryAsync<Template>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 

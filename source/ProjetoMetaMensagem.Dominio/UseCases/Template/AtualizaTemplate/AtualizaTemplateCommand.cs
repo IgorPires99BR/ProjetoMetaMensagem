@@ -7,15 +7,19 @@ using System.Collections.Generic;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
 {
-    // Edita um template já criado (PENDING ou REJECTED), reenviando pra Meta via POST
-    // /{template-id}. Propositalmente sem NomeTemplate/Idioma: a Meta não permite alterar nem um
-    // nem outro numa edição — outro idioma ou nome exige criar um novo template.
+    // Edita um template já criado. O nome no sistema (NomeExibicao) é só local e muda em qualquer
+    // status; o conteúdo só é reenviado pra Meta (POST /{template-id}) quando de fato mudou.
+    // Propositalmente sem NomeTemplate/Idioma: a Meta não permite alterar nem um nem outro numa
+    // edição — outro idioma ou nome técnico exige criar um novo template.
     public class AtualizaTemplateCommand : IRequest<Response<AtualizaTemplateResult>>, ITemplateComponentesInput
     {
         public Guid TemplateId { get; set; }
 
         // Escopo sempre vindo do token (nunca do corpo/rota) -- mesmo padrao de DeletaTemplateCommand
         public Guid? EmpresaIdSolicitante { get; set; }
+
+        // Nulo = mantém o nome atual; vazio = volta a mostrar o nome técnico (NomeTemplate).
+        public string? NomeExibicao { get; set; }
 
         public string Categoria { get; set; }
         public string Conteudo { get; set; }

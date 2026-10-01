@@ -13,6 +13,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
                 Id = template.Id;
                 IdEmpresa = template.EmpresaId;
                 NomeTemplate = template.NomeTemplate;
+                NomeExibicao = template.NomeExibicao;
                 Conteudo = template.Conteudo;
                 Categoria = template.Categoria;
                 Idioma = template.Idioma;
@@ -26,6 +27,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
         public Guid Id { get; set; }
         public Guid IdEmpresa { get; set; }
         public string NomeTemplate { get; set; }
+        public string? NomeExibicao { get; set; }
         public string Conteudo { get; set; }
         public string Categoria { get; set; }
         public string Idioma { get; set; }
@@ -33,5 +35,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
         public DateTime? DataAtualizacao { get; set; }
         public string? ComponentesJson { get; set; }
         public bool GeraCobranca { get; set; }
+
+        // Diz pra tela se a edição foi pra análise da Meta ou ficou só no sistema (troca de nome).
+        public bool EnviadoParaMeta { get; set; }
     }
 }

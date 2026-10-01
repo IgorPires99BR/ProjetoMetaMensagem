@@ -105,6 +105,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/47", "Template", "GeraCobranca"),
 
             new("BD/48", "CobrancaCliente"),
+
+            new("BD/49", "Template", "NomeExibicao"),
         };
     }
 }

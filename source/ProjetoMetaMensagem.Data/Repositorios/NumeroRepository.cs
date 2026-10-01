@@ -140,7 +140,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
         public async Task<IEnumerable<Numero>> ObterPorUsuario(Guid usuarioId)
         {
-            var sql = $"SELECT * FROM {nameof(Numero)} WHERE {nameof(Numero.UsuarioId)} = @UsuarioId";
+            // Descricao e opcional: numero sem descricao vai pro fim, ordenado pelo telefone.
+            var sql = $@"
+                SELECT * FROM {nameof(Numero)}
+                WHERE {nameof(Numero.UsuarioId)} = @UsuarioId
+                ORDER BY CASE WHEN ISNULL({nameof(Numero.Descricao)}, '') = '' THEN 1 ELSE 0 END,
+                         {nameof(Numero.Descricao)}, {nameof(Numero.Telefone)}";
             return await _session.Connection.QueryAsync<Numero>(sql, new { UsuarioId = usuarioId }, transaction: _session.Transaction);
         }
     }

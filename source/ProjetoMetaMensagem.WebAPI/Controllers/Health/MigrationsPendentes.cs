@@ -110,6 +110,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                     CONSTRAINT FK_CobrancaCliente_HistoricoDisparo FOREIGN KEY (HistoricoDisparoId) REFERENCES HistoricoDisparo(Id)
                   );
                   CREATE INDEX IX_CobrancaCliente_Empresa_Status ON CobrancaCliente (EmpresaId, Status, DataVencimento);"),
+
+            new("BD/49", "Template", "NomeExibicao",
+                "ALTER TABLE Template ADD NomeExibicao NVARCHAR(255) NULL;"),
         };
     }
 }

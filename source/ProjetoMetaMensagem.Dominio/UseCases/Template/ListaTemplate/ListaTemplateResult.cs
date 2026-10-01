@@ -16,6 +16,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
             Id = template.Id;
             EmpresaId = template.EmpresaId;
             NomeTemplate = template.NomeTemplate;
+            NomeExibicao = template.NomeExibicao;
             Conteudo = template.Conteudo;
             Categoria = template.Categoria;
             ComponentesJson = template.ComponentesJson;
@@ -34,6 +35,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
         [Required]
         [MaxLength(255)]
         public string NomeTemplate { get; set; }
+
+        [MaxLength(255)]
+        public string? NomeExibicao { get; set; }
 
         [Required]
         public string Conteudo { get; set; }

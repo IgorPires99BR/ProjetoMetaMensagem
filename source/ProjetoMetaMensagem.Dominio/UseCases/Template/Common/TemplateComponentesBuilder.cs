@@ -144,5 +144,31 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.Common
 
             return componentesLocais;
         }
+
+        // Diz se a edição muda o que a Meta avalia: categoria, corpo, cabeçalho, rodapé e botões.
+        // Exemplos de variável e o arquivo de exemplo do cabeçalho ficam de fora -- não são
+        // guardados localmente e não mudam a mensagem que o cliente recebe.
+        public static bool AlterouConteudoEnviado(Entidades.Template atual, string categoria, ITemplateComponentesInput input)
+        {
+            if (!string.Equals(Normalizar(atual.Categoria), Normalizar(categoria), System.StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (Normalizar(atual.Conteudo) != Normalizar(input.Conteudo))
+                return true;
+
+            return Assinatura(atual.Componentes) != Assinatura(MontarComponentesLocais(input));
+        }
+
+        // O corpo fica de fora: a sincronização com a Meta grava o BODY também como componente,
+        // a criação/edição não (o corpo vai em Template.Conteudo, já comparado acima).
+        private static string Assinatura(IEnumerable<TemplateComponenteDto> componentes) =>
+            string.Join("#", componentes
+                .Where(c => c.Tipo != TipoComponenteTemplate.Body)
+                .OrderBy(c => c.Tipo)
+                .Select(c => $"{(int)c.Tipo}|{(int)c.FormatMidia}|{Normalizar(c.Texto)}|" +
+                    string.Join(";", (c.Botoes ?? new List<TemplateBotaoDto>()).Select(b =>
+                        $"{(int)b.Tipo}|{Normalizar(b.Texto)}|{Normalizar(b.Url)}|{Normalizar(b.NumeroTelefone)}"))));
+
+        private static string Normalizar(string? texto) => (texto ?? string.Empty).Replace("\r\n", "\n").Trim();
     }
 }

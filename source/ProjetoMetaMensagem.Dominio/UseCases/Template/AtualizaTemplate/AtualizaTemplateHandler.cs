@@ -53,38 +53,57 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate
                     return response;
                 }
 
-                if (string.IsNullOrEmpty(template.Status) || !StatusEditaveis.Contains(template.Status.ToUpperInvariant()))
-                {
-                    var emAnalise = string.Equals(template.Status, "PENDING", StringComparison.OrdinalIgnoreCase);
+                // Trocar só o nome não passa pela Meta: antes toda edição reenviava o template, o que
+                // o devolvia pra análise (PENDING) e só era permitido em recusados.
+                var enviarParaMeta = TemplateComponentesBuilder.AlterouConteudoEnviado(template, command.Categoria, command);
 
-                    response.AddErro(emAnalise
-                        ? "Este modelo ainda está em análise na Meta e não pode ser alterado agora. Espere o resultado: se for recusado, você edita e reenvia."
-                        : "Só é possível editar modelos recusados pela Meta. Modelos aprovados não podem ser alterados — crie um novo.");
-                    return response;
+                if (enviarParaMeta)
+                {
+                    if (string.IsNullOrEmpty(template.Status) || !StatusEditaveis.Contains(template.Status.ToUpperInvariant()))
+                    {
+                        var emAnalise = string.Equals(template.Status, "PENDING", StringComparison.OrdinalIgnoreCase);
+
+                        response.AddErro(emAnalise
+                            ? "Este modelo ainda está em análise na Meta e o texto não pode ser alterado agora. Espere o resultado: se for recusado, você edita e reenvia. O nome no sistema pode ser trocado a qualquer momento."
+                            : "Só é possível alterar o texto de modelos recusados pela Meta. Modelos aprovados não podem ter o texto alterado — crie um novo. O nome no sistema pode ser trocado a qualquer momento.");
+                        return response;
+                    }
+
+                    if (string.IsNullOrEmpty(template.MetaTemplateId))
+                    {
+                        response.AddErro("Este template ainda não tem o identificador da Meta salvo localmente. Clique em \"Sincronizar Meta\" e tente editar novamente.");
+                        return response;
+                    }
+
+                    var validacaoEnvio = new AtualizaTemplateEnvioMetaValidator().Validate(command);
+                    if (!validacaoEnvio.IsValid)
+                    {
+                        response.AddErros(validacaoEnvio.Errors.ToCustomValidationFailure());
+                        return response;
+                    }
+
+                    var token = await _unitOfWork.Empresa.ObterMetaAccessToken(template.EmpresaId);
+
+                    var componentesMeta = TemplateComponentesBuilder.MontarComponentesEnvio(command);
+
+                    await _metaService.AtualizarTemplateMetaAsync(template.MetaTemplateId, command.Categoria, componentesMeta, token);
+
+                    template.Conteudo = command.Conteudo;
+                    template.Categoria = command.Categoria;
+                    template.Status = "PENDING"; // a Meta volta o template pra análise depois de uma edição
+                    template.Componentes = TemplateComponentesBuilder.MontarComponentesLocais(command);
                 }
 
-                if (string.IsNullOrEmpty(template.MetaTemplateId))
+                if (command.NomeExibicao != null)
                 {
-                    response.AddErro("Este template ainda não tem o identificador da Meta salvo localmente. Clique em \"Sincronizar Meta\" e tente editar novamente.");
-                    return response;
+                    template.NomeExibicao = string.IsNullOrWhiteSpace(command.NomeExibicao) ? null : command.NomeExibicao.Trim();
                 }
 
-                var wabaId = await _unitOfWork.Empresa.ObterWabaId(template.EmpresaId);
-                var token = await _unitOfWork.Empresa.ObterMetaAccessToken(template.EmpresaId);
-
-                var componentesMeta = TemplateComponentesBuilder.MontarComponentesEnvio(command);
-
-                await _metaService.AtualizarTemplateMetaAsync(template.MetaTemplateId, command.Categoria, componentesMeta, token);
-
-                template.Conteudo = command.Conteudo;
-                template.Categoria = command.Categoria;
-                template.Status = "PENDING"; // a Meta volta o template pra análise depois de uma edição
                 template.DataAtualizacao = DateTime.Now;
-                template.Componentes = TemplateComponentesBuilder.MontarComponentesLocais(command);
 
                 await _unitOfWork.Template.Alterar(template, command.EmpresaIdSolicitante);
 
-                response.AddValue(new AtualizaTemplateResult(template));
+                response.AddValue(new AtualizaTemplateResult(template) { EnviadoParaMeta = enviarParaMeta });
                 _unitOfWork.Commit();
             }
             catch (Exception ex)

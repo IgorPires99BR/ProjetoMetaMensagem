@@ -76,6 +76,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     Id = Guid.NewGuid(),
                     EmpresaId = command.IdEmpresa,
                     NomeTemplate = command.NomeTemplate,
+                    NomeExibicao = string.IsNullOrWhiteSpace(command.NomeExibicao) ? null : command.NomeExibicao.Trim(),
                     Conteudo = command.Conteudo,
                     Categoria = command.Categoria,
                     Idioma = command.Idioma ?? "pt_BR",

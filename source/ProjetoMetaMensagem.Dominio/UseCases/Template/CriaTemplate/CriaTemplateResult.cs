@@ -17,6 +17,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                 Id = template.Id;
                 IdEmpresa = template.EmpresaId;
                 NomeTemplate = template.NomeTemplate;
+                NomeExibicao = template.NomeExibicao;
                 Conteudo = template.Conteudo;
                 Categoria = template.Categoria;
                 Idioma = template.Idioma;
@@ -30,6 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
         public Guid Id { get; set; }
         public Guid IdEmpresa { get; set; }
         public string NomeTemplate { get; set; }
+        public string? NomeExibicao { get; set; }
         public string Conteudo { get; set; }
         public string Categoria { get; set; }
         public string Idioma { get; set; }

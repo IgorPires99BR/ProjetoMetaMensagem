@@ -155,7 +155,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             // null = conta de plataforma, ve contatos de todas as empresas de uma vez.
             var sql = @"
                 SELECT * FROM Contato
-                WHERE (@EmpresaId IS NULL OR EmpresaId = @EmpresaId)";
+                WHERE (@EmpresaId IS NULL OR EmpresaId = @EmpresaId)
+                ORDER BY NomeContato, NomeCliente";
 
             return await _session.Connection.QueryAsync<Contato>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }

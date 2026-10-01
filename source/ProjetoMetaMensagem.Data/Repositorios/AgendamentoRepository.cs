@@ -104,7 +104,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     a.{nameof(Agendamento.Id)} AS {nameof(AgendamentoListItem.Id)},
                     a.{nameof(Agendamento.Nome)} AS {nameof(AgendamentoListItem.Nome)},
                     a.{nameof(Agendamento.TemplateId)} AS {nameof(AgendamentoListItem.TemplateId)},
-                    t.{nameof(Template.NomeTemplate)} AS {nameof(AgendamentoListItem.NomeTemplate)},
+                    COALESCE(t.{nameof(Template.NomeExibicao)}, t.{nameof(Template.NomeTemplate)}) AS {nameof(AgendamentoListItem.NomeTemplate)},
                     a.{nameof(Agendamento.TipoRecorrencia)} AS {nameof(AgendamentoListItem.TipoRecorrencia)},
                     a.{nameof(Agendamento.DataInicio)} AS {nameof(AgendamentoListItem.DataInicio)},
                     a.{nameof(Agendamento.DataFim)} AS {nameof(AgendamentoListItem.DataFim)},

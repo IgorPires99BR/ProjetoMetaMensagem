@@ -14,23 +14,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.Common
 
         public static void Aplicar<T>(AbstractValidator<T> validator) where T : ITemplateComponentesInput
         {
-            validator.RuleFor(x => x.HeaderTipo)
-                .Must(t => string.IsNullOrEmpty(t) || t == "NONE" || TiposHeaderValidos.Contains(t))
-                .WithMessage("Tipo de cabeçalho inválido.");
+            AplicarEstrutura(validator);
+            AplicarExemplos(validator);
+        }
 
-            validator.RuleFor(x => x.HeaderTexto)
-                .NotEmpty()
-                .When(x => x.HeaderTipo == "TEXT")
-                .WithMessage("Informe o texto do cabeçalho.");
-
+        // Exemplos (valores das variaveis e arquivo do cabecalho de midia) so servem pra analise
+        // da Meta e nao ficam salvos localmente. Por isso a edicao so os exige quando o conteudo
+        // mudou e vai ser reenviado -- so trocar o nome no sistema nao pode pedir isso.
+        public static void AplicarExemplos<T>(AbstractValidator<T> validator) where T : ITemplateComponentesInput
+        {
             validator.RuleFor(x => x.HeaderExemploHandle)
                 .NotEmpty()
                 .When(x => x.HeaderTipo == "IMAGE" || x.HeaderTipo == "VIDEO" || x.HeaderTipo == "DOCUMENT")
                 .WithMessage("Envie um arquivo de exemplo para o cabeçalho de mídia antes de cadastrar o template.");
-
-            validator.RuleFor(x => x.FooterTexto)
-                .MaximumLength(60)
-                .WithMessage("O rodapé pode ter no máximo 60 caracteres.");
 
             validator.RuleFor(x => x.ExemplosBody)
                 .Must((command, exemplos) =>
@@ -40,6 +36,22 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.Common
                     return exemplos != null && exemplos.Count >= quantidadeVariaveis && exemplos.All(e => !string.IsNullOrWhiteSpace(e));
                 })
                 .WithMessage("Preencha um valor de exemplo para cada variável do corpo do template.");
+        }
+
+        public static void AplicarEstrutura<T>(AbstractValidator<T> validator) where T : ITemplateComponentesInput
+        {
+            validator.RuleFor(x => x.HeaderTipo)
+                .Must(t => string.IsNullOrEmpty(t) || t == "NONE" || TiposHeaderValidos.Contains(t))
+                .WithMessage("Tipo de cabeçalho inválido.");
+
+            validator.RuleFor(x => x.HeaderTexto)
+                .NotEmpty()
+                .When(x => x.HeaderTipo == "TEXT")
+                .WithMessage("Informe o texto do cabeçalho.");
+
+            validator.RuleFor(x => x.FooterTexto)
+                .MaximumLength(60)
+                .WithMessage("O rodapé pode ter no máximo 60 caracteres.");
 
             validator.RuleFor(x => x.Botoes)
                 .Must(b => b == null || b.Count <= 3)

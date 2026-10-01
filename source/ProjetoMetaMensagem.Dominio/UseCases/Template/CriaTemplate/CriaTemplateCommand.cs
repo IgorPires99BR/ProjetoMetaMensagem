@@ -13,6 +13,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
     {
         public Guid IdEmpresa { get; set; }
         public string NomeTemplate { get; set; }  // Ex: "boas_vindas_clientes"
+
+        // Nome que aparece no sistema (o NomeTemplate acima e o tecnico, exigido pela Meta).
+        public string? NomeExibicao { get; set; }
         public string Categoria { get; set; }     // Ex: "UTILITY", "MARKETING", "AUTHENTICATION"
         public string Idioma { get; set; }        // Ex: "pt_BR" (Pode vir default)
         public string Conteudo { get; set; }

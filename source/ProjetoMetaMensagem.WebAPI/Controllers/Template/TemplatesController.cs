@@ -119,7 +119,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
         }
 
         // Ligar/desligar cobranca e uma flag puramente local: funciona em template ja aprovado,
-        // sem reenviar nada pra Meta (diferente do PUT /api/template/{id}, que exige REJECTED).
+        // sem reenviar nada pra Meta (diferente do PUT /api/template/{id}, que exige REJECTED
+        // quando o texto muda).
         [HttpPatch("api/template/{id}/gera-cobranca")]
         public async Task<IActionResult> AlterarFlagCobranca(Guid id, [FromBody] AlteraFlagCobrancaTemplateCommand command)
         {

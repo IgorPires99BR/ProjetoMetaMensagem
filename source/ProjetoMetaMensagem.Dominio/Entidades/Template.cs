@@ -21,6 +21,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         [MaxLength(255)]
         public string NomeTemplate { get; set; }
 
+        // Nome mostrado no sistema, editavel a vontade. NomeTemplate e o nome tecnico na Meta,
+        // que ela nao deixa renomear e que identifica o template no disparo. Nulo = NomeTemplate.
+        [MaxLength(255)]
+        public string? NomeExibicao { get; set; }
+
         [Required]
         public string Conteudo { get; set; }
 

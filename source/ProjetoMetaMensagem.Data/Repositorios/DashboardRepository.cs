@@ -91,7 +91,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             // Disparos recentes (individuais, mais recentes primeiro)
             result.DisparosRecentes = (await conn.QueryAsync<DisparoRecente>(
                 @"SELECT TOP 5
-                    ISNULL(t.NomeTemplate, h.TipoDisparo) AS Nome,
+                    COALESCE(t.NomeExibicao, t.NomeTemplate, h.TipoDisparo) AS Nome,
                     1 AS Enviadas,
                     1 AS Total,
                     CASE WHEN h.WamidMeta IS NOT NULL AND h.WamidMeta <> '' THEN 'Concluído' ELSE 'Pendente' END AS Status
