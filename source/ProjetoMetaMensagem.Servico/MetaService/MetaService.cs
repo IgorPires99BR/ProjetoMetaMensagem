@@ -298,6 +298,101 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 };
             }
         }
+
+        public async Task<PerfilNumeroMetaDto> ObterPerfilNumeroAsync(string phoneNumberId, string accessToken)
+        {
+            // Duas leituras: o perfil (foto, recado...) e o nome ficam em nos diferentes da Graph.
+            var perfilJson = await GetMetaAsync(
+                $"{phoneNumberId}/whatsapp_business_profile?fields=about,address,description,email,profile_picture_url,websites,vertical",
+                accessToken, "a consulta do perfil do número");
+            var nomeJson = await GetMetaAsync(
+                $"{phoneNumberId}?fields=verified_name,new_display_name,new_name_status",
+                accessToken, "a consulta do nome do número");
+
+            var perfil = JsonConvert.DeserializeObject<ObtemPerfilNumeroResponse>(perfilJson)?.Data?.FirstOrDefault();
+            var nome = JsonConvert.DeserializeObject<NomeNumeroMetaResponse>(nomeJson);
+
+            return new PerfilNumeroMetaDto
+            {
+                Sobre = perfil?.About,
+                Descricao = perfil?.Description,
+                Endereco = perfil?.Address,
+                Email = perfil?.Email,
+                Sites = perfil?.Websites ?? new List<string>(),
+                Segmento = perfil?.Vertical,
+                FotoUrl = perfil?.ProfilePictureUrl,
+                NomeExibido = nome?.VerifiedName,
+                NovoNomeSolicitado = nome?.NewDisplayName,
+                StatusNovoNome = nome?.NewNameStatus
+            };
+        }
+
+        public async Task AtualizarPerfilNumeroAsync(string phoneNumberId, string accessToken, PerfilNumeroEnvio perfil)
+        {
+            var requestMeta = new AtualizaPerfilNumeroRequest
+            {
+                About = perfil.Sobre,
+                Description = perfil.Descricao,
+                Address = perfil.Endereco,
+                Email = perfil.Email,
+                Websites = perfil.Sites,
+                Vertical = perfil.Segmento,
+                ProfilePictureHandle = perfil.FotoHandle
+            };
+
+            var json = JsonConvert.SerializeObject(requestMeta, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+
+            await PostMetaAsync($"{phoneNumberId}/whatsapp_business_profile", accessToken,
+                new StringContent(json, Encoding.UTF8, "application/json"), "a alteração do perfil do número");
+        }
+
+        public async Task SolicitarNovoNomeExibicaoAsync(string phoneNumberId, string accessToken, string novoNome)
+        {
+            // A Meta recebe o nome na query string, sem corpo.
+            await PostMetaAsync($"{phoneNumberId}?new_display_name={Uri.EscapeDataString(novoNome)}", accessToken,
+                null, "a troca do nome exibido");
+        }
+
+        public async Task RegistrarNumeroAsync(string phoneNumberId, string accessToken, string pin)
+        {
+            var json = JsonConvert.SerializeObject(new AtivaCoexistenciaRequest { Pin = pin });
+
+            await PostMetaAsync($"{phoneNumberId}/register", accessToken,
+                new StringContent(json, Encoding.UTF8, "application/json"), "o novo registro do número");
+        }
+
+        private async Task<string> GetMetaAsync(string endpoint, string accessToken, string acao)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw MetaApiException.DoCorpo(responseContent, acao);
+            }
+
+            return responseContent;
+        }
+
+        private async Task PostMetaAsync(string endpoint, string accessToken, HttpContent? content, string acao)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw MetaApiException.DoCorpo(responseContent, acao);
+            }
+        }
         #endregion
 
         #region TEMPLATES

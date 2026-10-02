@@ -32,6 +32,18 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         // CoEx: habilita a coexistência entre o app WhatsApp Business e a Cloud API para o phone_number_id informado
         Task<ResultadoCoexistencia> AtivarCoexistenciaAsync(string phoneNumberId, string accessToken, string pin);
 
+        // Perfil do WhatsApp Business do numero (foto, recado, descricao...) junto com o nome
+        // exibido e o pedido de troca de nome em analise.
+        Task<PerfilNumeroMetaDto> ObterPerfilNumeroAsync(string phoneNumberId, string accessToken);
+
+        Task AtualizarPerfilNumeroAsync(string phoneNumberId, string accessToken, PerfilNumeroEnvio perfil);
+
+        // A troca do nome exibido passa por revisao da Meta; depois de aprovada so vale quando o
+        // numero e registrado de novo (POST /register com o PIN).
+        Task SolicitarNovoNomeExibicaoAsync(string phoneNumberId, string accessToken, string novoNome);
+
+        Task RegistrarNumeroAsync(string phoneNumberId, string accessToken, string pin);
+
         Task<ResultadoEnvioTemplate> EnviarTemplateAsync(EnviarMensagemTemplateMetaCommand command, string phoneNumberId, string accessToken);
 
         // Um resultado por destinatario, NA MESMA ORDEM de comandoLote.Telefones. Antes era um

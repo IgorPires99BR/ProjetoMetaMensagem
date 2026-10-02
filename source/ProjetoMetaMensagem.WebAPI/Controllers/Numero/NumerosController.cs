@@ -9,6 +9,11 @@ using ProjetoMetaMensagem.Dominio.UseCases.Numero.ListarNumeros;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.IniciaEmbeddedSignup;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.AtivaCoexistencia;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.DeletaNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.ObtemPerfilNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraPerfilNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AlteraFotoNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.SolicitaNomeNumero;
+using ProjetoMetaMensagem.Dominio.UseCases.Numero.AplicaNomeNumero;
 
 namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
 {
@@ -112,8 +117,110 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Numero
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.Excluir"), tipo = "Servico" });
             }
         }
+
+        // Perfil do WhatsApp Business: o que o cliente final vê ao abrir o contato do número.
+        [HttpGet("api/numero/{id}/perfil")]
+        public async Task<IActionResult> ObterPerfil(Guid id)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ObtemPerfilNumeroCommand
+                {
+                    NumeroId = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.ObterPerfil"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPut("api/numero/{id}/perfil")]
+        public async Task<IActionResult> AlterarPerfil(Guid id, [FromBody] AlteraPerfilNumeroCommand command)
+        {
+            try
+            {
+                command.NumeroId = id;
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.AlterarPerfil"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPost("api/numero/{id}/foto")]
+        [RequestSizeLimit(6_000_000)]
+        public async Task<IActionResult> AlterarFoto(Guid id, [FromForm] IFormFile arquivo)
+        {
+            try
+            {
+                if (arquivo == null || arquivo.Length == 0)
+                {
+                    return BadRequest(new { mensagem = "Nenhum arquivo enviado.", tipo = "Negocio" });
+                }
+
+                using var memoryStream = new MemoryStream();
+                await arquivo.CopyToAsync(memoryStream);
+
+                var resultado = await _mediator.Send(new AlteraFotoNumeroCommand
+                {
+                    NumeroId = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo(),
+                    Arquivo = memoryStream.ToArray(),
+                    MimeType = arquivo.ContentType
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.AlterarFoto"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPost("api/numero/{id}/nome")]
+        public async Task<IActionResult> SolicitarNome(Guid id, [FromBody] SolicitaNomeNumeroCommand command)
+        {
+            try
+            {
+                command.NumeroId = id;
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.SolicitarNome"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPost("api/numero/{id}/nome/aplicar")]
+        public async Task<IActionResult> AplicarNome(Guid id, [FromBody] AtivaCoexistenciaRequestBody body)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new AplicaNomeNumeroCommand
+                {
+                    NumeroId = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo(),
+                    Pin = body?.Pin
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "NumerosController.AplicarNome"), tipo = "Servico" });
+            }
+        }
     }
 
+    // Usado pela coexistência e pela aplicação do novo nome: as duas fazem o /register com PIN.
     public class AtivaCoexistenciaRequestBody
     {
         public string? Pin { get; set; }
