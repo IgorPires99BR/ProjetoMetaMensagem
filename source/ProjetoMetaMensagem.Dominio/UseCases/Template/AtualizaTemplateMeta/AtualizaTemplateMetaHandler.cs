@@ -46,7 +46,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
 
                 var wabaId = await _unitOfWork.Empresa.ObterWabaId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
-
+    
                 // 2. Busca os templates atualizados diretamente da API da Meta
                 var templatesMeta = await _metaService.ObterTemplatesMetaAsync(wabaId, token);
 

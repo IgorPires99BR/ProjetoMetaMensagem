@@ -45,6 +45,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                 return response;
             }
 
+            var criadoNaMeta = false;
+
             try
             {
                 _unitOfWork.BeginTransaction();
@@ -63,6 +65,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
                     response.AddErro("A Meta aceitou o template, mas retornou uma resposta vazia.");
                     return response;
                 }
+
+                criadoNaMeta = true;
 
                 // A Meta devolve o id numerico gerado pro template recem-criado -- precisa ser
                 // guardado porque a edicao (POST /{template-id}) e a exclusao mais precisa exigem
@@ -103,6 +107,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate
             catch (Exception ex)
             {
                 _unitOfWork.Rollback();
+
+                // A Meta nao tem rollback: se o template ja foi criado la e so a gravacao local
+                // falhou, ele fica orfao e toda nova tentativa com o mesmo nome e recusada pela
+                // Meta como duplicado (caso real: BD/49 nao aplicada em prod). O "Atualizar da
+                // Meta" importa o orfao, entao orienta o usuario a usar isso em vez de recriar.
+                if (criadoNaMeta)
+                {
+                    _logger.LogError(ex, "Template {NomeTemplate} criado na Meta, mas nao foi salvo localmente para a empresa {IdEmpresa}.", command.NomeTemplate, command.IdEmpresa);
+                    response.AddErro($"O modelo \"{command.NomeTemplate}\" foi criado na Meta, mas não foi salvo na plataforma. Não crie de novo: use \"Atualizar da Meta\" para trazê-lo para a lista.");
+                    return response;
+                }
+
                 // Captura e formata erros de HttpClient da Meta ou falhas no banco local
                 response.AddErroServico(ex, _logger, nameof(CriaTemplateHandler));
             }
