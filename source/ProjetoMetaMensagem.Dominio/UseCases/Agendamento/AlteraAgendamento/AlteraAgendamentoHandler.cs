@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Tarefas;
 using ProjetoMetaMensagem.Dominio.Servicos;
 using System;
 using System.Linq;
@@ -12,11 +13,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
     public class AlteraAgendamentoHandler : IRequestHandler<AlteraAgendamentoCommand, Response<AlteraAgendamentoResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAgendamentoTarefaAgendador _agendador;
         private readonly ILogger<AlteraAgendamentoHandler> _logger;
 
-        public AlteraAgendamentoHandler(IUnitOfWork unitOfWork, ILogger<AlteraAgendamentoHandler> logger)
+        public AlteraAgendamentoHandler(IUnitOfWork unitOfWork, IAgendamentoTarefaAgendador agendador, ILogger<AlteraAgendamentoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _agendador = agendador;
             _logger = logger;
         }
 
@@ -90,8 +93,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.AlteraAgendamento
 
                 await _unitOfWork.Agendamento.SubstituirContatos(command.Id, command.ContatoIds);
 
+                // Recorrencia pode ter mudado: atualiza o cron do job (antes do Commit, mesmo
+                // motivo do CriaAgendamentoHandler).
+                _agendador.Registrar(existente);
+
                 response.AddValue(new AlteraAgendamentoResult());
                 _unitOfWork.Commit();
+
+                if (recorrenciaMudou && existente.Ativo && existente.ProximaExecucao <= DateTime.Now)
+                    _agendador.ExecutarAgora(existente.Id);
             }
             catch (Exception ex)
             {

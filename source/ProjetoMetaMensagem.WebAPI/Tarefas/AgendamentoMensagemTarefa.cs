@@ -1,4 +1,4 @@
-﻿using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Tarefas;
 using ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento;
 
@@ -17,20 +17,20 @@ namespace ProjetoMetaMensagem.WebAPI.Tarefas
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task Executar()
+        public async Task Executar(Guid agendamentoId)
         {
             try
             {
-                _logger.LogInformation("Iniciando a execução da tarefa de agendamento de mensagens...");
+                _logger.LogInformation("Iniciando a execução do agendamento {AgendamentoId}...", agendamentoId);
 
-                var command = new ProcessaAgendamentoCommand();
+                var command = new ProcessaAgendamentoCommand { AgendamentoId = agendamentoId };
                 await _mediator.Send(command);
 
-                _logger.LogInformation("Tarefa de agendamento de mensagens executada com sucesso.");
+                _logger.LogInformation("Execução do agendamento {AgendamentoId} finalizada.", agendamentoId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ocorreu um erro ao processar o agendamento de mensagens no Hangfire.");
+                _logger.LogError(ex, "Ocorreu um erro ao processar o agendamento {AgendamentoId} no Hangfire.", agendamentoId);
                 throw; // Lança a exceção para que o Hangfire registre a falha e execute a política de retry.
             }
         }

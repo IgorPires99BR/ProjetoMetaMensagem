@@ -236,9 +236,9 @@ builder.Services.AddScoped<IWebhookDispatcherService, ProjetoMetaMensagem.Servic
 // para sempre, sem nenhum processo rodando pra efetivamente enviar as mensagens.
 builder.Services.AddHostedService<CampanhaWorker>();
 
-// HangFire varre a tabela Agendamento (recorrencia diaria/semanal/mensal) via job recorrente
-// -- ver RecurringJob.AddOrUpdate mais abaixo, depois de app.Build(). Mesma connection string
-// escolhida pelo DbSession (DEBUG local vs producao).
+// HangFire: cada Agendamento tem o proprio job recorrente, com o cron da recorrencia escolhida
+// (ver AgendamentoTarefaAgendador e a sincronizacao mais abaixo, depois de app.Build()). Mesma
+// connection string escolhida pelo DbSession (DEBUG local vs producao).
 #if DEBUG
 var connectionStringHangfire = builder.Configuration.GetConnectionString("ContactSolutionDB");
 #else
@@ -249,6 +249,7 @@ builder.Services.AddHangfireServer();
 // Hangfire.AspNetCore cria um IServiceScope proprio por execucao (dispensa
 // IServiceScopeFactory manual); a tarefa so precisa estar registrada no container.
 builder.Services.AddScoped<IAgendamentoMensagemTarefa, AgendamentoMensagemTarefa>();
+builder.Services.AddScoped<IAgendamentoTarefaAgendador, AgendamentoTarefaAgendador>();
 
 //Configura��es
 
@@ -408,11 +409,25 @@ app.UseHangfireDashboard("/jobs", new DashboardOptions
     Authorization = Array.Empty<IDashboardAuthorizationFilter>()
 });
 
-// Varre a tabela Agendamento a cada 5 minutos em busca de recorrencias devidas (ProximaExecucao
-// <= agora). Job idempotente por linha (reserva via Agendamento.ProcessandoAte), entao rodar
-// atrasado ou reiniciar o servidor no meio nao duplica disparo.
-RecurringJob.AddOrUpdate<AgendamentoMensagemTarefa>(
-    "agendamento-scan", job => job.Executar(), "*/5 * * * *");
+// O antigo job unico "agendamento-scan" (varria a tabela a cada 5 min) chamava Executar() sem
+// id e quebraria se continuasse no storage. Re-registrar os ativos na subida cobre agendamentos
+// criados antes dos jobs por agendamento e qualquer job perdido entre o banco e o HangFire.
+// Falha aqui so loga: a API tem que subir mesmo com o banco instavel.
+RecurringJob.RemoveIfExists("agendamento-scan");
+try
+{
+    using var escopo = app.Services.CreateScope();
+    var unitOfWork = escopo.ServiceProvider.GetRequiredService<IUnitOfWork>();
+    var agendador = escopo.ServiceProvider.GetRequiredService<IAgendamentoTarefaAgendador>();
+    var ativos = (await unitOfWork.Agendamento.ObterAtivos()).ToList();
+    foreach (var agendamento in ativos)
+        agendador.Registrar(agendamento);
+    app.Logger.LogInformation("Jobs de agendamento sincronizados no HangFire: {Total} ativo(s).", ativos.Count);
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Falha ao sincronizar os jobs de agendamento no HangFire.");
+}
 
 app.MapControllers();
 // O front conecta em `${environment.apiUrl}/hubs/chat`, e apiUrl ja inclui "/api" --

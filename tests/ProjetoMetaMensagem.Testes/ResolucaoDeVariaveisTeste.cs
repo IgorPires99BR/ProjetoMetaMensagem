@@ -49,13 +49,13 @@ public class ResolucaoDeVariaveisTeste
     }
 
     [Fact]
-    public void Valor_da_fatura_sai_em_formato_brasileiro_com_duas_casas()
+    public void Valor_da_fatura_sai_em_reais_com_formato_brasileiro_e_duas_casas()
     {
         var variavel = new AgendamentoVariavelDto { Origem = ResolvedorDeVariaveis.ValorFatura };
 
         var texto = ResolvedorDeVariaveis.Resolver(variavel, ContatoDeExemplo(valorFatura: 1234.5m), SemParametros, Setembro2026);
 
-        Assert.Equal("1.234,50", texto);
+        Assert.Equal("R$ 1.234,50", texto);
     }
 
     [Fact]
@@ -113,10 +113,10 @@ public class ResolucaoDeVariaveisTeste
         // Slot "global" fica vazio nas variaveis que dependem do contato; so os textos fixos entram.
         Assert.Equal(new[] { "", "", "", "pix@empresa.com", "obrigado" }, comando.ParametrosBody);
 
-        Assert.Equal(new[] { "Maria Souza", "20/09/2026", "405,00", "pix@empresa.com", "obrigado" },
+        Assert.Equal(new[] { "Maria Souza", "20/09/2026", "R$ 405,00", "pix@empresa.com", "obrigado" },
             comando.ParametrosBodyDe("5511111111111", ana.Id.ToString()));
         // Dia 31 em setembro (30 dias) cai no ultimo dia do mes.
-        Assert.Equal(new[] { "Maria Souza", "30/09/2026", "99,90", "pix@empresa.com", "obrigado" },
+        Assert.Equal(new[] { "Maria Souza", "30/09/2026", "R$ 99,90", "pix@empresa.com", "obrigado" },
             comando.ParametrosBodyDe("5522222222222", bruno.Id.ToString()));
     }
 
@@ -158,8 +158,8 @@ public class ResolucaoDeVariaveisTeste
         ResolvedorDeVariaveis.Preencher(comando, variaveis,
             new[] { (telefoneDoAdemir, americaXis), (telefoneDoAdemir, boutique) }, SemParametros, Setembro2026);
 
-        Assert.Equal(new[] { "AMERICA - XIS ALUGUEL", "505,00", "20/09/2026" }, comando.ParametrosBodyDoDestinatario(0));
-        Assert.Equal(new[] { "BOUTIQUE - SIMONE", "355,00", "30/09/2026" }, comando.ParametrosBodyDoDestinatario(1));
+        Assert.Equal(new[] { "AMERICA - XIS ALUGUEL", "R$ 505,00", "20/09/2026" }, comando.ParametrosBodyDoDestinatario(0));
+        Assert.Equal(new[] { "BOUTIQUE - SIMONE", "R$ 355,00", "30/09/2026" }, comando.ParametrosBodyDoDestinatario(1));
         Assert.True(comando.TemValoresPorDestinatario);
     }
 

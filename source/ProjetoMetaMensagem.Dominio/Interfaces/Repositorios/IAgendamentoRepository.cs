@@ -34,8 +34,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<int> AtualizarStatus(Guid id, bool ativo, Guid? empresaIdSolicitante);
         Task<int> Deletar(Guid id, Guid? empresaIdSolicitante);
 
-        // Usados pelo AgendamentoDispatchJob (roda fora do escopo de um usuario logado).
-        Task<IEnumerable<Agendamento>> ObterPendentes(DateTime agora);
+        // Usados pelos jobs do HangFire (rodam fora do escopo de um usuario logado).
+        // ObterAtivos: re-registro dos jobs na subida da API, ver Program.cs.
+        Task<IEnumerable<Agendamento>> ObterAtivos();
         // Reserva por prazo (mesmo padrao de EstadoConversa.ProcessandoAte): devolve false se
         // outra passada do job ja reivindicou esse agendamento e a reserva ainda esta valida.
         Task<bool> ReivindicarAgendamento(Guid id, DateTime prazoProcessamento);

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Tarefas;
 using System;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.DeletaAgendamento
@@ -10,11 +11,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.DeletaAgendamento
     public class DeletaAgendamentoHandler : IRequestHandler<DeletaAgendamentoCommand, Response<DeletaAgendamentoResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAgendamentoTarefaAgendador _agendador;
         private readonly ILogger<DeletaAgendamentoHandler> _logger;
 
-        public DeletaAgendamentoHandler(IUnitOfWork unitOfWork, ILogger<DeletaAgendamentoHandler> logger)
+        public DeletaAgendamentoHandler(IUnitOfWork unitOfWork, IAgendamentoTarefaAgendador agendador, ILogger<DeletaAgendamentoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _agendador = agendador;
             _logger = logger;
         }
 
@@ -41,6 +44,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.DeletaAgendamento
                     response.AddErro("Agendamento não encontrado.");
                     return response;
                 }
+
+                _agendador.Remover(command.Id);
 
                 response.AddValue(new DeletaAgendamentoResult());
                 _unitOfWork.Commit();

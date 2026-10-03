@@ -63,6 +63,54 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             }
         }
 
+        // Proxima execucao estritamente depois de 'agora', pulando os ciclos que ja passaram. Sem
+        // o pulo, um agendamento retomado depois de semanas pausado (ou com o servidor fora do
+        // ar) ficaria com ProximaExecucao no passado e dispararia em todo ciclo ate alcancar hoje.
+        public static DateTime CalcularProximaExecucaoFutura(Agendamento agendamento, DateTime agora)
+        {
+            var proxima = agendamento.ProximaExecucao;
+            do
+            {
+                proxima = CalcularProximaExecucao(
+                    agendamento.DataReferencia, proxima, agendamento.TipoRecorrencia,
+                    agendamento.DiasSemanaLista, agendamento.DiaDoMes);
+            }
+            while (proxima <= agora);
+
+            return proxima;
+        }
+
+        // Cron do job recorrente do agendamento no HangFire (minuto/hora da DataReferencia). O
+        // cron so decide QUANDO o job acorda; quem decide se dispara e a ProximaExecucao (ver
+        // ProcessaAgendamentoHandler). Mensal com dia 29-31 acorda em 28-31 porque cron nao sabe
+        // clampar pro ultimo dia do mes (dia 31 em abril deve sair no 30) -- nos dias que nao
+        // batem com a ProximaExecucao o job so acorda e volta a dormir.
+        public static string ExpressaoCron(Agendamento agendamento)
+        {
+            var referencia = agendamento.DataReferencia;
+            var minutoEHora = $"{referencia.Minute} {referencia.Hour}";
+
+            switch (agendamento.TipoRecorrencia)
+            {
+                case Agendamento.Diaria:
+                case Agendamento.VencimentoContato:
+                    return $"{minutoEHora} * * *";
+
+                case Agendamento.Semanal:
+                    var dias = agendamento.DiasSemanaLista.Count > 0
+                        ? agendamento.DiasSemanaLista
+                        : new List<int> { (int)referencia.DayOfWeek };
+                    return $"{minutoEHora} * * {string.Join(",", dias.Distinct().OrderBy(d => d))}";
+
+                case Agendamento.Mensal:
+                    var dia = agendamento.DiaDoMes ?? referencia.Day;
+                    return dia <= 28 ? $"{minutoEHora} {dia} * *" : $"{minutoEHora} 28-31 * *";
+
+                default:
+                    throw new ArgumentException($"Tipo de recorrência inválido: {agendamento.TipoRecorrencia}", nameof(agendamento));
+            }
+        }
+
         // Primeiro dia, estritamente apos 'apartirDe', cujo DayOfWeek esteja em diasSemana --
         // sempre acha em ate 7 dias porque diasSemana cobre pelo menos 1 dos 7 possiveis.
         private static DateTime ProximoDiaDaSemana(TimeSpan horaDoDisparo, DateTime apartirDe, List<int> diasSemana)

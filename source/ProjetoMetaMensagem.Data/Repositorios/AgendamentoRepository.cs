@@ -199,17 +199,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante }, transaction: _session.Transaction);
         }
 
-        public async Task<IEnumerable<Agendamento>> ObterPendentes(DateTime agora)
+        public async Task<IEnumerable<Agendamento>> ObterAtivos()
         {
             var sql = $@"
                 SELECT * FROM {nameof(Agendamento)}
-                WHERE {nameof(Agendamento.Ativo)} = 1
-                  AND {nameof(Agendamento.ProximaExecucao)} <= @Agora
-                  AND ({nameof(Agendamento.ProcessandoAte)} IS NULL OR {nameof(Agendamento.ProcessandoAte)} < @Agora)
-                ORDER BY {nameof(Agendamento.ProximaExecucao)};";
+                WHERE {nameof(Agendamento.Ativo)} = 1;";
 
-            return await _session.Connection.QueryAsync<Agendamento>(
-                sql, new { Agora = agora }, transaction: _session.Transaction);
+            return await _session.Connection.QueryAsync<Agendamento>(sql, transaction: _session.Transaction);
         }
 
         public async Task<bool> ReivindicarAgendamento(Guid id, DateTime prazoProcessamento)

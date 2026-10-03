@@ -83,7 +83,9 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 Nome => contato.NomeContato ?? string.Empty,
                 NomeCliente => contato.NomeCliente ?? string.Empty,
                 Telefone => contato.Telefone ?? string.Empty,
-                ValorFatura => contato.ValorFatura?.ToString("N2", Brasil) ?? string.Empty,
+                // "R$ " montado a mao em vez do formato "C": no pt-BR o "C" separa o simbolo com
+                // espaco nao separavel (U+00A0), e a mensagem deve sair com espaco comum.
+                ValorFatura => contato.ValorFatura.HasValue ? $"R$ {contato.ValorFatura.Value.ToString("N2", Brasil)}" : string.Empty,
                 DiaVencimento => contato.DiaVencimento?.ToString() ?? string.Empty,
                 DataVencimento => DataDeVencimento(contato.DiaVencimento, hoje),
                 TaxaJuros => contato.TaxaJuros?.ToString("N2", Brasil) ?? string.Empty,

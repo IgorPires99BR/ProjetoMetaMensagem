@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Tarefas;
 using ProjetoMetaMensagem.Dominio.Servicos;
 using System;
 using System.Linq;
@@ -12,11 +13,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.CriaAgendamento
     public class CriaAgendamentoHandler : IRequestHandler<CriaAgendamentoCommand, Response<CriaAgendamentoResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAgendamentoTarefaAgendador _agendador;
         private readonly ILogger<CriaAgendamentoHandler> _logger;
 
-        public CriaAgendamentoHandler(IUnitOfWork unitOfWork, ILogger<CriaAgendamentoHandler> logger)
+        public CriaAgendamentoHandler(IUnitOfWork unitOfWork, IAgendamentoTarefaAgendador agendador, ILogger<CriaAgendamentoHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _agendador = agendador;
             _logger = logger;
         }
 
@@ -76,8 +79,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.CriaAgendamento
 
                 await _unitOfWork.Agendamento.IncluirContatos(vinculos);
 
+                // Antes do Commit: se o HangFire falhar, o Rollback desfaz o agendamento em vez de
+                // deixar um agendamento gravado que nunca dispara.
+                _agendador.Registrar(agendamento);
+
                 response.AddValue(new CriaAgendamentoResult { Id = agendamentoId });
                 _unitOfWork.Commit();
+
+                // 1o disparo com data/hora ja passada (ex: agendado pra "agora"): o cron so
+                // acordaria no proximo ciclo. Depois do Commit pro job enxergar o agendamento.
+                if (agendamento.ProximaExecucao <= DateTime.Now)
+                    _agendador.ExecutarAgora(agendamentoId);
             }
             catch (Exception ex)
             {
