@@ -60,6 +60,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                 // Como mapeado no banco, templates pertencem à EmpresaId
                 var templatesNoBanco = await _unitOfWork.Template.ObterPorEmpresa(command.IdEmpresa);
 
+                // Template pertence a empresa que o criou, mesmo com WABA compartilhado (a Meta nao
+                // sabe de empresa nenhuma). Sem isso cada sincronizacao copiava pra empresa atual
+                // os templates das outras do mesmo WABA, e todas passavam a ver os de todas.
+                var templatesDeOutrasEmpresas = (await _unitOfWork.Template.ObterDeOutrasEmpresasDoWaba(command.IdEmpresa, wabaId)).ToList();
+
                 // --- LÓGICA DE EXCLUSÃO (Sincronização de órfãos) ---
                 // Identifica templates que estão no banco, mas foram deletados no painel da Meta
                 // Nota: Se você não usar o Id da Meta como PK física, adapte o NomeTemplate ou crie um campo 'MetaTemplateId'
@@ -116,6 +121,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                         templateExistente.Componentes = componentesPersistidos;
 
                         await _unitOfWork.Template.Alterar(templateExistente, command.IdEmpresa);
+                    }
+                    else if (templatesDeOutrasEmpresas.Any(x => x.MetaTemplateId == templateApi.Id
+                        || (string.IsNullOrEmpty(x.MetaTemplateId) && x.NomeTemplate == templateApi.Nome)))
+                    {
+                        // Ja e de outra empresa do mesmo WABA: nao importa.
+                        continue;
                     }
                     else
                     {

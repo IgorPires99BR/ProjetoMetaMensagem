@@ -116,6 +116,19 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryAsync<Template>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
+        public async Task<IEnumerable<Template>> ObterDeOutrasEmpresasDoWaba(Guid empresaId, string wabaId)
+        {
+            var sql = $@"
+                SELECT t.* FROM {nameof(Template)} t
+                INNER JOIN Empresa e ON e.Id = t.{nameof(Template.EmpresaId)}
+                WHERE e.WabaId = @WabaId
+                  AND t.{nameof(Template.EmpresaId)} <> @EmpresaId";
+
+            return await _session.Connection.QueryAsync<Template>(sql,
+                new { EmpresaId = empresaId, WabaId = wabaId },
+                transaction: _session.Transaction);
+        }
+
         public async Task<int> AlterarFlagCobranca(Guid id, Guid? empresaIdSolicitante, bool geraCobranca)
         {
             var sql = $@"

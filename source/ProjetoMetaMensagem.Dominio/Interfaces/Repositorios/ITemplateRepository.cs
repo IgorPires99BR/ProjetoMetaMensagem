@@ -20,6 +20,11 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<IEnumerable<Template>> Obter();
         Task<IEnumerable<Template>> ObterPorEmpresa(Guid empresaId);
 
+        // Templates das OUTRAS empresas que dividem o mesmo WABA (ex: Sebrecon usa o numero da
+        // Contact Solution). A Meta lista tudo do WABA junto, entao a sincronizacao precisa
+        // disso pra nao importar como seu um template que outra empresa criou.
+        Task<IEnumerable<Template>> ObterDeOutrasEmpresasDoWaba(Guid empresaId, string wabaId);
+
         // Update dedicado e minimo (so a coluna local GeraCobranca) -- nao passa por Alterar()
         // porque esse reenvia o template pra Meta e exige status REJECTED, e ligar/desligar
         // cobranca e uma flag puramente nossa, sem relacao com a analise do template.
