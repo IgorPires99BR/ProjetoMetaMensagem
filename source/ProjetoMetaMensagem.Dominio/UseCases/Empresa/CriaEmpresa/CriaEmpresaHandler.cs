@@ -17,12 +17,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMetaService _metaService;
+        private readonly ICredenciaisMetaDaPlataforma _credenciaisMetaDaPlataforma;
         private readonly ILogger<CriaEmpresaHandler> _logger;
 
-        public CriaEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService, ILogger<CriaEmpresaHandler> logger)
+        public CriaEmpresaHandler(IUnitOfWork unitOfWork, IMetaService metaService, ICredenciaisMetaDaPlataforma credenciaisMetaDaPlataforma, ILogger<CriaEmpresaHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
+            _credenciaisMetaDaPlataforma = credenciaisMetaDaPlataforma;
             _logger = logger;
         }
 
@@ -42,7 +44,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa
                     return response;
                 }
 
-                var resultado = await _unitOfWork.Empresa.Incluir(new Entidades.Empresa(command));
+                var empresa = new Entidades.Empresa(command);
+                await _credenciaisMetaDaPlataforma.PreencherEmBranco(empresa);
+
+                var resultado = await _unitOfWork.Empresa.Incluir(empresa);
 
                 response.AddValue(new CriaEmpresaResult());
                 _unitOfWork.Commit();

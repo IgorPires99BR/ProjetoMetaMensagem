@@ -300,6 +300,7 @@ builder.Services.AddScoped<IOnboardingComercialService, ProjetoMetaMensagem.Serv
 // Sequencia de nascer uma conta de cliente, compartilhada pelo webhook da Cakto e pelo
 // cadastro interno feito pela equipe.
 builder.Services.AddScoped<ICriacaoDeContaDeCliente, ProjetoMetaMensagem.Dominio.Servicos.CriacaoDeContaDeCliente>();
+builder.Services.AddScoped<ICredenciaisMetaDaPlataforma, ProjetoMetaMensagem.Servico.Meta.CredenciaisMetaDaPlataforma>();
 
 // Flow Orchestrator
 builder.Services.AddScoped<IFlowOrchestratorService, FlowOrchestratorService>();

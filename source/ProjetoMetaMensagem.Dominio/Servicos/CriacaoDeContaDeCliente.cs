@@ -20,17 +20,20 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
         private readonly IOnboardingComercialService _onboarding;
+        private readonly ICredenciaisMetaDaPlataforma _credenciaisMetaDaPlataforma;
         private readonly ILogger<CriacaoDeContaDeCliente> _logger;
 
         public CriacaoDeContaDeCliente(
             IUnitOfWork unitOfWork,
             IEmailService emailService,
             IOnboardingComercialService onboarding,
+            ICredenciaisMetaDaPlataforma credenciaisMetaDaPlataforma,
             ILogger<CriacaoDeContaDeCliente> logger)
         {
             _unitOfWork = unitOfWork;
             _emailService = emailService;
             _onboarding = onboarding;
+            _credenciaisMetaDaPlataforma = credenciaisMetaDaPlataforma;
             _logger = logger;
         }
 
@@ -49,6 +52,8 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 PlanoId = dados.Plano,
                 DataCriacao = DateTime.Now
             };
+
+            await _credenciaisMetaDaPlataforma.PreencherEmBranco(empresa);
 
             var empresaId = await _unitOfWork.Empresa.Incluir(empresa);
             if (empresaId == Guid.Empty) empresaId = empresa.Id;
