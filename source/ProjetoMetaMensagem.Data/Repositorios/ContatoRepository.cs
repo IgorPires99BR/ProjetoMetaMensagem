@@ -172,25 +172,6 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 transaction: _session.Transaction);
         }
 
-        public async Task<bool> ExisteOutroComTelefone(Guid empresaId, string telefone, Guid? ignorarId)
-        {
-            // Mesma normalizacao do ObterPorTelefone, senao "+55 11..." passaria por numero novo.
-            var sql = @"
-                SELECT CASE WHEN EXISTS (
-                    SELECT 1 FROM Contato c
-                    WHERE c.EmpresaId = @EmpresaId
-                      AND (@IgnorarId IS NULL OR c.Id <> @IgnorarId)
-                      AND (REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
-                           OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone2, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone)
-                ) THEN 1 ELSE 0 END";
-
-            var telefoneNormalizado = new string(telefone.Where(char.IsDigit).ToArray());
-
-            return await _session.Connection.ExecuteScalarAsync<bool>(sql,
-                new { EmpresaId = empresaId, Telefone = telefoneNormalizado, IgnorarId = ignorarId },
-                transaction: _session.Transaction);
-        }
-
         public async Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId)
         {
             // null = conta de plataforma, ve contatos de todas as empresas de uma vez.

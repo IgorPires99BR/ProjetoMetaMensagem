@@ -18,9 +18,6 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone);
         // null = administrador (sem restricao).
         Task<Contato?> ObterPorId(Guid id, Guid? empresaIdSolicitante);
-        // Procura o numero no Telefone e no Telefone2 de outro contato da empresa; ignorarId
-        // tira da busca o proprio contato que esta sendo editado.
-        Task<bool> ExisteOutroComTelefone(Guid empresaId, string telefone, Guid? ignorarId);
         // null = administrador (sem restricao, ve contatos de todas as empresas).
         Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId);
         // Busca em lote pra lista de chats: evita 1 consulta por contato ao montar a tela.

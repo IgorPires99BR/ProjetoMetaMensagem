@@ -55,25 +55,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
                     return response;
                 }
 
-                // Evita duplicar contato com o mesmo telefone na mesma empresa (ja aconteceu
-                // com dados de teste e quebrava o agrupamento de mensagens no chat, deixando
-                // conversas do mesmo lead espalhadas em duas linhas diferentes).
-                var existente = await _unitOfWork.Contato.ObterPorTelefone(command.EmpresaId, command.Telefone);
-                if (existente != null)
-                {
-                    response.AddErro("Já existe um contato cadastrado com esse telefone.");
-                    return response;
-                }
-
-                // O Telefone2 recebe os disparos do contato: se ja for numero de outro, a pessoa
-                // receberia a mesma cobranca duas vezes.
-                if (!string.IsNullOrWhiteSpace(command.Telefone2)
-                    && await _unitOfWork.Contato.ExisteOutroComTelefone(command.EmpresaId, command.Telefone2, null))
-                {
-                    response.AddErro($"Já existe um contato cadastrado com o telefone {command.Telefone2.Trim()}.");
-                    return response;
-                }
-
+                // Sem checagem de numero repetido entre contatos: a mesma pessoa pode responder
+                // por varias empresas do cliente (caso da Sebrecon). O ObterPorTelefone ja
+                // desempata qual contato recebe a resposta no webhook.
                 await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
 
                 response.AddValue(new CriaContatoResult());

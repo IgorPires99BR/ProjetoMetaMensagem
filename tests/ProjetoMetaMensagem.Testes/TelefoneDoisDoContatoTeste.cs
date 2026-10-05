@@ -59,37 +59,3 @@ public class TelefoneDoisDoContatoTeste
         Assert.Equal("5511988888888", new Dominio.Entidades.Contato(Alteracao("5511999999999", " 5511988888888 ")).Telefone2);
     }
 }
-
-// Checagem de duplicado na edicao: so o numero que mudou vai pro banco. Contatos que ja dividem
-// numero (mesma pessoa respondendo por varias empresas do cliente) precisam continuar editaveis.
-public class NumerosNovosNaEdicaoTeste
-{
-    private static Dominio.Entidades.Contato Atual(string telefone, string? telefone2) =>
-        new() { Telefone = telefone, Telefone2 = telefone2 };
-
-    [Fact]
-    public void Editar_sem_mudar_numeros_nao_checa_nada()
-    {
-        Assert.Empty(AlteraContatoHandler.NumerosNovos(Atual("5511999999999", "5511988888888"), "5511999999999", "5511988888888"));
-    }
-
-    [Fact]
-    public void Trocar_principal_com_telefone2_ou_so_a_formatacao_nao_e_numero_novo()
-    {
-        Assert.Empty(AlteraContatoHandler.NumerosNovos(Atual("5511999999999", "5511988888888"), "5511988888888", "+55 (11) 99999-9999"));
-    }
-
-    [Fact]
-    public void Adicionar_telefone2_checa_so_ele()
-    {
-        Assert.Equal(new[] { "5511977777777" },
-            AlteraContatoHandler.NumerosNovos(Atual("5511999999999", null), "5511999999999", " 5511977777777 "));
-    }
-
-    [Fact]
-    public void Trocar_o_principal_checa_o_novo_principal()
-    {
-        Assert.Equal(new[] { "5511966666666" },
-            AlteraContatoHandler.NumerosNovos(Atual("5511999999999", null), "5511966666666", ""));
-    }
-}
