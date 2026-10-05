@@ -8,6 +8,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
     {
         public Guid UsuarioId { get; set; }
         public string Telefone { get; set; }
+        public string? Telefone2 { get; set; }
         public string? NomeContato { get; set; }
         public string? Email { get; set; }
 

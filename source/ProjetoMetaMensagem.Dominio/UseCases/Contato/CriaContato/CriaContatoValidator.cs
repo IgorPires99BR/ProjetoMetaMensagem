@@ -1,4 +1,5 @@
 using FluentValidation;
+using ProjetoMetaMensagem.Dominio.Helpers;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
 {
@@ -12,6 +13,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
             RuleFor(x => x.Telefone)
                 .NotEmpty().WithMessage("Informe o telefone do contato.")
                 .MaximumLength(50).WithMessage("O telefone deve ter no máximo 50 caracteres.");
+
+            RuleFor(x => x.Telefone2)
+                .MaximumLength(50).WithMessage("O telefone 2 deve ter no máximo 50 caracteres.")
+                .Must((cmd, tel2) => TelefoneHelper.FormatarParaMeta(tel2) != TelefoneHelper.FormatarParaMeta(cmd.Telefone))
+                .WithMessage("O telefone 2 não pode ser igual ao telefone principal.")
+                .When(x => !string.IsNullOrWhiteSpace(x.Telefone2));
 
             RuleFor(x => x.NomeContato)
                 .MaximumLength(255).WithMessage("O nome do contato deve ter no máximo 255 caracteres.");

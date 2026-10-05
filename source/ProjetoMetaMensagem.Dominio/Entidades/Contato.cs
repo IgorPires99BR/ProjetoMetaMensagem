@@ -31,6 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             UsuarioId = command.UsuarioId;
             EmpresaId = command.EmpresaId;
             Telefone = command.Telefone;
+            Telefone2 = NormalizarTelefone2(command.Telefone2);
             NomeContato = command.NomeContato;
             Email = command.Email;
             NomeCliente = command.NomeCliente;
@@ -47,6 +48,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             UsuarioId = command.UsuarioId;
             EmpresaId = command.EmpresaId;
             Telefone = command.Telefone;
+            Telefone2 = NormalizarTelefone2(command.Telefone2);
             NomeContato = command.NomeContato;
             Email = command.Email;
             NomeCliente = command.NomeCliente;
@@ -56,6 +58,12 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             ValorFatura = command.ValorFatura ?? ValorFaturaPadrao;
             DataCriacao = DateTime.Now;
         }
+
+        // O front manda "" quando o campo fica em branco; grava NULL pra o disparo nao tentar
+        // enviar para um numero vazio.
+        private static string? NormalizarTelefone2(string? telefone2) =>
+            string.IsNullOrWhiteSpace(telefone2) ? null : telefone2.Trim();
+
         [Key]
         public Guid Id { get; set; }
 
@@ -73,6 +81,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         [Required] // Único obrigatório conforme regra de negócio
         [MaxLength(50)]
         public string Telefone { get; set; }
+
+        // Segundo numero do mesmo contato (ex: dois socios, marido e mulher): os disparos saem
+        // para os dois numeros, mas a cobranca continua uma so por contato.
+        [MaxLength(50)]
+        public string? Telefone2 { get; set; }
 
         // Nome de quem atende esse numero de WhatsApp (pode ser diferente do titular da fatura).
         [MaxLength(255)]

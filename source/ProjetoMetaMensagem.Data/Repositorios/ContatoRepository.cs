@@ -32,6 +32,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Contato.UsuarioId)},
                     {nameof(Contato.EmpresaId)},
                     {nameof(Contato.Telefone)},
+                    {nameof(Contato.Telefone2)},
                     {nameof(Contato.NomeContato)},
                     {nameof(Contato.Email)},
                     {nameof(Contato.NomeCliente)},
@@ -42,7 +43,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Contato.DataCriacao)}
                 )
                 VALUES (
-                    @Id, @UsuarioId, @EmpresaId, @Telefone, @NomeContato, @Email, @NomeCliente,
+                    @Id, @UsuarioId, @EmpresaId, @Telefone, @Telefone2, @NomeContato, @Email, @NomeCliente,
                     @DiaVencimento, @TaxaJuros, @TaxaJurosMensal, @ValorFatura, @DataCriacao
                 );";
 
@@ -52,6 +53,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 contato.UsuarioId,
                 contato.EmpresaId,
                 contato.Telefone,
+                contato.Telefone2,
                 contato.NomeContato,
                 contato.Email,
                 contato.NomeCliente,
@@ -76,6 +78,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 UPDATE {nameof(Contato)}
                 SET
                     {nameof(Contato.Telefone)} = @Telefone,
+                    {nameof(Contato.Telefone2)} = @Telefone2,
                     {nameof(Contato.NomeContato)} = @NomeContato,
                     {nameof(Contato.Email)} = @Email,
                     {nameof(Contato.NomeCliente)} = @NomeCliente,
@@ -91,6 +94,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 {
                     contato.Id,
                     contato.Telefone,
+                    contato.Telefone2,
                     contato.NomeContato,
                     contato.Email,
                     contato.NomeCliente,
@@ -128,11 +132,17 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             //  2. o contato pra quem mais recentemente ENVIAMOS algo -- e a esse envio que o
             //     cliente esta respondendo;
             //  3. o cadastro mais antigo, so pra o resultado ser sempre o mesmo.
+            //
+            // Telefone2 tambem casa: o segundo socio que responde um disparo e o mesmo contato,
+            // nao um lead novo a ser criado. Quem tem o numero como principal vem antes.
             var sql = @"
         SELECT TOP 1 c.* FROM Contato c
         WHERE c.EmpresaId = @EmpresaId
-          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
+          AND (REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
+               OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone2, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone)
         ORDER BY
+          CASE WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
+               THEN 0 ELSE 1 END,
           CASE WHEN EXISTS (SELECT 1 FROM EstadoConversa e
                             WHERE e.EmpresaId = c.EmpresaId AND e.ContatoId = c.Id AND e.Finalizado = 0)
                THEN 0 ELSE 1 END,
@@ -153,10 +163,14 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId)
         {
             // null = conta de plataforma, ve contatos de todas as empresas de uma vez.
+            // Ordem pedida pelo Igor para as telas de Contatos, Disparos e Agendamentos (todas
+            // usam esta lista): pelo cliente (titular da fatura), e quem nao tem cliente por ultimo.
             var sql = @"
                 SELECT * FROM Contato
                 WHERE (@EmpresaId IS NULL OR EmpresaId = @EmpresaId)
-                ORDER BY NomeContato, NomeCliente";
+                ORDER BY
+                    CASE WHEN NULLIF(LTRIM(RTRIM(NomeCliente)), '') IS NULL THEN 1 ELSE 0 END,
+                    NomeCliente, NomeContato";
 
             return await _session.Connection.QueryAsync<Contato>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }

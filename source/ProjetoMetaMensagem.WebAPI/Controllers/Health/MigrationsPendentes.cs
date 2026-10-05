@@ -113,6 +113,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/49", "Template", "NomeExibicao",
                 "ALTER TABLE Template ADD NomeExibicao NVARCHAR(255) NULL;"),
+
+            new("BD/50", "Contato", "Telefone2",
+                "ALTER TABLE Contato ADD Telefone2 NVARCHAR(50) NULL;"),
         };
     }
 }

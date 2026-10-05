@@ -10,6 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             UsuarioId = contato.UsuarioId;
             EmpresaId = contato.EmpresaId;
             Telefone = contato.Telefone;
+            Telefone2 = contato.Telefone2;
             NomeContato = contato.NomeContato;
             Email = contato.Email;
             NomeCliente = contato.NomeCliente;
@@ -30,6 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
         public Guid UsuarioId { get; set; }
         public Guid EmpresaId { get; set; }
         public string Telefone { get; set; }
+        public string? Telefone2 { get; set; }
         public string? NomeContato { get; set; }
         public string? Email { get; set; }
         public string? NomeCliente { get; set; }

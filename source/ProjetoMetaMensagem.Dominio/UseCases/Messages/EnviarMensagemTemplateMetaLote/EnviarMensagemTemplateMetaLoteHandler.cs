@@ -68,6 +68,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
             try
             {
+                await IncluirSegundoTelefone(command);
+
                 var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
@@ -98,6 +100,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 }
 
                 var agora = DateTime.Now;
+
+                // Contato com Telefone2 aparece duas vezes nos resultados (um envio por numero),
+                // mas a fatura e uma so: a cobranca fica no primeiro envio que deu certo.
+                var contatosJaCobrados = new HashSet<Guid>();
 
                 // Um resultado por destinatario, na ordem da lista: o indice diz de quem e cada
                 // um, mesmo quando dois contatos dividem o mesmo telefone.
@@ -131,9 +137,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                         await _unitOfWork.HistoricoDisparo.Incluir(historico);
 
                         // Mesma regra do envio individual (EnviarMensagemTemplateMetaHandler):
-                        // template com GeraCobranca abre uma CobrancaCliente por destinatario.
+                        // template com GeraCobranca abre uma CobrancaCliente por contato.
                         if (contatoPorId != null && contatoPorId.TryGetValue(contatoId, out var contato))
                         {
+                            if (!contatosJaCobrados.Add(contatoId)) continue;
+
                             var cobranca = CobrancaClienteFactory.Criar(contato, templateEnviado!.Id, historico.Id, agora);
                             await _unitOfWork.CobrancaCliente.Incluir(cobranca);
                         }
@@ -175,6 +183,66 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
 
             return response;
+        }
+
+        // Contato com Telefone2 (ex: dois socios, marido e mulher) recebe a mesma mensagem nos
+        // dois numeros. Feito aqui, e nao no front, pra valer igual na tela de Disparos e no
+        // Agendamento. O segundo numero entra logo apos o primeiro com o MESMO ContatoId, entao
+        // ParametrosBodyDoDestinatario devolve os mesmos valores (fatura, vencimento...).
+        private async Task IncluirSegundoTelefone(EnviarMensagemTemplateMetaLoteCommand command)
+        {
+            var telefones = command.Telefones ?? new List<string>();
+            var contatosIds = command.ContatosIds ?? new List<string>();
+
+            // Sem as duas listas pareadas nao da pra saber de quem e cada telefone.
+            if (contatosIds.Count != telefones.Count) return;
+
+            var ids = contatosIds
+                .Select(id => Guid.TryParse(id, out var g) ? g : Guid.Empty)
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+            if (ids.Count == 0) return;
+
+            var contatos = new List<Entidades.Contato>();
+            foreach (var lote in ids.Chunk(1000))
+            {
+                contatos.AddRange(await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, lote));
+            }
+            var telefone2PorContato = contatos
+                .Where(c => !string.IsNullOrWhiteSpace(c.Telefone2))
+                .ToDictionary(c => c.Id.ToString(), c => c.Telefone2!, StringComparer.OrdinalIgnoreCase);
+            if (telefone2PorContato.Count == 0) return;
+
+            var novosTelefones = new List<string>();
+            var novosContatosIds = new List<string>();
+            var jaExpandidos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            for (var i = 0; i < telefones.Count; i++)
+            {
+                var contatoId = contatosIds[i];
+                novosTelefones.Add(telefones[i]);
+                novosContatosIds.Add(contatoId);
+
+                if (contatoId == null || !telefone2PorContato.TryGetValue(contatoId, out var telefone2)) continue;
+                if (!jaExpandidos.Add(contatoId)) continue;
+                if (Helpers.TelefoneHelper.FormatarParaMeta(telefone2) == Helpers.TelefoneHelper.FormatarParaMeta(telefones[i])) continue;
+
+                novosTelefones.Add(telefone2);
+                novosContatosIds.Add(contatoId);
+
+                // Legado: quem ainda manda os valores por telefone (sem PorContato) precisa
+                // deles tambem no segundo numero.
+                if (command.ParametrosBodyPorTelefone != null &&
+                    command.ParametrosBodyPorTelefone.TryGetValue(telefones[i], out var valores) &&
+                    !command.ParametrosBodyPorTelefone.ContainsKey(telefone2))
+                {
+                    command.ParametrosBodyPorTelefone[telefone2] = valores;
+                }
+            }
+
+            command.Telefones = novosTelefones;
+            command.ContatosIds = novosContatosIds;
         }
 
         // Devolve a mensagem de erro de negocio, ou null quando resolveu tudo. Os contatos vem
