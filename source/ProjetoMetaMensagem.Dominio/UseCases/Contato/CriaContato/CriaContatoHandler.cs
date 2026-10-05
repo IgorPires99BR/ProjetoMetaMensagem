@@ -65,6 +65,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
                     return response;
                 }
 
+                // O Telefone2 recebe os disparos do contato: se ja for numero de outro, a pessoa
+                // receberia a mesma cobranca duas vezes.
+                if (!string.IsNullOrWhiteSpace(command.Telefone2)
+                    && await _unitOfWork.Contato.ExisteOutroComTelefone(command.EmpresaId, command.Telefone2, null))
+                {
+                    response.AddErro($"Já existe um contato cadastrado com o telefone {command.Telefone2.Trim()}.");
+                    return response;
+                }
+
                 await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
 
                 response.AddValue(new CriaContatoResult());
