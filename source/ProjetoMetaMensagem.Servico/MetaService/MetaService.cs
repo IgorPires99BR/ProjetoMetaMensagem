@@ -699,9 +699,9 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 var templateData = MontarTemplateData(
                     comandoLote.NomeTemplate,
                     comandoLote.Idioma,
-                    comandoLote.ParametroHeaderMediaUrl,
+                    comandoLote.HeaderMediaUrlDoDestinatario(index),
                     comandoLote.ParametrosBodyDoDestinatario(index),
-                    comandoLote.ParametrosButton);
+                    comandoLote.ParametrosButtonDoDestinatario(index));
 
                 var requestMeta = new EnviarMensagemTemplateRequest
                 {
@@ -1020,7 +1020,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                         Texto = b.Text,
                         Url = b.Url,
                         NumeroTelefone = b.PhoneNumber,
-                        CodigoExemplo = b.Example,
+                        CodigoExemplo = b.CodigoExemplo,
                         Tipo = b.Type?.ToUpper() switch
                         {
                             "QUICK_REPLY" => TipoBotaoTemplate.QuickReply,

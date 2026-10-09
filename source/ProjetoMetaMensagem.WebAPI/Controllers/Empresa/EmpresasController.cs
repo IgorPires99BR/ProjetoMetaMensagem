@@ -7,7 +7,9 @@ using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ConectaContaMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
 
@@ -139,6 +141,44 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.ConectarMeta"), tipo = "Servico" });
+            }
+        }
+
+        // Conta Itau onde a empresa recebe o Pix das cobrancas aos clientes dela. So admin: a
+        // tela de Empresas ja e restrita a admin no front, mas o endpoint nao pode depender disso
+        // -- um vendedor nao tem por que ver nem trocar a conta que recebe o dinheiro. O recorte
+        // por empresa (empresaId na rota/corpo) fica com o EmpresaAccessFilter.
+        [HttpGet("api/v2/empresa/{empresaId}/dados-bancarios")]
+        public async Task<IActionResult> ObterDadosBancarios([FromRoute] Guid empresaId)
+        {
+            try
+            {
+                if (!this.EhAdmin() && !this.EhAdminDaPlataforma())
+                    return StatusCode(403, new { mensagem = "Apenas administradores podem ver os dados bancários da empresa.", tipo = "Negocio" });
+
+                var resultado = await _mediator.Send(new ObtemDadosBancariosCommand(empresaId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.ObterDadosBancarios"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPut("api/v2/empresa/dados-bancarios")]
+        public async Task<IActionResult> SalvarDadosBancarios([FromBody] SalvaDadosBancariosCommand command)
+        {
+            try
+            {
+                if (!this.EhAdmin() && !this.EhAdminDaPlataforma())
+                    return StatusCode(403, new { mensagem = "Apenas administradores podem alterar os dados bancários da empresa.", tipo = "Negocio" });
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.SalvarDadosBancarios"), tipo = "Servico" });
             }
         }
 

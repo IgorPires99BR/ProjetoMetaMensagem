@@ -17,12 +17,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
     {
         private readonly IMetaService _whatsappService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPreparadorCobrancaPix _preparadorPix;
         private readonly ILogger<EnviarMensagemTemplateMetaHandler> _logger;
 
-        public EnviarMensagemTemplateMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork, ILogger<EnviarMensagemTemplateMetaHandler> logger)
+        public EnviarMensagemTemplateMetaHandler(IMetaService whatsappService, IUnitOfWork unitOfWork, IPreparadorCobrancaPix preparadorPix, ILogger<EnviarMensagemTemplateMetaHandler> logger)
         {
             _whatsappService = whatsappService;
             _unitOfWork = unitOfWork;
+            _preparadorPix = preparadorPix;
             _logger = logger;
         }
 
@@ -45,27 +47,57 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-                // 2. Chamada ao serviço de integração com a Meta
-                var respostaMeta = await _whatsappService.EnviarTemplateAsync(command, phoneNumberId, token);
+                var templateEnviado = command.TemplateId.HasValue
+                    ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
+                    : null;
 
-                if (respostaMeta == null)
+                // Mesma regra do lote: cobranca e Pix nascem antes do envio, porque o Pix vai
+                // dentro da mensagem.
+                CobrancaPreparada? preparada = null;
+                Entidades.Contato? contato = null;
+                if (templateEnviado != null && templateEnviado.GeraCobranca)
                 {
-                    response.AddErro("Erro ao Acessar a meta");
+                    contato = (await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, new[] { command.ContatoId }))
+                        .FirstOrDefault();
+                    if (contato != null)
+                    {
+                        var preparadas = await _preparadorPix.PrepararAsync(command.IdEmpresa, templateEnviado, new[] { contato }, HorarioBrasilia.Agora());
+                        preparada = preparadas[contato.Id];
+                    }
+                }
+
+                var erroPix = preparada?.Erro
+                    ?? PixNoTemplate.ErroDoBotaoSemPix(templateEnviado, preparada, command.ParametrosButton?.Any(p => !string.IsNullOrWhiteSpace(p)) ?? false)
+                    ?? _preparadorPix.AplicarNasVariaveis(command.ParametrosBody, preparada);
+                if (erroPix != null)
+                {
+                    response.AddErro(erroPix);
                     return response;
                 }
 
-                if (!respostaMeta.Sucesso)
+                if (preparada != null && preparada.TemPix)
                 {
-                    response.AddErro($"Falha no disparo da Meta: {respostaMeta.Erro}");
+                    if (PixNoTemplate.TemBotaoUrlDinamico(templateEnviado!) && !(command.ParametrosButton?.Any(p => !string.IsNullOrWhiteSpace(p)) ?? false))
+                        command.ParametrosButton = new List<string> { preparada.Cobranca.Txid! };
+                    if (PixNoTemplate.TemCabecalhoImagem(templateEnviado!) && string.IsNullOrWhiteSpace(command.ParametroHeaderMediaUrl))
+                        command.ParametroHeaderMediaUrl = preparada.UrlQrCode;
+                }
+
+                // 2. Chamada ao serviço de integração com a Meta
+                var respostaMeta = await _whatsappService.EnviarTemplateAsync(command, phoneNumberId, token);
+
+                if (respostaMeta == null || !respostaMeta.Sucesso)
+                {
+                    if (preparada != null)
+                        await _preparadorPix.DescartarAsync(command.IdEmpresa, new[] { preparada });
+
+                    response.AddErro(respostaMeta == null ? "Erro ao Acessar a meta" : $"Falha no disparo da Meta: {respostaMeta.Erro}");
                     return response;
                 }
 
                 // 3. Persistencia no historico em caso de sucesso
                 // Grava o texto final, ja com as variaveis trocadas: e isso que o chat e o
                 // relatorio mostram pro usuario.
-                var templateEnviado = command.TemplateId.HasValue
-                    ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
-                    : null;
 
                 var historico = new HistoricoDisparo
                 {
@@ -88,13 +120,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 // envio -- ver CobrancaClienteFactory.
                 if (templateEnviado != null && templateEnviado.GeraCobranca)
                 {
-                    var contato = (await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, new[] { command.ContatoId }))
-                        .FirstOrDefault();
-
-                    if (contato != null)
+                    if (preparada != null)
                     {
-                        var cobranca = CobrancaClienteFactory.Criar(contato, templateEnviado.Id, historico.Id, DateTime.Now);
-                        await _unitOfWork.CobrancaCliente.Incluir(cobranca);
+                        preparada.Cobranca.HistoricoDisparoId = historico.Id;
+                        await _unitOfWork.CobrancaCliente.Incluir(preparada.Cobranca);
                     }
                     else
                     {

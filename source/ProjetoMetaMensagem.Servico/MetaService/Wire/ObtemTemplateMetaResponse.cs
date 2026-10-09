@@ -80,8 +80,13 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
         [JsonProperty("phone_number", NullValueHandling = NullValueHandling.Ignore)]
         public string PhoneNumber { get; set; } // Número do botão se o tipo for PHONE_NUMBER
 
+        // COPY_CODE devolve o cupom (string); URL com parte variavel devolve uma lista de links.
+        // Como string, a lista quebrava a leitura de TODOS os templates da conta.
         [JsonProperty("example", NullValueHandling = NullValueHandling.Ignore)]
-        public string Example { get; set; } // Cupom de exemplo se o tipo for COPY_CODE
+        public Newtonsoft.Json.Linq.JToken? Example { get; set; }
+
+        public string? CodigoExemplo =>
+            Example?.Type == Newtonsoft.Json.Linq.JTokenType.String ? Example.ToString() : null;
     }
 
     public class PagingResponse

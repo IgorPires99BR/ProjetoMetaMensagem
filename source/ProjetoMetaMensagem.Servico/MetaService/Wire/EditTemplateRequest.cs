@@ -25,7 +25,9 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
                         Type = b.Tipo,
                         Text = b.Texto,
                         Url = b.Url,
-                        PhoneNumber = b.NumeroTelefone
+                        PhoneNumber = b.NumeroTelefone,
+                        // So o link de exemplo do URL dinamico: sem ele a Meta recusa a edicao.
+                        Example = b.Tipo == "URL" ? CreateTemplateRequest.ExemploDoBotao(b) : null
                     }).ToList(),
                     Example = (c.HeaderHandle != null || c.BodyTextExemplos != null)
                         ? new TemplateExampleRequest { HeaderHandle = c.HeaderHandle, BodyText = c.BodyTextExemplos }

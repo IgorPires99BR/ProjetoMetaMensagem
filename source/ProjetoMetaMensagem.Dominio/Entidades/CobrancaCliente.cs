@@ -45,6 +45,20 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? UtmContentCakto { get; set; }
         public string? EventoIdCakto { get; set; }
 
+        // Pix gerado na conta Itau da empresa (ver BD/52). Nulos quando a empresa nao tem
+        // cobranca Pix ativa -- a cobranca continua existindo, so sem baixa automatica.
+        public string? Txid { get; set; }
+        public string? PixCopiaECola { get; set; }
+        public DateTime? PixExpiraEm { get; set; }
+        public decimal? Multa { get; set; }
+        public decimal? Juros { get; set; }
+        public decimal? ValorCobrado { get; set; }
+        public decimal? ValorPago { get; set; }
+        public string? EndToEndId { get; set; }
+
+        // Txid no formato aceito pelo Bacen (26 a 35 alfanumericos): o proprio Id sem hifens.
+        public static string TxidDe(Guid id) => id.ToString("N");
+
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
     }

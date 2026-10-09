@@ -7,6 +7,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Helpers.MensagemFormatter;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
 using ProjetoMetaMensagem.Dominio.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Numero.CriaNumero;
 using System;
@@ -21,15 +22,90 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
     {
         private readonly IMetaService _metaService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPreparadorCobrancaPix _preparadorPix;
 
 
         private readonly ILogger<EnviarMensagemTemplateMetaLoteHandler> _logger;
 
-        public EnviarMensagemTemplateMetaLoteHandler(IMetaService metaService, IUnitOfWork unitOfWork, ILogger<EnviarMensagemTemplateMetaLoteHandler> logger)
+        public EnviarMensagemTemplateMetaLoteHandler(IMetaService metaService, IUnitOfWork unitOfWork, IPreparadorCobrancaPix preparadorPix, ILogger<EnviarMensagemTemplateMetaLoteHandler> logger)
         {
             _metaService = metaService;
             _unitOfWork = unitOfWork;
+            _preparadorPix = preparadorPix;
             _logger = logger;
+        }
+
+        private async Task<List<Entidades.Contato>> ObterContatosDoLote(EnviarMensagemTemplateMetaLoteCommand command)
+        {
+            var ids = (command.ContatosIds ?? new List<string>())
+                .Select(id => Guid.TryParse(id, out var g) ? g : Guid.Empty)
+                .Where(g => g != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var contatos = new List<Entidades.Contato>();
+            foreach (var lote in ids.Chunk(1000))
+            {
+                contatos.AddRange(await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, lote));
+            }
+            return contatos;
+        }
+
+        // Troca os marcadores de Pix nas variaveis de cada destinatario, preenche botao/QR por
+        // contato e tira da lista quem nao pode receber (Pix nao gerado). Devolve as falhas
+        // desses destinatarios, no formato do resultado da Meta.
+        private List<ResultadoEnvioTemplate> AplicarCobrancas(
+            EnviarMensagemTemplateMetaLoteCommand command, Entidades.Template? template, Dictionary<Guid, CobrancaPreparada>? preparadas)
+        {
+            var falhas = new List<ResultadoEnvioTemplate>();
+            var telefones = command.Telefones ?? new List<string>();
+            var contatosIds = command.ContatosIds ?? new List<string>();
+            var botaoInformado = command.ParametrosButton?.Any(p => !string.IsNullOrWhiteSpace(p)) ?? false;
+            var preencherBotao = template != null && PixNoTemplate.TemBotaoUrlDinamico(template) && !botaoInformado;
+            var preencherCabecalho = template != null && PixNoTemplate.TemCabecalhoImagem(template)
+                && string.IsNullOrWhiteSpace(command.ParametroHeaderMediaUrl);
+
+            var novosTelefones = new List<string>();
+            var novosContatosIds = new List<string>();
+
+            for (var i = 0; i < telefones.Count; i++)
+            {
+                var contatoIdTexto = i < contatosIds.Count ? contatosIds[i] : null;
+                CobrancaPreparada? preparada = null;
+                if (preparadas != null && Guid.TryParse(contatoIdTexto, out var contatoId))
+                    preparadas.TryGetValue(contatoId, out preparada);
+
+                var erro = preparada?.Erro ?? PixNoTemplate.ErroDoBotaoSemPix(template, preparada, botaoInformado);
+                if (erro == null)
+                {
+                    // Copia: a lista pode ser a global (compartilhada entre destinatarios).
+                    var valores = command.ParametrosBodyDoDestinatario(i).ToList();
+                    erro = _preparadorPix.AplicarNasVariaveis(valores, preparada);
+                    if (erro == null && contatoIdTexto != null && preparada != null)
+                        command.ParametrosBodyPorContato[contatoIdTexto] = valores;
+                }
+
+                if (erro != null)
+                {
+                    falhas.Add(new ResultadoEnvioTemplate { Sucesso = false, Erro = erro, ContatoId = contatoIdTexto!, Telefone = telefones[i] });
+                    continue;
+                }
+
+                if (preparada != null && preparada.TemPix && contatoIdTexto != null)
+                {
+                    if (preencherBotao)
+                        command.ParametrosButtonPorContato[contatoIdTexto] = new List<string> { preparada.Cobranca.Txid! };
+                    if (preencherCabecalho)
+                        command.HeaderMediaUrlPorContato[contatoIdTexto] = preparada.UrlQrCode!;
+                }
+
+                novosTelefones.Add(telefones[i]);
+                if (i < contatosIds.Count) novosContatosIds.Add(contatosIds[i]);
+            }
+
+            command.Telefones = novosTelefones;
+            if (command.ContatosIds != null) command.ContatosIds = novosContatosIds;
+            return falhas;
         }
 
         public async Task<Response<EnviarMensagemTemplateMetaLoteResult>> Handle(EnviarMensagemTemplateMetaLoteCommand command)
@@ -73,41 +149,36 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                 var phoneNumberId = await _unitOfWork.Empresa.ObterPhoneNumberId(command.IdEmpresa);
                 var token = await _unitOfWork.Empresa.ObterMetaAccessToken(command.IdEmpresa);
 
-                // O serviço retorna o Dictionary<string, ResultadoEnvioTemplate> contendo [Telefone -> Resultado]
-                var resultadoDisparos = await _metaService.EnviarTemplatesEmLoteAsync(command, phoneNumberId, token);
-
                 // Uma consulta so; o texto muda por destinatario quando o disparo e personalizado.
                 var templateEnviado = command.TemplateId.HasValue
                     ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
                     : null;
 
-                // Contatos de quem GeraCobranca vai precisar, buscados de uma vez so (nao um a
-                // um dentro do loop) -- so quando o template dispara cobranca, pra nao pagar
-                // essa consulta em todo disparo em lote comum.
-                Dictionary<Guid, Entidades.Contato>? contatoPorId = null;
+                // Cobranca (e o Pix dela) nasce ANTES do envio: o Pix vai dentro da mensagem.
+                // Quem ficou sem Pix sai da lista e volta como falha -- cobranca sem forma de
+                // pagamento nao deve chegar ao cliente.
+                Dictionary<Guid, CobrancaPreparada>? preparadas = null;
                 if (templateEnviado != null && templateEnviado.GeraCobranca)
                 {
-                    var idsSucesso = resultadoDisparos
-                        .Where(r => r.Sucesso)
-                        .Select(r => Guid.TryParse(r.ContatoId, out var id) ? id : (Guid?)null)
-                        .Where(id => id.HasValue)
-                        .Select(id => id!.Value)
-                        .Distinct()
-                        .ToList();
-
-                    contatoPorId = (await _unitOfWork.Contato.ObterPorIds(command.IdEmpresa, idsSucesso))
-                        .ToDictionary(c => c.Id);
+                    preparadas = await _preparadorPix.PrepararAsync(
+                        command.IdEmpresa, templateEnviado, await ObterContatosDoLote(command), HorarioBrasilia.Agora());
                 }
+                var falhasAntesDoEnvio = AplicarCobrancas(command, templateEnviado, preparadas);
 
-                var agora = DateTime.Now;
+                var resultadoDisparos = command.Telefones.Count > 0
+                    ? await _metaService.EnviarTemplatesEmLoteAsync(command, phoneNumberId, token)
+                    : new List<ResultadoEnvioTemplate>();
+                var totalEnviados = resultadoDisparos.Count;
+                resultadoDisparos.AddRange(falhasAntesDoEnvio);
 
                 // Contato com Telefone2 aparece duas vezes nos resultados (um envio por numero),
                 // mas a fatura e uma so: a cobranca fica no primeiro envio que deu certo.
                 var contatosJaCobrados = new HashSet<Guid>();
 
                 // Um resultado por destinatario, na ordem da lista: o indice diz de quem e cada
-                // um, mesmo quando dois contatos dividem o mesmo telefone.
-                for (var i = 0; i < resultadoDisparos.Count; i++)
+                // um, mesmo quando dois contatos dividem o mesmo telefone. As falhas de Pix
+                // (depois de totalEnviados) nao tem posicao no command e nunca tem sucesso.
+                for (var i = 0; i < totalEnviados; i++)
                 {
                     var respostaMeta = resultadoDisparos[i];
 
@@ -138,12 +209,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
 
                         // Mesma regra do envio individual (EnviarMensagemTemplateMetaHandler):
                         // template com GeraCobranca abre uma CobrancaCliente por contato.
-                        if (contatoPorId != null && contatoPorId.TryGetValue(contatoId, out var contato))
+                        if (preparadas != null && preparadas.TryGetValue(contatoId, out var preparada))
                         {
                             if (!contatosJaCobrados.Add(contatoId)) continue;
 
-                            var cobranca = CobrancaClienteFactory.Criar(contato, templateEnviado!.Id, historico.Id, agora);
-                            await _unitOfWork.CobrancaCliente.Incluir(cobranca);
+                            preparada.Cobranca.HistoricoDisparoId = historico.Id;
+                            await _unitOfWork.CobrancaCliente.Incluir(preparada.Cobranca);
                         }
                         else if (templateEnviado != null && templateEnviado.GeraCobranca)
                         {
@@ -152,6 +223,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                                 contatoId, historico.Id);
                         }
                     }
+                }
+
+                if (preparadas != null)
+                {
+                    await _preparadorPix.DescartarAsync(command.IdEmpresa,
+                        preparadas.Where(p => !contatosJaCobrados.Contains(p.Key)).Select(p => p.Value));
                 }
 
                 // 3. Montagem do objeto de resultado mantendo o dicionário original [Telefone -> bool] para a View do CRM

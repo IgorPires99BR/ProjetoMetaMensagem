@@ -25,10 +25,20 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         public const string DataVencimento = "dataVencimento";
         public const string TaxaJuros = "taxaJuros";
         public const string TaxaJurosMensal = "taxaJurosMensal";
+        // Fatura + multa + juros do dia (CalculoCobrancaPix) -- o mesmo valor do Pix gerado.
+        public const string ValorAtualizado = "valorAtualizado";
+        // Dependem do Pix gerado no Itau, que so existe no momento do envio: aqui viram
+        // marcadores, trocados pelo PreparadorCobrancaPix depois que o Pix e criado.
+        public const string PixCopiaECola = "pixCopiaECola";
+        public const string LinkPagamento = "linkPagamento";
+
+        public const string MarcadorPixCopiaECola = "\u0001PIX_COPIA_E_COLA\u0001";
+        public const string MarcadorLinkPagamento = "\u0001PIX_LINK_PAGAMENTO\u0001";
 
         public static readonly string[] CamposDoContato =
         {
-            Nome, NomeCliente, Telefone, ValorFatura, DiaVencimento, DataVencimento, TaxaJuros, TaxaJurosMensal
+            Nome, NomeCliente, Telefone, ValorFatura, DiaVencimento, DataVencimento, TaxaJuros, TaxaJurosMensal,
+            ValorAtualizado, PixCopiaECola, LinkPagamento
         };
 
         // Sem casa decimal fixa em pt-BR (405 vira "405,00") o template sai com o valor cru do
@@ -90,6 +100,9 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 DataVencimento => DataDeVencimento(contato.DiaVencimento, hoje),
                 TaxaJuros => contato.TaxaJuros?.ToString("N2", Brasil) ?? string.Empty,
                 TaxaJurosMensal => contato.TaxaJurosMensal?.ToString("N2", Brasil) ?? string.Empty,
+                ValorAtualizado => FormatarValorAtualizado(contato, hoje),
+                PixCopiaECola => MarcadorPixCopiaECola,
+                LinkPagamento => MarcadorLinkPagamento,
                 _ => string.Empty
             };
         }
@@ -102,6 +115,15 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         // tambem precisa desse clamp pra gravar CobrancaCliente.DataVencimento -- duplicar essa
         // conta foi exatamente o tipo de bug que este arquivo existe pra evitar (ver comentario
         // da classe).
+        private static string FormatarValorAtualizado(Contato contato, DateTime hoje)
+        {
+            if (!contato.ValorFatura.HasValue) return string.Empty;
+
+            var vencimento = CalcularDataVencimento(contato.DiaVencimento, hoje) ?? hoje.Date;
+            var valor = CalculoCobrancaPix.ValorAtualizado(contato.ValorFatura.Value, contato.TaxaJuros, contato.TaxaJurosMensal, vencimento, hoje);
+            return $"R$ {valor.ToString("N2", Brasil)}";
+        }
+
         public static string DataDeVencimento(int? diaVencimento, DateTime hoje) =>
             CalcularDataVencimento(diaVencimento, hoje)?.ToString("dd/MM/yyyy", Brasil) ?? string.Empty;
 

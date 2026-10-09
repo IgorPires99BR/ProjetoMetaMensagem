@@ -25,7 +25,25 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
             NomeCliente = nomeCliente;
             NomeContato = nomeContato;
             Telefone = telefone;
+            TemPix = cobranca.Txid != null;
+            ValorCobrado = cobranca.ValorCobrado;
+            Multa = cobranca.Multa;
+            Juros = cobranca.Juros;
+            ValorPago = cobranca.ValorPago;
+            PixExpiraEm = cobranca.PixExpiraEm;
+            // Baixa feita pelo Itau sempre grava o EndToEndId; a manual nao.
+            PagoViaPix = cobranca.EndToEndId != null;
         }
+
+        // Pix (ver BD/52). O copia e cola fica de fora: a tela nao precisa dele e a lista
+        // inteira de codigos pagaveis nao tem por que trafegar.
+        public bool TemPix { get; set; }
+        public decimal? ValorCobrado { get; set; }
+        public decimal? Multa { get; set; }
+        public decimal? Juros { get; set; }
+        public decimal? ValorPago { get; set; }
+        public DateTime? PixExpiraEm { get; set; }
+        public bool PagoViaPix { get; set; }
 
         public Guid Id { get; set; }
         public Guid EmpresaId { get; set; }

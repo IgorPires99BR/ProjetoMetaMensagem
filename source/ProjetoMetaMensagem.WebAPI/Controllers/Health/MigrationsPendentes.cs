@@ -116,6 +116,45 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/50", "Contato", "Telefone2",
                 "ALTER TABLE Contato ADD Telefone2 NVARCHAR(50) NULL;"),
+
+            new("BD/51", "DadosBancariosEmpresa", null,
+                @"CREATE TABLE DadosBancariosEmpresa (
+                    EmpresaId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+                    Banco NVARCHAR(3) NOT NULL DEFAULT ('341'),
+                    Agencia NVARCHAR(10) NULL,
+                    Conta NVARCHAR(20) NULL,
+                    ContaDigito NVARCHAR(2) NULL,
+                    TitularNome NVARCHAR(255) NULL,
+                    TitularDocumento NVARCHAR(14) NULL,
+                    TipoChavePix NVARCHAR(20) NULL,
+                    ChavePix NVARCHAR(100) NULL,
+                    Ambiente NVARCHAR(20) NOT NULL DEFAULT ('SANDBOX'),
+                    ClientId NVARCHAR(100) NULL,
+                    ClientSecretCriptografado NVARCHAR(MAX) NULL,
+                    CertificadoPem NVARCHAR(MAX) NULL,
+                    ChavePrivadaCriptografada NVARCHAR(MAX) NULL,
+                    CertificadoValidoAte DATETIME NULL,
+                    CertificadoTitular NVARCHAR(500) NULL,
+                    CobrancaPixAtiva BIT NOT NULL DEFAULT (0),
+                    DataCriacao DATETIME NOT NULL DEFAULT (GETDATE()),
+                    DataAtualizacao DATETIME NULL,
+                    CONSTRAINT FK_DadosBancariosEmpresa_Empresa FOREIGN KEY (EmpresaId) REFERENCES Empresa(Id) ON DELETE CASCADE
+                  );"),
+
+            // Colunas do Pix entram juntas (um ALTER so); a checagem pela primeira basta. O indice
+            // vai por EXEC: no mesmo lote o SQL Server compila o CREATE INDEX antes do ALTER rodar
+            // e recusa com "Invalid column name 'Txid'".
+            new("BD/52", "CobrancaCliente", "Txid",
+                @"ALTER TABLE CobrancaCliente ADD
+                    Txid NVARCHAR(35) NULL,
+                    PixCopiaECola NVARCHAR(512) NULL,
+                    PixExpiraEm DATETIME NULL,
+                    Multa DECIMAL(10,2) NULL,
+                    Juros DECIMAL(10,2) NULL,
+                    ValorCobrado DECIMAL(10,2) NULL,
+                    ValorPago DECIMAL(10,2) NULL,
+                    EndToEndId NVARCHAR(50) NULL;
+                  EXEC('CREATE INDEX IX_CobrancaCliente_Txid ON CobrancaCliente (Txid) WHERE Txid IS NOT NULL');"),
         };
     }
 }

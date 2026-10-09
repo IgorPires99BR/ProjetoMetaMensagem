@@ -33,6 +33,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
         IOrigemLeadRepository OrigemLead { get; }
         IAgendamentoRepository Agendamento { get; }
         ICobrancaClienteRepository CobrancaCliente { get; }
+        IDadosBancariosEmpresaRepository DadosBancariosEmpresa { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();

@@ -26,13 +26,24 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
                         Text = b.Texto,
                         Url = b.Url,
                         PhoneNumber = b.NumeroTelefone,
-                        Example = b.CodigoExemplo
+                        Example = ExemploDoBotao(b)
                     }).ToList(),
                     Example = (c.HeaderHandle != null || c.BodyTextExemplos != null)
                         ? new TemplateExampleRequest { HeaderHandle = c.HeaderHandle, BodyText = c.BodyTextExemplos }
                         : null
                 }).ToList();
             }
+        }
+
+        // COPY_CODE: o cupom de exemplo (string). URL com parte variavel ({{1}}, ex: pagina do
+        // Pix da cobranca): a Meta exige uma lista com um link completo de exemplo, senao recusa
+        // o template.
+        internal static object? ExemploDoBotao(BotaoTemplateEnvio botao)
+        {
+            if (botao.Tipo == "URL" && botao.Url != null && botao.Url.Contains("{{1}}"))
+                return new List<string> { botao.Url.Replace("{{1}}", "0f8fad5bd9cb469fa16570867728950e") };
+
+            return botao.CodigoExemplo;
         }
 
         [JsonProperty("name")]
@@ -96,8 +107,8 @@ namespace ProjetoMetaMensagem.Servico.MetaService.Wire
         [JsonProperty("phone_number", NullValueHandling = NullValueHandling.Ignore)]
         public string PhoneNumber { get; set; }
 
-        // Cupom de exemplo exigido pela Meta quando Type == COPY_CODE
+        // String (cupom do COPY_CODE) ou lista (link de exemplo do URL dinamico) -- ver ExemploDoBotao.
         [JsonProperty("example", NullValueHandling = NullValueHandling.Ignore)]
-        public string Example { get; set; }
+        public object? Example { get; set; }
     }
 }

@@ -18,19 +18,22 @@ namespace ProjetoMetaMensagem.Servico.Flow
         private readonly INotificadorChat _notificadorChat;
         private readonly ILogger<FlowOrchestratorService> _logger;
         private readonly ProjetoMetaMensagem.Servico.Configuration.PlanosConfiguration _planosConfig;
+        private readonly IPreparadorCobrancaPix _preparadorPix;
 
         public FlowOrchestratorService(
             IUnitOfWork unitOfWork,
             IMetaService metaService,
             ILogger<FlowOrchestratorService> logger,
             INotificadorChat notificadorChat,
-            Microsoft.Extensions.Options.IOptions<ProjetoMetaMensagem.Servico.Configuration.PlanosConfiguration> planosConfig)
+            Microsoft.Extensions.Options.IOptions<ProjetoMetaMensagem.Servico.Configuration.PlanosConfiguration> planosConfig,
+            IPreparadorCobrancaPix preparadorPix)
         {
             _unitOfWork = unitOfWork;
             _metaService = metaService;
             _notificadorChat = notificadorChat;
             _logger = logger;
             _planosConfig = planosConfig.Value;
+            _preparadorPix = preparadorPix;
         }
 
         public async Task<FlowOrchestrationResult> ProcessarMensagem(
@@ -602,6 +605,43 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     ? new Dictionary<string, string>()
                     : JsonConvert.DeserializeObject<Dictionary<string, string>>(variaveisJson) ?? new Dictionary<string, string>();
 
+                // Template de cobranca: a cobranca (e o Pix) nasce antes do envio e entra nas
+                // variaveis do flow pelos mesmos nomes do disparo ({{valorAtualizado}},
+                // {{pixCopiaECola}}, {{linkPagamento}}).
+                CobrancaPreparada? preparada = null;
+                if (template.GeraCobranca && estadoAtual?.ContatoId is Guid idContatoCobranca && idContatoCobranca != Guid.Empty)
+                {
+                    var contatoCobranca = (await _unitOfWork.Contato.ObterPorIds(empresaId, new[] { idContatoCobranca })).FirstOrDefault();
+                    if (contatoCobranca != null)
+                    {
+                        var agoraBrasilia = HorarioBrasilia.Agora();
+                        preparada = (await _preparadorPix.PrepararAsync(empresaId, template, new[] { contatoCobranca }, agoraBrasilia))[contatoCobranca.Id];
+
+                        if (preparada.Erro != null)
+                        {
+                            _logger.LogWarning("Flow: template de cobranca {TemplateId} nao enviado ao contato {ContatoId}: {Erro}",
+                                template.Id, contatoCobranca.Id, preparada.Erro);
+                            return;
+                        }
+
+                        variaveis[ResolvedorDeVariaveis.ValorAtualizado] = ResolvedorDeVariaveis.Resolver(
+                            new AgendamentoVariavelDto { Origem = ResolvedorDeVariaveis.ValorAtualizado },
+                            contatoCobranca, new Dictionary<Guid, Parametro>(), agoraBrasilia);
+                        if (preparada.TemPix)
+                        {
+                            variaveis[ResolvedorDeVariaveis.PixCopiaECola] = preparada.Cobranca.PixCopiaECola!;
+                            variaveis[ResolvedorDeVariaveis.LinkPagamento] = preparada.LinkPagamento!;
+                        }
+                    }
+                }
+
+                var erroBotao = PixNoTemplate.ErroDoBotaoSemPix(template, preparada, botaoInformado: false);
+                if (erroBotao != null)
+                {
+                    _logger.LogWarning("Flow: template {TemplateId} nao enviado: {Erro}", template.Id, erroBotao);
+                    return;
+                }
+
                 var parametrosBody = Regex.Matches(template.Conteudo ?? string.Empty, @"\{\{(\w+)\}\}")
                     .Select(m => variaveis.TryGetValue(m.Groups[1].Value, out var valor) ? valor : string.Empty)
                     .ToList();
@@ -622,10 +662,21 @@ namespace ProjetoMetaMensagem.Servico.Flow
                     ParametrosBody = parametrosBody
                 };
 
+                if (preparada != null && preparada.TemPix)
+                {
+                    if (PixNoTemplate.TemBotaoUrlDinamico(template))
+                        command.ParametrosButton = new List<string> { preparada.Cobranca.Txid! };
+                    if (PixNoTemplate.TemCabecalhoImagem(template))
+                        command.ParametroHeaderMediaUrl = preparada.UrlQrCode;
+                }
+
                 var resultadoEnvio = await _metaService.EnviarTemplateAsync(command, phoneNumberId, token);
 
                 if (resultadoEnvio == null || !resultadoEnvio.Sucesso)
                 {
+                    if (preparada != null)
+                        await _preparadorPix.DescartarAsync(empresaId, new[] { preparada });
+
                     _logger.LogWarning(
                         "Flow: falha ao enviar Template {TemplateId} na etapa {EtapaId}: {Erro}",
                         etapa.TemplateId, etapa.Id, resultadoEnvio?.Erro ?? "resposta nula da Meta");
@@ -652,14 +703,10 @@ namespace ProjetoMetaMensagem.Servico.Flow
                 // CobrancaCliente.
                 if (template.GeraCobranca)
                 {
-                    var contato = historico.ContatoId == Guid.Empty
-                        ? null
-                        : (await _unitOfWork.Contato.ObterPorIds(empresaId, new[] { historico.ContatoId })).FirstOrDefault();
-
-                    if (contato != null)
+                    if (preparada != null)
                     {
-                        var cobranca = CobrancaClienteFactory.Criar(contato, template.Id, historico.Id, DateTime.Now);
-                        await _unitOfWork.CobrancaCliente.Incluir(cobranca);
+                        preparada.Cobranca.HistoricoDisparoId = historico.Id;
+                        await _unitOfWork.CobrancaCliente.Incluir(preparada.Cobranca);
                     }
                     else
                     {

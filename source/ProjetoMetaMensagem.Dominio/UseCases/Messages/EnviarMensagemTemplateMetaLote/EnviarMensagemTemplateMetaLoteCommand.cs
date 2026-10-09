@@ -75,6 +75,35 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             return ParametrosBodyDe(Telefones[indice], contatoId);
         }
 
+        // Botao de URL e imagem do cabecalho por contato: o Pix de cada cobranca tem link e QR
+        // proprios. Preenchidos pelo handler (PreparadorCobrancaPix), nunca pelo front; quem nao
+        // tem entrada aqui usa ParametrosButton/ParametroHeaderMediaUrl.
+        public Dictionary<string, List<string>> ParametrosButtonPorContato { get; set; } =
+            new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> HeaderMediaUrlPorContato { get; set; } =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        private string? ContatoDoDestinatario(int indice) =>
+            ContatosIds != null && indice < ContatosIds.Count ? ContatosIds[indice] : null;
+
+        public List<string> ParametrosButtonDoDestinatario(int indice)
+        {
+            var contatoId = ContatoDoDestinatario(indice);
+            return contatoId != null && ParametrosButtonPorContato != null &&
+                   ParametrosButtonPorContato.TryGetValue(contatoId, out var doContato)
+                ? doContato
+                : ParametrosButton;
+        }
+
+        public string? HeaderMediaUrlDoDestinatario(int indice)
+        {
+            var contatoId = ContatoDoDestinatario(indice);
+            return contatoId != null && HeaderMediaUrlPorContato != null &&
+                   HeaderMediaUrlPorContato.TryGetValue(contatoId, out var doContato)
+                ? doContato
+                : ParametroHeaderMediaUrl;
+        }
+
         // Sempre fixado por quem monta o command (controller ou worker) -- ver OrigemDisparo.
         // Nao vem do corpo da requisicao nesta rota.
         public string Origem { get; set; } = ProjetoMetaMensagem.Dominio.Common.OrigemDisparo.DisparadorDeMensagem;

@@ -20,5 +20,11 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
             DateTime? dataInicio = null, DateTime? dataFim = null);
 
         Task<int> MarcarPaga(Guid id, Guid? empresaIdSolicitante, DateTime dataPagamento);
+
+        // Baixa automatica do Pix (webhook/consulta periodica do Itau). Sem recorte de empresa:
+        // quem chama ja confirmou o pagamento no Itau com as credenciais da propria empresa.
+        Task<CobrancaCliente?> ObterPorTxid(string txid);
+        Task<IEnumerable<CobrancaCliente>> ObterPendentesComPix(DateTime expiradoDesde);
+        Task<int> BaixarPix(Guid id, DateTime dataPagamento, decimal valorPago, string? endToEndId);
     }
 }

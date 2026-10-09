@@ -286,6 +286,16 @@ builder.Services.AddScoped<IAssinaturaRepository, AssinaturaRepository>();
 builder.Services.AddScoped<IOrigemLeadRepository, OrigemLeadRepository>();
 builder.Services.AddScoped<IAgendamentoRepository, AgendamentoRepository>();
 builder.Services.AddScoped<ICobrancaClienteRepository, CobrancaClienteRepository>();
+builder.Services.AddScoped<IDadosBancariosEmpresaRepository, DadosBancariosEmpresaRepository>();
+builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.CriptografiaConfiguration>(
+    builder.Configuration.GetSection("Criptografia"));
+builder.Services.AddSingleton<ICriptografiaService, ProjetoMetaMensagem.Servico.Configuration.CriptografiaService>();
+// Pix do Itau nas cobrancas aos clientes. Singleton: guarda HttpClient (mTLS) e token por empresa.
+builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.ItauPixConfiguration>(
+    builder.Configuration.GetSection("ItauPix"));
+builder.Services.AddSingleton<IItauPixService, ProjetoMetaMensagem.Servico.Cobranca.ItauPixService>();
+builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IPreparadorCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.PreparadorCobrancaPix>();
+builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.BaixaCobrancaPix>();
 builder.Services.AddScoped<INotificadorChat, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorChat>();
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MetaConversoesConfiguration>(
     builder.Configuration.GetSection("MetaConversoesConfiguration"));
@@ -428,6 +438,22 @@ try
 catch (Exception ex)
 {
     app.Logger.LogError(ex, "Falha ao sincronizar os jobs de agendamento no HangFire.");
+}
+
+// Rede de seguranca do webhook do Itau (que pode nao chegar, ver ItauPixConfiguration):
+// confere no Itau as cobrancas Pix pendentes.
+try
+{
+    var intervaloPix = Math.Clamp(
+        app.Configuration.GetValue<int?>("ItauPix:IntervaloConsultaMinutos") ?? 10, 1, 59);
+    RecurringJob.AddOrUpdate<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix>(
+        "baixa-pix-itau",
+        servico => servico.ConsultarPendentesAsync(),
+        $"*/{intervaloPix} * * * *");
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Falha ao registrar o job de consulta dos Pix do Itau no HangFire.");
 }
 
 app.MapControllers();
