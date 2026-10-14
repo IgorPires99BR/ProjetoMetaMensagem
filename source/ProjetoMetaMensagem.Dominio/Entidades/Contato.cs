@@ -35,6 +35,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             NomeContato = command.NomeContato;
             Email = command.Email;
             NomeCliente = command.NomeCliente;
+            CpfCnpj = Helpers.DocumentoHelper.SoDigitos(command.CpfCnpj);
             DiaVencimento = command.DiaVencimento ?? DiaVencimentoPadrao;
             TaxaJuros = command.TaxaJuros ?? TaxaJurosPadrao;
             TaxaJurosMensal = command.TaxaJurosMensal ?? TaxaJurosMensalPadrao;
@@ -52,6 +53,7 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             NomeContato = command.NomeContato;
             Email = command.Email;
             NomeCliente = command.NomeCliente;
+            CpfCnpj = Helpers.DocumentoHelper.SoDigitos(command.CpfCnpj);
             DiaVencimento = command.DiaVencimento ?? DiaVencimentoPadrao;
             TaxaJuros = command.TaxaJuros ?? TaxaJurosPadrao;
             TaxaJurosMensal = command.TaxaJurosMensal ?? TaxaJurosMensalPadrao;
@@ -98,6 +100,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // quem usa esse conceito (ex: Sebrecon). Pode ser o mesmo nome de NomeContato ou nao.
         [MaxLength(255)]
         public string? NomeCliente { get; set; }
+
+        // CPF/CNPJ de quem deve a fatura, so digitos. Opcional no cadastro, mas sem ele o Pix
+        // nao e gerado: o Asaas so cria cobranca para cliente com documento.
+        [MaxLength(14)]
+        public string? CpfCnpj { get; set; }
 
         public int? DiaVencimento { get; set; }
 

@@ -36,6 +36,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Contato.NomeContato)},
                     {nameof(Contato.Email)},
                     {nameof(Contato.NomeCliente)},
+                    {nameof(Contato.CpfCnpj)},
                     {nameof(Contato.DiaVencimento)},
                     {nameof(Contato.TaxaJuros)},
                     {nameof(Contato.TaxaJurosMensal)},
@@ -44,7 +45,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 )
                 VALUES (
                     @Id, @UsuarioId, @EmpresaId, @Telefone, @Telefone2, @NomeContato, @Email, @NomeCliente,
-                    @DiaVencimento, @TaxaJuros, @TaxaJurosMensal, @ValorFatura, @DataCriacao
+                    @CpfCnpj, @DiaVencimento, @TaxaJuros, @TaxaJurosMensal, @ValorFatura, @DataCriacao
                 );";
 
             var parameters = new
@@ -57,6 +58,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 contato.NomeContato,
                 contato.Email,
                 contato.NomeCliente,
+                contato.CpfCnpj,
                 contato.DiaVencimento,
                 contato.TaxaJuros,
                 contato.TaxaJurosMensal,
@@ -82,6 +84,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(Contato.NomeContato)} = @NomeContato,
                     {nameof(Contato.Email)} = @Email,
                     {nameof(Contato.NomeCliente)} = @NomeCliente,
+                    {nameof(Contato.CpfCnpj)} = @CpfCnpj,
                     {nameof(Contato.DiaVencimento)} = @DiaVencimento,
                     {nameof(Contato.TaxaJuros)} = @TaxaJuros,
                     {nameof(Contato.TaxaJurosMensal)} = @TaxaJurosMensal,
@@ -98,6 +101,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     contato.NomeContato,
                     contato.Email,
                     contato.NomeCliente,
+                    contato.CpfCnpj,
                     contato.DiaVencimento,
                     contato.TaxaJuros,
                     contato.TaxaJurosMensal,

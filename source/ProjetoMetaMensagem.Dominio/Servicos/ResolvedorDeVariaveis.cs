@@ -27,7 +27,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         public const string TaxaJurosMensal = "taxaJurosMensal";
         // Fatura + multa + juros do dia (CalculoCobrancaPix) -- o mesmo valor do Pix gerado.
         public const string ValorAtualizado = "valorAtualizado";
-        // Dependem do Pix gerado no Itau, que so existe no momento do envio: aqui viram
+        // Dependem do Pix gerado no Asaas, que so existe no momento do envio: aqui viram
         // marcadores, trocados pelo PreparadorCobrancaPix depois que o Pix e criado.
         public const string PixCopiaECola = "pixCopiaECola";
         public const string LinkPagamento = "linkPagamento";

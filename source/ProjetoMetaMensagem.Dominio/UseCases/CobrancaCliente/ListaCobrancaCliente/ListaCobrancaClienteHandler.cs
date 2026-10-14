@@ -4,6 +4,7 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +15,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
     public class ListaCobrancaClienteHandler : IRequestHandler<ListaCobrancaClienteCommand, Response<ListaCobrancaClienteResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPixService _pix;
         private readonly ILogger<ListaCobrancaClienteHandler> _logger;
 
-        public ListaCobrancaClienteHandler(IUnitOfWork unitOfWork, ILogger<ListaCobrancaClienteHandler> logger)
+        public ListaCobrancaClienteHandler(IUnitOfWork unitOfWork, IPixService pix, ILogger<ListaCobrancaClienteHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _pix = pix;
             _logger = logger;
         }
 
@@ -60,7 +63,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
                         .Select(c =>
                         {
                             contatoPorId.TryGetValue(c.ContatoId, out var contato);
-                            return new CobrancaClienteResumo(c, contato?.NomeCliente, contato?.NomeContato, contato?.Telefone);
+                            return new CobrancaClienteResumo(c, contato?.NomeCliente, contato?.NomeContato, contato?.Telefone,
+                                c.Txid != null ? _pix.LinkPagamento(c.Txid) : null);
                         })
                         .ToList()
                 };

@@ -3,8 +3,8 @@ using System;
 namespace ProjetoMetaMensagem.Dominio.Servicos
 {
     // Regras do Pix da cobranca ao cliente, decididas com o Igor (2026-10-05/06):
-    // - Pix imediato (cob), com encargos calculados por nos. Nao usamos cobranca com vencimento
-    //   (cobv), que exige CPF/CNPJ do pagador -- o Contato nao tem esse campo.
+    // - Pix de valor fixo, com encargos calculados por nos. No Asaas a cobranca vai com multa e
+    //   juros zerados (senao valem os da conta da plataforma) e vencimento = dia em que expira.
     // - TaxaJuros (%) e multa unica; TaxaJurosMensal (%) vira juros pro rata dia (mes de 30
     //   dias). Os dois so contam depois do vencimento.
     // - O Pix vale ate 23:59:59 do vencimento; se a cobranca ja sai vencida, ate o fim do dia

@@ -204,6 +204,20 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ClockSkew = TimeSpan.Zero
     };
+
+    // SignalR por WebSocket/SSE nao consegue mandar o cabecalho Authorization: o cliente manda
+    // o JWT na query access_token. Aceito so no caminho do hub -- no resto da API um token em
+    // URL acabaria em log/historico sem necessidade.
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var token = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/api/hubs"))
+                context.Token = token;
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.Configure<ApiWhatsappConnectionConfiguration>(builder.Configuration.GetSection("ApiWhatsappConnectionConfiguration"));
@@ -290,13 +304,15 @@ builder.Services.AddScoped<IDadosBancariosEmpresaRepository, DadosBancariosEmpre
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.CriptografiaConfiguration>(
     builder.Configuration.GetSection("Criptografia"));
 builder.Services.AddSingleton<ICriptografiaService, ProjetoMetaMensagem.Servico.Configuration.CriptografiaService>();
-// Pix do Itau nas cobrancas aos clientes. Singleton: guarda HttpClient (mTLS) e token por empresa.
-builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.ItauPixConfiguration>(
-    builder.Configuration.GetSection("ItauPix"));
-builder.Services.AddSingleton<IItauPixService, ProjetoMetaMensagem.Servico.Cobranca.ItauPixService>();
+// Pix (Asaas, conta da plataforma com split para a subconta da empresa) nas cobrancas aos
+// clientes. Singleton: guarda o HttpClient e o cache de customers.
+builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.AsaasConfiguration>(
+    builder.Configuration.GetSection("Asaas"));
+builder.Services.AddSingleton<IPixService, ProjetoMetaMensagem.Servico.Cobranca.AsaasPixService>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IPreparadorCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.PreparadorCobrancaPix>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.BaixaCobrancaPix>();
 builder.Services.AddScoped<INotificadorChat, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorChat>();
+builder.Services.AddScoped<INotificadorCobranca, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorCobranca>();
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MetaConversoesConfiguration>(
     builder.Configuration.GetSection("MetaConversoesConfiguration"));
 builder.Services.AddHttpClient<IConversoesMetaService, ProjetoMetaMensagem.Servico.Meta.ConversoesMetaService>(client =>
@@ -440,20 +456,24 @@ catch (Exception ex)
     app.Logger.LogError(ex, "Falha ao sincronizar os jobs de agendamento no HangFire.");
 }
 
-// Rede de seguranca do webhook do Itau (que pode nao chegar, ver ItauPixConfiguration):
-// confere no Itau as cobrancas Pix pendentes.
+// Rede de seguranca do webhook do Asaas: confere as cobrancas Pix pendentes e cancela no
+// Asaas as que passaram da validade (ver BaixaCobrancaPix).
 try
 {
+    // Jobs das integracoes antigas: chamam o mesmo metodo e rodariam em dobro.
+    RecurringJob.RemoveIfExists("baixa-pix-itau");
+    RecurringJob.RemoveIfExists("baixa-pix-transfeera");
+
     var intervaloPix = Math.Clamp(
-        app.Configuration.GetValue<int?>("ItauPix:IntervaloConsultaMinutos") ?? 10, 1, 59);
+        app.Configuration.GetValue<int?>("Asaas:IntervaloConsultaMinutos") ?? 10, 1, 59);
     RecurringJob.AddOrUpdate<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix>(
-        "baixa-pix-itau",
+        "baixa-pix-asaas",
         servico => servico.ConsultarPendentesAsync(),
         $"*/{intervaloPix} * * * *");
 }
 catch (Exception ex)
 {
-    app.Logger.LogError(ex, "Falha ao registrar o job de consulta dos Pix do Itau no HangFire.");
+    app.Logger.LogError(ex, "Falha ao registrar o job de consulta dos Pix do Asaas no HangFire.");
 }
 
 app.MapControllers();

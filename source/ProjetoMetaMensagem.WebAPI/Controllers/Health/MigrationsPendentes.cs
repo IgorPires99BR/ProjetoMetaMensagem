@@ -155,6 +155,35 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                     ValorPago DECIMAL(10,2) NULL,
                     EndToEndId NVARCHAR(50) NULL;
                   EXEC('CREATE INDEX IX_CobrancaCliente_Txid ON CobrancaCliente (Txid) WHERE Txid IS NOT NULL');"),
+
+            // UPDATE por EXEC pelo mesmo motivo do indice da BD/52 (coluna criada no mesmo lote).
+            new("BD/53", "DadosBancariosEmpresa", "ComissaoTipo",
+                @"ALTER TABLE DadosBancariosEmpresa ADD
+                    ComissaoTipo NVARCHAR(20) NULL,
+                    ComissaoValor DECIMAL(10,2) NULL;
+                  EXEC('UPDATE DadosBancariosEmpresa SET CobrancaPixAtiva = 0, DataAtualizacao = GETDATE()
+                        WHERE CobrancaPixAtiva = 1 AND ComissaoTipo IS NULL');"),
+
+            new("BD/53", "CobrancaCliente", "ValorComissao",
+                @"ALTER TABLE CobrancaCliente ADD
+                    ValorComissao DECIMAL(10,2) NULL,
+                    ValorRepasse DECIMAL(10,2) NULL;"),
+
+            // UPDATE por EXEC pelo mesmo motivo da BD/53.
+            new("BD/54", "DadosBancariosEmpresa", "AsaasWalletId",
+                @"ALTER TABLE DadosBancariosEmpresa ADD
+                    AsaasContaId NVARCHAR(50) NULL,
+                    AsaasWalletId NVARCHAR(50) NULL,
+                    AsaasApiKeyCriptografada NVARCHAR(MAX) NULL,
+                    AsaasContaCriadaEm DATETIME NULL;
+                  EXEC('UPDATE DadosBancariosEmpresa SET CobrancaPixAtiva = 0, DataAtualizacao = GETDATE()
+                        WHERE CobrancaPixAtiva = 1 AND AsaasWalletId IS NULL');"),
+
+            new("BD/54", "CobrancaCliente", "PixIdExterno",
+                "ALTER TABLE CobrancaCliente ADD PixIdExterno NVARCHAR(50) NULL;"),
+
+            new("BD/54", "Contato", "CpfCnpj",
+                "ALTER TABLE Contato ADD CpfCnpj NVARCHAR(14) NULL;"),
         };
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Entidades;
+using ProjetoMetaMensagem.Dominio.Helpers;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System;
@@ -19,8 +20,8 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         public CobrancaCliente Cobranca { get; set; } = null!;
 
         // Preenchido quando a empresa tem cobranca Pix ativa mas o Pix deste contato nao saiu
-        // (Itau fora, credencial errada, contato sem valor). O destinatario nao deve receber
-        // uma cobranca sem forma de pagamento.
+        // (Asaas fora, comissao maior que a fatura, contato sem valor ou sem CPF/CNPJ). O destinatario nao
+        // deve receber uma cobranca sem forma de pagamento.
         public string? Erro { get; set; }
 
         public bool TemPix => Cobranca.Txid != null;
@@ -55,7 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
     {
         Task<Dictionary<Guid, CobrancaPreparada>> PrepararAsync(Guid empresaId, Template template, IEnumerable<Contato> contatos, DateTime agora);
 
-        // Cancela no Itau o Pix das cobrancas que nao foram enviadas. Nunca lanca excecao.
+        // Cancela no Asaas o Pix das cobrancas que nao foram enviadas. Nunca lanca excecao.
         Task DescartarAsync(Guid empresaId, IEnumerable<CobrancaPreparada> naoEnviadas);
 
         // Troca os marcadores de Pix (ver ResolvedorDeVariaveis) pelos valores desta cobranca.
@@ -65,17 +66,18 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
 
     public class PreparadorCobrancaPix : IPreparadorCobrancaPix
     {
-        // Lote de centenas de contatos nao pode abrir centenas de conexoes simultaneas no Itau.
+        // Lote de centenas de contatos nao pode abrir centenas de conexoes simultaneas no Asaas
+        // (cada Pix sao 2 a 4 chamadas: cliente, cobranca e QR).
         private const int ChamadasSimultaneas = 5;
 
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IItauPixService _itau;
+        private readonly IPixService _pix;
         private readonly ILogger<PreparadorCobrancaPix> _logger;
 
-        public PreparadorCobrancaPix(IUnitOfWork unitOfWork, IItauPixService itau, ILogger<PreparadorCobrancaPix> logger)
+        public PreparadorCobrancaPix(IUnitOfWork unitOfWork, IPixService pix, ILogger<PreparadorCobrancaPix> logger)
         {
             _unitOfWork = unitOfWork;
-            _itau = itau;
+            _pix = pix;
             _logger = logger;
         }
 
@@ -127,62 +129,81 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 return;
             }
 
+            // A ativacao ja exige os dois, mas o registro pode ter sido mexido direto no banco.
+            if (!dados.TemSubconta || !dados.ComissaoDefinida)
+            {
+                preparada.Erro = "Pix não gerado: a empresa está sem subconta Asaas ou sem comissão definida nos dados bancários.";
+                return;
+            }
+
+            if (!DocumentoHelper.CpfCnpjValido(contato.CpfCnpj))
+            {
+                preparada.Erro = "Pix não gerado: o contato está sem CPF/CNPJ válido no cadastro (o Asaas exige o documento de quem paga).";
+                return;
+            }
+
+            var divisao = CalculoComissao.Calcular(cobranca.ValorCobrado.Value, dados.ComissaoTipo!, dados.ComissaoValor!.Value);
+            if (divisao == null)
+            {
+                preparada.Erro = "Pix não gerado: o valor da cobrança não cobre a comissão da plataforma.";
+                return;
+            }
+
             var txid = CobrancaCliente.TxidDe(cobranca.Id);
             var expiraEm = CalculoCobrancaPix.Calcular(cobranca.Valor, contato.TaxaJuros, contato.TaxaJurosMensal, cobranca.DataVencimento, agora).ExpiraEm;
             // Minimo de 1 hora: disparo feito as 23:50 de um dia vencido nao pode sair com um Pix
             // que expira em 10 minutos.
-            var segundos = Math.Max(3600, (int)(expiraEm - agora).TotalSeconds);
+            // O QR do Asaas continua pagavel depois do vencimento; quem faz valer esta validade e
+            // a BaixaCobrancaPix, cancelando no Asaas o que passou dela.
+            if (expiraEm < agora.AddHours(1)) expiraEm = agora.AddHours(1);
 
             var nome = string.IsNullOrWhiteSpace(contato.NomeCliente) ? contato.NomeContato : contato.NomeCliente;
-            var solicitacao = $"Fatura{(string.IsNullOrWhiteSpace(nome) ? "" : " de " + nome)} - venc. {cobranca.DataVencimento.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}";
+            var descricao = $"Fatura{(string.IsNullOrWhiteSpace(nome) ? "" : " de " + nome)} - venc. {cobranca.DataVencimento.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}";
+            var pagador = new PagadorPix(
+                string.IsNullOrWhiteSpace(nome) ? contato.Telefone : nome!,
+                contato.CpfCnpj!, contato.Email);
 
             try
             {
-                var pix = await _itau.CriarCobrancaAsync(dados, txid, cobranca.ValorCobrado.Value, segundos, solicitacao);
+                var pix = await _pix.CriarCobrancaAsync(new NovaCobrancaPix(
+                    txid, cobranca.ValorCobrado.Value, expiraEm.Date, descricao,
+                    pagador, dados.AsaasWalletId!, divisao.Repasse));
                 cobranca.Txid = txid;
+                cobranca.PixIdExterno = pix.IdExterno;
                 cobranca.PixCopiaECola = pix.PixCopiaECola;
-                cobranca.PixExpiraEm = agora.AddSeconds(segundos);
-                preparada.LinkPagamento = _itau.LinkPagamento(txid);
-                preparada.UrlQrCode = _itau.UrlQrCode(txid);
+                cobranca.PixExpiraEm = expiraEm;
+                cobranca.ValorComissao = divisao.Comissao;
+                cobranca.ValorRepasse = divisao.Repasse;
+                preparada.LinkPagamento = _pix.LinkPagamento(txid);
+                preparada.UrlQrCode = _pix.UrlQrCode(txid);
             }
-            catch (ItauPixException ex)
+            catch (PixException ex)
             {
                 preparada.Erro = $"Pix não gerado: {ex.Message}";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ItauPix: erro inesperado ao gerar Pix do contato {ContatoId}", contato.Id);
-                preparada.Erro = "Pix não gerado: erro inesperado ao falar com o Itaú.";
+                _logger.LogError(ex, "AsaasPix: erro inesperado ao gerar Pix do contato {ContatoId}", contato.Id);
+                preparada.Erro = "Pix não gerado: erro inesperado ao falar com o Asaas.";
             }
         }
 
         public async Task DescartarAsync(Guid empresaId, IEnumerable<CobrancaPreparada> naoEnviadas)
         {
-            var comPix = naoEnviadas.Where(p => p.TemPix).ToList();
-            if (comPix.Count == 0) return;
-
-            try
+            foreach (var preparada in naoEnviadas.Where(p => p.TemPix && p.Cobranca.PixIdExterno != null))
             {
-                var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(empresaId);
-                if (dados == null) return;
-
-                foreach (var preparada in comPix)
+                try
                 {
-                    try
-                    {
-                        await _itau.CancelarCobrancaAsync(dados, preparada.Cobranca.Txid!);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Sem cancelar, o Pix so expira sozinho no prazo -- e ninguem recebeu o
-                        // codigo, entao o risco e baixo. Fica o log.
-                        _logger.LogWarning(ex, "ItauPix: nao foi possivel cancelar o Pix {Txid} de mensagem nao enviada", preparada.Cobranca.Txid);
-                    }
+                    await _pix.CancelarCobrancaAsync(preparada.Cobranca.PixIdExterno!);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "ItauPix: falha ao descartar Pix nao enviados da empresa {EmpresaId}", empresaId);
+                catch (Exception ex)
+                {
+                    // A CobrancaCliente nao e gravada, entao a consulta periodica nao volta a
+                    // esse Pix: fica so no Asaas, pendente. Ninguem recebeu o codigo, entao o
+                    // risco e baixo; o log da o id para cancelar pelo painel.
+                    _logger.LogWarning(ex, "AsaasPix: nao foi possivel cancelar a cobranca {IdExterno} (txid {Txid}) de mensagem nao enviada (empresa {EmpresaId})",
+                        preparada.Cobranca.PixIdExterno, preparada.Cobranca.Txid, empresaId);
+                }
             }
         }
 

@@ -21,40 +21,29 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryFirstOrDefaultAsync<DadosBancariosEmpresa>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
+        // As colunas antigas do Itau e da Transfeera (Banco, Ambiente, ChavePix etc.) ficam de
+        // fora: no INSERT recebem o DEFAULT da tabela, no UPDATE continuam como estavam.
         public async Task Salvar(DadosBancariosEmpresa dados)
         {
             var sql = @"
                 UPDATE DadosBancariosEmpresa
-                SET Banco = @Banco,
-                    Agencia = @Agencia,
-                    Conta = @Conta,
-                    ContaDigito = @ContaDigito,
-                    TitularNome = @TitularNome,
-                    TitularDocumento = @TitularDocumento,
-                    TipoChavePix = @TipoChavePix,
-                    ChavePix = @ChavePix,
-                    Ambiente = @Ambiente,
-                    ClientId = @ClientId,
-                    ClientSecretCriptografado = @ClientSecretCriptografado,
-                    CertificadoPem = @CertificadoPem,
-                    ChavePrivadaCriptografada = @ChavePrivadaCriptografada,
-                    CertificadoValidoAte = @CertificadoValidoAte,
-                    CertificadoTitular = @CertificadoTitular,
+                SET AsaasContaId = @AsaasContaId,
+                    AsaasWalletId = @AsaasWalletId,
+                    AsaasApiKeyCriptografada = @AsaasApiKeyCriptografada,
+                    AsaasContaCriadaEm = @AsaasContaCriadaEm,
+                    ComissaoTipo = @ComissaoTipo,
+                    ComissaoValor = @ComissaoValor,
                     CobrancaPixAtiva = @CobrancaPixAtiva,
                     DataAtualizacao = GETDATE()
                 WHERE EmpresaId = @EmpresaId;
 
                 IF @@ROWCOUNT = 0
                     INSERT INTO DadosBancariosEmpresa (
-                        EmpresaId, Banco, Agencia, Conta, ContaDigito, TitularNome, TitularDocumento,
-                        TipoChavePix, ChavePix, Ambiente, ClientId, ClientSecretCriptografado,
-                        CertificadoPem, ChavePrivadaCriptografada, CertificadoValidoAte, CertificadoTitular,
-                        CobrancaPixAtiva, DataCriacao)
+                        EmpresaId, AsaasContaId, AsaasWalletId, AsaasApiKeyCriptografada, AsaasContaCriadaEm,
+                        ComissaoTipo, ComissaoValor, CobrancaPixAtiva, DataCriacao)
                     VALUES (
-                        @EmpresaId, @Banco, @Agencia, @Conta, @ContaDigito, @TitularNome, @TitularDocumento,
-                        @TipoChavePix, @ChavePix, @Ambiente, @ClientId, @ClientSecretCriptografado,
-                        @CertificadoPem, @ChavePrivadaCriptografada, @CertificadoValidoAte, @CertificadoTitular,
-                        @CobrancaPixAtiva, GETDATE());";
+                        @EmpresaId, @AsaasContaId, @AsaasWalletId, @AsaasApiKeyCriptografada, @AsaasContaCriadaEm,
+                        @ComissaoTipo, @ComissaoValor, @CobrancaPixAtiva, GETDATE());";
 
             await _session.Connection.ExecuteAsync(sql, dados, transaction: _session.Transaction);
         }

@@ -4,26 +4,19 @@ using System;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
 {
+    // A subconta Asaas nao passa por aqui: nasce em CriaSubcontaAsaas e nao pode ser trocada
+    // pela tela (o walletId so vem da resposta do Asaas).
     public class SalvaDadosBancariosCommand : IRequest<Response<SalvaDadosBancariosResult>>
     {
         public Guid EmpresaId { get; set; }
-        public string Banco { get; set; } = Entidades.DadosBancariosEmpresa.CodigoItau;
-        public string? Agencia { get; set; }
-        public string? Conta { get; set; }
-        public string? ContaDigito { get; set; }
-        public string? TitularNome { get; set; }
-        public string? TitularDocumento { get; set; }
-        public string? TipoChavePix { get; set; }
-        public string? ChavePix { get; set; }
-        public string Ambiente { get; set; } = Entidades.DadosBancariosEmpresa.AmbienteSandbox;
-        public string? ClientId { get; set; }
         public bool CobrancaPixAtiva { get; set; }
 
-        // Segredos: em branco mantem o que ja esta gravado (a tela nunca recebe o valor atual
-        // de volta, entao nao tem como reenviar). Certificado e chave privada vem sempre juntos,
-        // em PEM, e so sao aceitos se a chave for mesmo a do certificado.
-        public string? ClientSecret { get; set; }
-        public string? CertificadoPem { get; set; }
-        public string? ChavePrivadaPem { get; set; }
+        // So vale quando quem salva e admin da plataforma; para os demais o handler mantem a
+        // comissao gravada -- senao o admin da empresa poderia zerar a propria comissao.
+        public string? ComissaoTipo { get; set; }
+        public decimal? ComissaoValor { get; set; }
+
+        // Vem do token, nunca do corpo (preenchido pelo controller).
+        public bool SolicitanteEhAdminDaPlataforma { get; set; }
     }
 }

@@ -6,6 +6,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Empresa.AtualizaWabaId;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ConectaContaMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaSubcontaAsaas;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
@@ -144,7 +145,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             }
         }
 
-        // Conta Itau onde a empresa recebe o Pix das cobrancas aos clientes dela. So admin: a
+        // Subconta Asaas onde a empresa recebe o repasse das cobrancas aos clientes dela. So admin: a
         // tela de Empresas ja e restrita a admin no front, mas o endpoint nao pode depender disso
         // -- um vendedor nao tem por que ver nem trocar a conta que recebe o dinheiro. O recorte
         // por empresa (empresaId na rota/corpo) fica com o EmpresaAccessFilter.
@@ -173,12 +174,34 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
                 if (!this.EhAdmin() && !this.EhAdminDaPlataforma())
                     return StatusCode(403, new { mensagem = "Apenas administradores podem alterar os dados bancários da empresa.", tipo = "Negocio" });
 
+                // Do token, nunca do corpo: so o admin da plataforma define a comissao.
+                command.SolicitanteEhAdminDaPlataforma = this.EhAdminDaPlataforma();
+
                 var resultado = await _mediator.Send(command);
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.SalvarDadosBancarios"), tipo = "Servico" });
+            }
+        }
+
+        // Abre a subconta Asaas que recebe o repasse. Mesma regra de acesso dos dados bancarios:
+        // e a propria empresa (o admin dela) quem fornece os dados cadastrais.
+        [HttpPost("api/v2/empresa/dados-bancarios/subconta-asaas")]
+        public async Task<IActionResult> CriarSubcontaAsaas([FromBody] CriaSubcontaAsaasCommand command)
+        {
+            try
+            {
+                if (!this.EhAdmin() && !this.EhAdminDaPlataforma())
+                    return StatusCode(403, new { mensagem = "Apenas administradores podem criar a subconta da empresa.", tipo = "Negocio" });
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.Created, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.CriarSubcontaAsaas"), tipo = "Servico" });
             }
         }
 

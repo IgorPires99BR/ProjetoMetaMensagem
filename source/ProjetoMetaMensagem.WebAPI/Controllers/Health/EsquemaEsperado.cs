@@ -114,6 +114,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/52", "CobrancaCliente", "Txid"),
             new("BD/52", "CobrancaCliente", "ValorCobrado"),
+
+            new("BD/53", "DadosBancariosEmpresa", "ComissaoTipo"),
+            new("BD/53", "CobrancaCliente", "ValorComissao"),
+
+            new("BD/54", "DadosBancariosEmpresa", "AsaasWalletId"),
+            new("BD/54", "CobrancaCliente", "PixIdExterno"),
+            new("BD/54", "Contato", "CpfCnpj"),
         };
     }
 }

@@ -10,7 +10,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
 
     public class CobrancaClienteResumo
     {
-        public CobrancaClienteResumo(Entidades.CobrancaCliente cobranca, string? nomeCliente, string? nomeContato, string? telefone)
+        public CobrancaClienteResumo(Entidades.CobrancaCliente cobranca, string? nomeCliente, string? nomeContato, string? telefone,
+            string? linkPagamento = null)
         {
             Id = cobranca.Id;
             EmpresaId = cobranca.EmpresaId;
@@ -31,8 +32,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
             Juros = cobranca.Juros;
             ValorPago = cobranca.ValorPago;
             PixExpiraEm = cobranca.PixExpiraEm;
-            // Baixa feita pelo Itau sempre grava o EndToEndId; a manual nao.
-            PagoViaPix = cobranca.EndToEndId != null;
+            // Baixa automatica sempre grava o ValorPago (vindo do provedor); a manual nao. O
+            // EndToEndId nao serve: o Asaas nao o devolve na consulta da cobranca.
+            PagoViaPix = cobranca.ValorPago != null;
+            ValorComissao = cobranca.ValorComissao;
+            ValorRepasse = cobranca.ValorRepasse;
+            LinkPagamento = cobranca.Txid != null ? linkPagamento : null;
         }
 
         // Pix (ver BD/52). O copia e cola fica de fora: a tela nao precisa dele e a lista
@@ -44,6 +49,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
         public decimal? ValorPago { get; set; }
         public DateTime? PixExpiraEm { get; set; }
         public bool PagoViaPix { get; set; }
+
+        // Split do Pix: o que fica com a plataforma e o que vai para a subconta da empresa.
+        public decimal? ValorComissao { get; set; }
+        public decimal? ValorRepasse { get; set; }
+
+        // Mesma pagina enviada ao cliente no botao do WhatsApp: a empresa pode reenviar o link
+        // ou conferir o que o cliente esta vendo. So mostra o que o cliente ja recebeu.
+        public string? LinkPagamento { get; set; }
 
         public Guid Id { get; set; }
         public Guid EmpresaId { get; set; }

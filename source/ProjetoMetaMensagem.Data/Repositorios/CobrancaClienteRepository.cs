@@ -22,11 +22,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 INSERT INTO CobrancaCliente (Id, EmpresaId, ContatoId, TemplateId, HistoricoDisparoId,
                                              Valor, DataVencimento, Status, DataPagamento,
                                              UtmContentCakto, EventoIdCakto, DataCriacao,
-                                             Txid, PixCopiaECola, PixExpiraEm, Multa, Juros, ValorCobrado)
+                                             Txid, PixIdExterno, PixCopiaECola, PixExpiraEm, Multa, Juros, ValorCobrado,
+                                             ValorComissao, ValorRepasse)
                 VALUES (@Id, @EmpresaId, @ContatoId, @TemplateId, @HistoricoDisparoId,
                         @Valor, @DataVencimento, @Status, @DataPagamento,
                         @UtmContentCakto, @EventoIdCakto, @DataCriacao,
-                        @Txid, @PixCopiaECola, @PixExpiraEm, @Multa, @Juros, @ValorCobrado)";
+                        @Txid, @PixIdExterno, @PixCopiaECola, @PixExpiraEm, @Multa, @Juros, @ValorCobrado,
+                        @ValorComissao, @ValorRepasse)";
 
             await _session.Connection.ExecuteAsync(sql, cobranca, transaction: _session.Transaction);
         }
@@ -95,7 +97,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         }
 
         // Pendentes cujo Pix ainda pode ser pago (ou acabou de expirar: o pagamento feito no
-        // ultimo minuto pode chegar no Itau depois da expiracao).
+        // ultimo minuto pode ser liquidado depois da expiracao).
         public async Task<IEnumerable<CobrancaCliente>> ObterPendentesComPix(DateTime expiradoDesde)
         {
             var sql = @"

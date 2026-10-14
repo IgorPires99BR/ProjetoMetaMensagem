@@ -14,6 +14,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             NomeContato = contato.NomeContato;
             Email = contato.Email;
             NomeCliente = contato.NomeCliente;
+            CpfCnpj = contato.CpfCnpj;
             DiaVencimento = contato.DiaVencimento;
             TaxaJuros = contato.TaxaJuros;
             TaxaJurosMensal = contato.TaxaJurosMensal;
@@ -35,6 +36,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
         public string? NomeContato { get; set; }
         public string? Email { get; set; }
         public string? NomeCliente { get; set; }
+        public string? CpfCnpj { get; set; }
         public int? DiaVencimento { get; set; }
         public decimal? TaxaJuros { get; set; }
         public decimal? TaxaJurosMensal { get; set; }

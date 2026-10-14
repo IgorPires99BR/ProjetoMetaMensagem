@@ -16,6 +16,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
         // vira o padrao de negocio no Handler, nao no default do parametro, pra o front
         // poder mandar explicitamente um valor diferente sem mexer no Command.
         public string? NomeCliente { get; set; }
+        public string? CpfCnpj { get; set; }
         public int? DiaVencimento { get; set; }
         public decimal? TaxaJuros { get; set; }
         public decimal? TaxaJurosMensal { get; set; }

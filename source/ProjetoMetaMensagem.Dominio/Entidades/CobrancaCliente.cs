@@ -45,9 +45,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? UtmContentCakto { get; set; }
         public string? EventoIdCakto { get; set; }
 
-        // Pix gerado na conta Itau da empresa (ver BD/52). Nulos quando a empresa nao tem
-        // cobranca Pix ativa -- a cobranca continua existindo, so sem baixa automatica.
+        // Pix gerado na conta Asaas da plataforma (ver BD/52 e BD/54). Nulos quando a empresa nao
+        // tem cobranca Pix ativa -- a cobranca continua existindo, so sem baixa automatica.
+        // Txid e nosso (externalReference no Asaas); PixIdExterno e o id da cobranca no Asaas.
         public string? Txid { get; set; }
+        public string? PixIdExterno { get; set; }
         public string? PixCopiaECola { get; set; }
         public DateTime? PixExpiraEm { get; set; }
         public decimal? Multa { get; set; }
@@ -55,6 +57,12 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public decimal? ValorCobrado { get; set; }
         public decimal? ValorPago { get; set; }
         public string? EndToEndId { get; set; }
+
+        // Split do ValorCobrado no momento do disparo (ver BD/53): ValorComissao fica com a
+        // plataforma, ValorRepasse vai para a subconta Asaas da empresa. Snapshot -- mudar a comissao
+        // depois nao altera cobranca ja enviada.
+        public decimal? ValorComissao { get; set; }
+        public decimal? ValorRepasse { get; set; }
 
         // Txid no formato aceito pelo Bacen (26 a 35 alfanumericos): o proprio Id sem hifens.
         public static string TxidDe(Guid id) => id.ToString("N");

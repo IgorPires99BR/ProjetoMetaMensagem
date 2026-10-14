@@ -34,6 +34,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
             RuleFor(x => x.NomeCliente)
                 .MaximumLength(255).WithMessage("O nome do cliente deve ter no máximo 255 caracteres.");
 
+            RuleFor(x => x.CpfCnpj)
+                .Must(DocumentoHelper.CpfCnpjValido).WithMessage("CPF/CNPJ do cliente inválido.")
+                .When(x => !string.IsNullOrWhiteSpace(x.CpfCnpj));
+
             RuleFor(x => x.DiaVencimento)
                 .InclusiveBetween(1, 31).WithMessage("O dia de vencimento deve estar entre 1 e 31.")
                 .When(x => x.DiaVencimento.HasValue);

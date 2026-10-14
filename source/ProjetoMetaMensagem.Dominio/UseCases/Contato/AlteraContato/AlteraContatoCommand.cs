@@ -14,6 +14,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato
         public string? Email { get; set; }
 
         public string? NomeCliente { get; set; }
+        public string? CpfCnpj { get; set; }
         public int? DiaVencimento { get; set; }
         public decimal? TaxaJuros { get; set; }
         public decimal? TaxaJurosMensal { get; set; }
