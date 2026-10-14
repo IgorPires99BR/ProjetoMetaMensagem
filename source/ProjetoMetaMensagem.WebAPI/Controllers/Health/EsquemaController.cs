@@ -71,11 +71,25 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             var faltando = itens.Where(i => !i.configurado).Select(i => i.chave).ToList();
 
+            // O Asaas so responde 401 para chave errada, sem dizer o motivo. Os erros comuns sao
+            // de colagem no Render (sem o "$" inicial, espaco sobrando) ou ambiente trocado: o
+            // formato da chave diz isso sem expor o valor.
+            var chaveAsaas = _configuration["Asaas:ApiKey"] ?? string.Empty;
+            var asaas = new
+            {
+                ambiente = _configuration["Asaas:Ambiente"] ?? "(vazio = SANDBOX)",
+                chaveComecaComCifrao = chaveAsaas.StartsWith("$"),
+                chaveDeProducao = chaveAsaas.TrimStart('$').StartsWith("aact_prod_"),
+                chaveComEspacoOuQuebra = chaveAsaas != chaveAsaas.Trim(),
+                tamanhoChave = chaveAsaas.Length
+            };
+
             return Ok(new
             {
                 tudoConfigurado = faltando.Count == 0,
                 faltando,
                 itens,
+                asaas,
                 ambiente = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "desconhecido",
                 horaServidor = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             });
