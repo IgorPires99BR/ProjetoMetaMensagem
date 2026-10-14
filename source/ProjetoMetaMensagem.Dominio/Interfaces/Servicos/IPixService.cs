@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
@@ -31,6 +32,12 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         // CPF/CNPJ. O Asaas exige documento no customer, mas o QR pode ser pago por qualquer
         // pessoa -- a baixa casa pelo txid, nao pelo customer.
         Task<PagadorPix> PagadorPadraoDaSubcontaAsync(string walletId);
+
+        // GET /myAccount/status + /myAccount/documents com a apiKey DA SUBCONTA (a da plataforma
+        // devolveria a situacao da propria plataforma). Enquanto a subconta nao for aprovada o
+        // split ate cai nela, mas o Asaas segura o saque: a empresa precisa enviar os documentos
+        // pelos links (onboardingUrl) que vem aqui.
+        Task<SituacaoSubconta> ConsultarSituacaoSubcontaAsync(string apiKeySubconta);
 
         // Chamada leve (saldo): confirma a apiKey da plataforma sem gerar cobranca.
         Task TestarCredenciaisAsync();
@@ -66,6 +73,15 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
                                string? Complemento, string Bairro, string Cep);
 
     public record SubcontaCriada(string Id, string WalletId, string ApiKey);
+
+    // Status do Asaas sem traducao (PENDING, AWAITING_APPROVAL, APPROVED, REJECTED); a tela traduz.
+    public record SituacaoSubconta(string Geral, string DadosComerciais, string DadosBancarios, string Documentacao,
+                                   string? MotivoRecusa, IReadOnlyList<DocumentoSubconta> Documentos);
+
+    // Grupo de documentos pedido pelo Asaas. Com LinkEnvio, o envio e so por ele (a API de
+    // upload recusa); o link expira em LinkExpiraEm.
+    public record DocumentoSubconta(string Titulo, string? Descricao, string Status, string? Responsavel,
+                                    string? LinkEnvio, string? LinkExpiraEm);
 
     public record SubcontaExistente(string Id, string WalletId, string Nome, string CpfCnpj);
 

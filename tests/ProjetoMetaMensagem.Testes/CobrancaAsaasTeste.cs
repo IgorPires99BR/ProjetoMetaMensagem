@@ -89,4 +89,51 @@ public class CobrancaAsaasTeste
         Assert.False(new ConsultaCobrancaPix("CONFIRMED", 10m, DateTime.Now, null).Paga);
         Assert.False(new ConsultaCobrancaPix("PENDING", null, null, null).Paga);
     }
+
+    [Fact]
+    public async Task Situacao_da_subconta_e_consultada_com_a_chave_da_subconta()
+    {
+        // Com a chave da plataforma o /myAccount devolveria a situacao da propria plataforma.
+        var livre = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        livre.Start();
+        var porta = ((System.Net.IPEndPoint)livre.LocalEndpoint).Port;
+        livre.Stop();
+        using var servidor = new System.Net.HttpListener();
+        servidor.Prefixes.Add($"http://localhost:{porta}/");
+        servidor.Start();
+
+        var chavesRecebidas = new List<string?>();
+        var atendimento = Task.Run(async () =>
+        {
+            for (var i = 0; i < 2; i++)
+            {
+                var ctx = await servidor.GetContextAsync();
+                chavesRecebidas.Add(ctx.Request.Headers["access_token"]);
+                var json = ctx.Request.Url!.AbsolutePath.EndsWith("/status")
+                    ? """{"id":"acc_1","commercialInfo":"APPROVED","bankAccountInfo":"APPROVED","documentation":"PENDING","general":"PENDING"}"""
+                    : """{"rejectReasons":null,"data":[{"id":"g1","title":"Documentos de identificação","description":"RG ou CNH","status":"NOT_SENT","type":"IDENTIFICATION","responsible":{"name":"Gilson","type":"PARTNER"},"onboardingUrl":"https://asaas.com/onboarding/abc","onboardingUrlExpirationDate":"2026-10-21 10:00:00","documents":[]}]}""";
+                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.OutputStream.WriteAsync(bytes);
+                ctx.Response.Close();
+            }
+        });
+
+        var servico = new AsaasPixService(Options.Create(new AsaasConfiguration
+        {
+            ApiKey = "$aact_plataforma",
+            UrlApiSandbox = $"http://localhost:{porta}/v3"
+        }), NullLogger<AsaasPixService>.Instance);
+
+        var situacao = await servico.ConsultarSituacaoSubcontaAsync("$aact_subconta");
+        await atendimento;
+
+        Assert.All(chavesRecebidas, c => Assert.Equal("$aact_subconta", c));
+        Assert.Equal("PENDING", situacao.Geral);
+        Assert.Equal("PENDING", situacao.Documentacao);
+        var documento = Assert.Single(situacao.Documentos);
+        Assert.Equal("NOT_SENT", documento.Status);
+        Assert.Equal("https://asaas.com/onboarding/abc", documento.LinkEnvio);
+        Assert.Equal("2026-10-21 10:00:00", documento.LinkExpiraEm);
+    }
 }

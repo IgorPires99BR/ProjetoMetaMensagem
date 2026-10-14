@@ -196,6 +196,30 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             return pagador;
         }
 
+        public async Task<SituacaoSubconta> ConsultarSituacaoSubcontaAsync(string apiKeySubconta)
+        {
+            var status = await EnviarAsync(HttpMethod.Get, "/myAccount/status", null, "consultar a situação da subconta", apiKeySubconta);
+            var documentos = await EnviarAsync(HttpMethod.Get, "/myAccount/documents", null, "consultar os documentos da subconta", apiKeySubconta);
+
+            var grupos = (documentos["data"] as JArray ?? new JArray())
+                .Select(g => new DocumentoSubconta(
+                    g["title"]?.ToString() ?? string.Empty,
+                    g["description"]?.ToString(),
+                    g["status"]?.ToString() ?? string.Empty,
+                    g["responsible"]?["name"]?.ToString(),
+                    g["onboardingUrl"]?.ToString(),
+                    g["onboardingUrlExpirationDate"]?.ToString()))
+                .ToList();
+
+            return new SituacaoSubconta(
+                status["general"]?.ToString() ?? string.Empty,
+                status["commercialInfo"]?.ToString() ?? string.Empty,
+                status["bankAccountInfo"]?.ToString() ?? string.Empty,
+                status["documentation"]?.ToString() ?? string.Empty,
+                documentos["rejectReasons"]?.ToString(),
+                grupos);
+        }
+
         public async Task TestarCredenciaisAsync()
         {
             await EnviarAsync(HttpMethod.Get, "/finance/balance", null, "conferir a conta");
@@ -231,13 +255,14 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             return id;
         }
 
-        private async Task<JObject> EnviarAsync(HttpMethod metodo, string caminho, JObject? corpo, string operacao)
+        // apiKey informada = chamada em nome de uma subconta; sem ela, conta da plataforma.
+        private async Task<JObject> EnviarAsync(HttpMethod metodo, string caminho, JObject? corpo, string operacao, string? apiKey = null)
         {
-            if (!_config.Configurada)
+            if (apiKey == null && !_config.Configurada)
                 throw new PixException("A integração com o Asaas não está configurada no servidor (Asaas:ApiKey). Avise o suporte.");
 
             using var requisicao = new HttpRequestMessage(metodo, UrlApi + caminho);
-            requisicao.Headers.TryAddWithoutValidation("access_token", _config.ApiKey);
+            requisicao.Headers.TryAddWithoutValidation("access_token", apiKey ?? _config.ApiKey);
             if (corpo != null)
                 requisicao.Content = new StringContent(corpo.ToString(Formatting.None), Encoding.UTF8, "application/json");
 
@@ -259,7 +284,9 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 if ((int)resposta.StatusCode == 401)
                 {
                     _logger.LogWarning("AsaasPix: HTTP 401 ao {Operacao}", operacao);
-                    throw new PixException("O Asaas recusou a chave de API da plataforma. Avise o suporte.", 401);
+                    throw new PixException(apiKey == null
+                        ? "O Asaas recusou a chave de API da plataforma. Avise o suporte."
+                        : "O Asaas recusou a chave de API da subconta (pode ter sido revogada no painel). Avise o suporte.", 401);
                 }
 
                 if (!resposta.IsSuccessStatusCode)

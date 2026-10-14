@@ -171,6 +171,7 @@ public class BaixaCobrancaAsaasTeste
         }
 
         public Task<SubcontaCriada> CriarSubcontaAsync(NovaSubconta subconta) => throw new NotSupportedException();
+        public Task<SituacaoSubconta> ConsultarSituacaoSubcontaAsync(string apiKeySubconta) => throw new NotSupportedException();
         public Task TestarCredenciaisAsync() => Task.CompletedTask;
         public string LinkPagamento(string txid) => $"https://teste/pix/{txid}";
         public string UrlQrCode(string txid) => $"https://teste/pix/{txid}/qrcode.png";

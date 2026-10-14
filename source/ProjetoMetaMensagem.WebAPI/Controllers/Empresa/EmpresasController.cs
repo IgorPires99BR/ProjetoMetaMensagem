@@ -11,6 +11,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemSituacaoSubconta;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
@@ -164,6 +165,25 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.ObterDadosBancarios"), tipo = "Servico" });
+            }
+        }
+
+        // Situacao cadastral e documentos pendentes da subconta no Asaas: sem aprovacao, o repasse
+        // cai na subconta mas nao pode ser sacado.
+        [HttpGet("api/v2/empresa/{empresaId}/dados-bancarios/situacao-subconta")]
+        public async Task<IActionResult> ObterSituacaoSubconta([FromRoute] Guid empresaId)
+        {
+            try
+            {
+                if (!this.EhAdmin() && !this.EhAdminDaPlataforma())
+                    return StatusCode(403, new { mensagem = "Apenas administradores podem ver os dados bancários da empresa.", tipo = "Negocio" });
+
+                var resultado = await _mediator.Send(new ObtemSituacaoSubcontaCommand(empresaId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.ObterSituacaoSubconta"), tipo = "Servico" });
             }
         }
 
