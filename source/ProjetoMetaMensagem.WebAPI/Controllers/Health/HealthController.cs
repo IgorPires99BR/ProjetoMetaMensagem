@@ -63,6 +63,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 latenciaMs = relogio.ElapsedMilliseconds,
                 ambiente = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "desconhecido",
                 versao = typeof(HealthController).Assembly.GetName().Version?.ToString(),
+                // Preenchida pelo Render: diz qual commit esta no ar ("deploy concluido" no painel
+                // ja nao bateu com o codigo rodando).
+                commit = Environment.GetEnvironmentVariable("RENDER_GIT_COMMIT") is { Length: >= 7 } c ? c[..7] : "desconhecido",
                 horaServidor = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             };
 
