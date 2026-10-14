@@ -81,7 +81,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 chaveComecaComCifrao = chaveAsaas.StartsWith("$"),
                 chaveDeProducao = chaveAsaas.TrimStart('$').StartsWith("aact_prod_"),
                 chaveComEspacoOuQuebra = chaveAsaas != chaveAsaas.Trim(),
-                tamanhoChave = chaveAsaas.Length
+                tamanhoChave = chaveAsaas.Length,
+                // Inicio do SHA-256: compara com a chave do arquivo local sem expor nenhum trecho dela.
+                impressaoChave = chaveAsaas.Length == 0 ? null
+                    : Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(chaveAsaas)))[..8].ToLowerInvariant(),
+                instanciaIniciadaEm = System.Diagnostics.Process.GetCurrentProcess().StartTime.ToString("yyyy-MM-dd HH:mm:ss")
             };
 
             return Ok(new
