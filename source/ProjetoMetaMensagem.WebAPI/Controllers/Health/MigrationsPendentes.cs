@@ -56,10 +56,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             // de ProximaExecucao (mesma data/hora que ja funcionava como referencia antes desta
             // coluna existir) e remove o default -- coluna nova some sem exigir um valor fixo
             // artificial nem quebrar linha ja existente.
+            // UPDATE por EXEC pelo mesmo motivo da BD/52: sem isso o lote inteiro e recusado na
+            // compilacao ("Invalid column name 'DataReferencia'") e nem o ALTER roda.
             new("BD/40", "Agendamento", "DataReferencia",
                 @"ALTER TABLE Agendamento ADD DataReferencia DATETIME NOT NULL
                     CONSTRAINT DF_Agendamento_DataReferencia DEFAULT ('19000101');
-                  UPDATE Agendamento SET DataReferencia = ProximaExecucao WHERE DataReferencia = '19000101';
+                  EXEC('UPDATE Agendamento SET DataReferencia = ProximaExecucao WHERE DataReferencia = ''19000101''');
                   ALTER TABLE Agendamento DROP CONSTRAINT DF_Agendamento_DataReferencia;"),
 
             new("BD/40", "Agendamento", "VariaveisJson",
