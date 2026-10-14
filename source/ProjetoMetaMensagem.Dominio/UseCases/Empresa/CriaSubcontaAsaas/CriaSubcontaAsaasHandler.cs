@@ -80,7 +80,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaSubcontaAsaas
                 }
                 catch (PixException ex)
                 {
-                    response.AddErro($"O Asaas recusou a criação da subconta: {ex.Message}");
+                    // A mensagem do PixException ja diz que foi o Asaas e em qual operacao.
+                    response.AddErro(ex.Message);
                     return response;
                 }
 
