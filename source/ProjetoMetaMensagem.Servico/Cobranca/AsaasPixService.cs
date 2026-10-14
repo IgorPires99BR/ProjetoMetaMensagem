@@ -27,6 +27,9 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
         // contato; o customer nao muda de id, entao o cache nunca fica errado.
         private readonly ConcurrentDictionary<string, string> _customers = new();
 
+        // walletId -> cliente padrao da empresa. O documento da subconta nao muda.
+        private readonly ConcurrentDictionary<string, PagadorPix> _pagadoresPadrao = new();
+
         public AsaasPixService(IOptions<AsaasConfiguration> options, ILogger<AsaasPixService> logger)
         {
             _config = options.Value;
@@ -167,6 +170,21 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 _logger.LogWarning("AsaasPix: subconta {ContaId} criada sem apiKey na resposta", id);
 
             return new SubcontaCriada(id, walletId, apiKey);
+        }
+
+        public async Task<PagadorPix> PagadorPadraoDaSubcontaAsync(string walletId)
+        {
+            if (_pagadoresPadrao.TryGetValue(walletId, out var existente)) return existente;
+
+            var busca = await EnviarAsync(HttpMethod.Get, $"/accounts?walletId={Uri.EscapeDataString(walletId)}&limit=1", null, "consultar a subconta da empresa");
+            var conta = (busca["data"] as JArray)?.FirstOrDefault();
+            var cpfCnpj = conta?["cpfCnpj"]?.ToString();
+            if (string.IsNullOrWhiteSpace(cpfCnpj))
+                throw new PixException("não foi possível obter o CNPJ da subconta Asaas da empresa para usar como cliente padrão.");
+
+            var pagador = new PagadorPix($"Clientes {conta!["name"]?.ToString() ?? "da empresa"}".Trim(), cpfCnpj, null);
+            _pagadoresPadrao[walletId] = pagador;
+            return pagador;
         }
 
         public async Task TestarCredenciaisAsync()

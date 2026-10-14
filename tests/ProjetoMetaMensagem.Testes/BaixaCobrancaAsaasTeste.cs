@@ -59,6 +59,55 @@ public class BaixaCobrancaAsaasTeste
         Assert.Equal(StatusCobrancaCliente.Pendente, cenario.Cobranca.Status);
     }
 
+    [Fact]
+    public async Task Contato_sem_CpfCnpj_gera_Pix_no_cliente_padrao_da_subconta()
+    {
+        var (pix, preparada) = await PrepararPara(cpfCnpj: null);
+
+        Assert.True(preparada.TemPix, preparada.Erro);
+        Assert.Equal(new PagadorPix("Clientes Sebrecon", "19183412000132", null), pix.Criadas.Single().Pagador);
+        Assert.Equal("wal_sebrecon", pix.Criadas.Single().WalletIdRepasse);
+    }
+
+    [Fact]
+    public async Task Contato_com_CpfCnpj_continua_sendo_o_cliente_da_cobranca()
+    {
+        var (pix, _) = await PrepararPara(cpfCnpj: "52998224725");
+
+        Assert.Equal("52998224725", pix.Criadas.Single().Pagador.CpfCnpj);
+        Assert.Equal(0, pix.ConsultasDeSubconta);
+    }
+
+    private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj)
+    {
+        var empresaId = Guid.NewGuid();
+        var contato = new Contato
+        {
+            Id = Guid.NewGuid(), EmpresaId = empresaId, Telefone = "5511999990000",
+            NomeCliente = "Maria Souza", DiaVencimento = 20, ValorFatura = 405m, CpfCnpj = cpfCnpj
+        };
+        var dados = new DadosBancariosEmpresa
+        {
+            EmpresaId = empresaId, CobrancaPixAtiva = true, AsaasWalletId = "wal_sebrecon",
+            ComissaoTipo = DadosBancariosEmpresa.ComissaoFixa, ComissaoValor = 3.50m
+        };
+        var pix = new PixFalso("PENDING");
+        var uow = new UnitOfWorkFalso(new CobrancaRepositorioFalso(new CobrancaCliente()), new DadosBancariosFalso(dados));
+
+        var preparadas = await new PreparadorCobrancaPix(uow, pix, NullLogger<PreparadorCobrancaPix>.Instance)
+            .PrepararAsync(empresaId, new Template { Id = Guid.NewGuid() }, new[] { contato }, new DateTime(2026, 10, 14, 10, 0, 0));
+
+        return (pix, preparadas[contato.Id]);
+    }
+
+    private class DadosBancariosFalso : IDadosBancariosEmpresaRepository
+    {
+        private readonly DadosBancariosEmpresa _dados;
+        public DadosBancariosFalso(DadosBancariosEmpresa dados) => _dados = dados;
+        public Task<DadosBancariosEmpresa?> ObterPorEmpresa(Guid empresaId) => Task.FromResult<DadosBancariosEmpresa?>(_dados);
+        public Task Salvar(DadosBancariosEmpresa dados) => throw new NotSupportedException();
+    }
+
     private class Cenario
     {
         public CobrancaCliente Cobranca { get; }
@@ -104,7 +153,21 @@ public class BaixaCobrancaAsaasTeste
             return Task.CompletedTask;
         }
 
-        public Task<PixGerado> CriarCobrancaAsync(NovaCobrancaPix cobranca) => throw new NotSupportedException();
+        public List<NovaCobrancaPix> Criadas { get; } = new();
+        public int ConsultasDeSubconta { get; private set; }
+
+        public Task<PixGerado> CriarCobrancaAsync(NovaCobrancaPix cobranca)
+        {
+            Criadas.Add(cobranca);
+            return Task.FromResult(new PixGerado("pay_novo", "000201...", "PENDING"));
+        }
+
+        public Task<PagadorPix> PagadorPadraoDaSubcontaAsync(string walletId)
+        {
+            ConsultasDeSubconta++;
+            return Task.FromResult(new PagadorPix("Clientes Sebrecon", "19183412000132", null));
+        }
+
         public Task<SubcontaCriada> CriarSubcontaAsync(NovaSubconta subconta) => throw new NotSupportedException();
         public Task TestarCredenciaisAsync() => Task.CompletedTask;
         public string LinkPagamento(string txid) => $"https://teste/pix/{txid}";
@@ -151,7 +214,13 @@ public class BaixaCobrancaAsaasTeste
 
     private class UnitOfWorkFalso : IUnitOfWork
     {
-        public UnitOfWorkFalso(ICobrancaClienteRepository cobrancas) => CobrancaCliente = cobrancas;
+        private readonly IDadosBancariosEmpresaRepository? _dadosBancarios;
+
+        public UnitOfWorkFalso(ICobrancaClienteRepository cobrancas, IDadosBancariosEmpresaRepository? dadosBancarios = null)
+        {
+            CobrancaCliente = cobrancas;
+            _dadosBancarios = dadosBancarios;
+        }
 
         public ICobrancaClienteRepository CobrancaCliente { get; }
 
@@ -178,7 +247,7 @@ public class BaixaCobrancaAsaasTeste
         public IAssinaturaRepository Assinatura => throw new NotSupportedException();
         public IOrigemLeadRepository OrigemLead => throw new NotSupportedException();
         public IAgendamentoRepository Agendamento => throw new NotSupportedException();
-        public IDadosBancariosEmpresaRepository DadosBancariosEmpresa => throw new NotSupportedException();
+        public IDadosBancariosEmpresaRepository DadosBancariosEmpresa => _dadosBancarios ?? throw new NotSupportedException();
         public void Commit() { }
         public void BeginTransaction() { }
         public void Rollback() { }

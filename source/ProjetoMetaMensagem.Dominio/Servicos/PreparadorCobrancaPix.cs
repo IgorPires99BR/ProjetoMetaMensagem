@@ -20,7 +20,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         public CobrancaCliente Cobranca { get; set; } = null!;
 
         // Preenchido quando a empresa tem cobranca Pix ativa mas o Pix deste contato nao saiu
-        // (Asaas fora, comissao maior que a fatura, contato sem valor ou sem CPF/CNPJ). O destinatario nao
+        // (Asaas fora, comissao maior que a fatura, contato sem valor). O destinatario nao
         // deve receber uma cobranca sem forma de pagamento.
         public string? Erro { get; set; }
 
@@ -136,12 +136,6 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 return;
             }
 
-            if (!DocumentoHelper.CpfCnpjValido(contato.CpfCnpj))
-            {
-                preparada.Erro = "Pix não gerado: o contato está sem CPF/CNPJ válido no cadastro (o Asaas exige o documento de quem paga).";
-                return;
-            }
-
             var divisao = CalculoComissao.Calcular(cobranca.ValorCobrado.Value, dados.ComissaoTipo!, dados.ComissaoValor!.Value);
             if (divisao == null)
             {
@@ -159,12 +153,14 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
 
             var nome = string.IsNullOrWhiteSpace(contato.NomeCliente) ? contato.NomeContato : contato.NomeCliente;
             var descricao = $"Fatura{(string.IsNullOrWhiteSpace(nome) ? "" : " de " + nome)} - venc. {cobranca.DataVencimento.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}";
-            var pagador = new PagadorPix(
-                string.IsNullOrWhiteSpace(nome) ? contato.Telefone : nome!,
-                contato.CpfCnpj!, contato.Email);
-
             try
             {
+                // Contato sem documento (a Sebrecon nao tem o dos clientes) vai para o cliente
+                // padrao da empresa; o nome dele continua na descricao da cobranca.
+                var pagador = DocumentoHelper.CpfCnpjValido(contato.CpfCnpj)
+                    ? new PagadorPix(string.IsNullOrWhiteSpace(nome) ? contato.Telefone : nome!, contato.CpfCnpj!, contato.Email)
+                    : await _pix.PagadorPadraoDaSubcontaAsync(dados.AsaasWalletId!);
+
                 var pix = await _pix.CriarCobrancaAsync(new NovaCobrancaPix(
                     txid, cobranca.ValorCobrado.Value, expiraEm.Date, descricao,
                     pagador, dados.AsaasWalletId!, divisao.Repasse));
