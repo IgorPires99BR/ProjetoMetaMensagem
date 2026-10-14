@@ -7,6 +7,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ConectaContaMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaContaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.CriaSubcontaAsaas;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
@@ -202,6 +203,26 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.CriarSubcontaAsaas"), tipo = "Servico" });
+            }
+        }
+
+        // Liga uma subconta aberta pelo painel do Asaas. So admin da plataforma: o admin da empresa
+        // poderia colar o walletId de OUTRA empresa (toda subconta e da mesma conta da plataforma)
+        // e desviar o repasse dela.
+        [HttpPost("api/v2/empresa/dados-bancarios/vincular-subconta-asaas")]
+        public async Task<IActionResult> VincularSubcontaAsaas([FromBody] VinculaSubcontaAsaasCommand command)
+        {
+            try
+            {
+                if (!this.EhAdminDaPlataforma())
+                    return StatusCode(403, new { mensagem = "Apenas a conta de plataforma pode vincular uma subconta existente.", tipo = "Negocio" });
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.VincularSubcontaAsaas"), tipo = "Servico" });
             }
         }
 

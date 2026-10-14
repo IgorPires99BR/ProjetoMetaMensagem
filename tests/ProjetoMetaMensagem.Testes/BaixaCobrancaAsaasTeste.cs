@@ -162,6 +162,8 @@ public class BaixaCobrancaAsaasTeste
             return Task.FromResult(new PixGerado("pay_novo", "000201...", "PENDING"));
         }
 
+        public Task<SubcontaExistente?> ObterSubcontaAsync(string walletId) => throw new NotSupportedException();
+
         public Task<PagadorPix> PagadorPadraoDaSubcontaAsync(string walletId)
         {
             ConsultasDeSubconta++;

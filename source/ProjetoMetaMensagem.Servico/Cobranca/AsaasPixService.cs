@@ -172,17 +172,26 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             return new SubcontaCriada(id, walletId, apiKey);
         }
 
+        public async Task<SubcontaExistente?> ObterSubcontaAsync(string walletId)
+        {
+            var busca = await EnviarAsync(HttpMethod.Get, $"/accounts?walletId={Uri.EscapeDataString(walletId)}&limit=1", null, "consultar a subconta");
+            var conta = (busca["data"] as JArray)?.FirstOrDefault();
+            var id = conta?["id"]?.ToString();
+            if (string.IsNullOrWhiteSpace(id)) return null;
+
+            return new SubcontaExistente(id, conta!["walletId"]?.ToString() ?? walletId,
+                conta["name"]?.ToString() ?? string.Empty, conta["cpfCnpj"]?.ToString() ?? string.Empty);
+        }
+
         public async Task<PagadorPix> PagadorPadraoDaSubcontaAsync(string walletId)
         {
             if (_pagadoresPadrao.TryGetValue(walletId, out var existente)) return existente;
 
-            var busca = await EnviarAsync(HttpMethod.Get, $"/accounts?walletId={Uri.EscapeDataString(walletId)}&limit=1", null, "consultar a subconta da empresa");
-            var conta = (busca["data"] as JArray)?.FirstOrDefault();
-            var cpfCnpj = conta?["cpfCnpj"]?.ToString();
-            if (string.IsNullOrWhiteSpace(cpfCnpj))
+            var conta = await ObterSubcontaAsync(walletId);
+            if (conta == null || string.IsNullOrWhiteSpace(conta.CpfCnpj))
                 throw new PixException("não foi possível obter o CNPJ da subconta Asaas da empresa para usar como cliente padrão.");
 
-            var pagador = new PagadorPix($"Clientes {conta!["name"]?.ToString() ?? "da empresa"}".Trim(), cpfCnpj, null);
+            var pagador = new PagadorPix($"Clientes {(conta.Nome == string.Empty ? "da empresa" : conta.Nome)}", conta.CpfCnpj, null);
             _pagadoresPadrao[walletId] = pagador;
             return pagador;
         }

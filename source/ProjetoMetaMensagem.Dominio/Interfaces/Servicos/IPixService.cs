@@ -23,9 +23,13 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         // POST /accounts. A apiKey da subconta so vem nesta resposta.
         Task<SubcontaCriada> CriarSubcontaAsync(NovaSubconta subconta);
 
-        // GET /accounts?walletId=: cliente padrao da empresa (nome e CNPJ da subconta dela), usado
-        // quando o contato nao tem CPF/CNPJ. O Asaas exige documento no customer, mas o QR pode ser
-        // pago por qualquer pessoa -- a baixa casa pelo txid, nao pelo customer.
+        // GET /accounts?walletId=. So lista subcontas da conta da plataforma: null = o walletId nao
+        // e de uma subconta nossa (digitado errado ou de outra conta Asaas).
+        Task<SubcontaExistente?> ObterSubcontaAsync(string walletId);
+
+        // Cliente padrao da empresa (nome e CNPJ da subconta dela), usado quando o contato nao tem
+        // CPF/CNPJ. O Asaas exige documento no customer, mas o QR pode ser pago por qualquer
+        // pessoa -- a baixa casa pelo txid, nao pelo customer.
         Task<PagadorPix> PagadorPadraoDaSubcontaAsync(string walletId);
 
         // Chamada leve (saldo): confirma a apiKey da plataforma sem gerar cobranca.
@@ -62,6 +66,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
                                string? Complemento, string Bairro, string Cep);
 
     public record SubcontaCriada(string Id, string WalletId, string ApiKey);
+
+    public record SubcontaExistente(string Id, string WalletId, string Nome, string CpfCnpj);
 
     public class PixException : Exception
     {
