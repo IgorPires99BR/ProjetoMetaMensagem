@@ -33,5 +33,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public bool ComissaoDefinida => ComissaoTipo != null && ComissaoValor.HasValue;
         public bool TemSubconta => !string.IsNullOrWhiteSpace(AsaasWalletId);
+
+        // Conta Asaas propria da empresa, aberta fora da plataforma (a Sebrecon ja tinha uma e o
+        // Asaas nao abre segunda conta no mesmo CNPJ). So o walletId e conhecido: sem AsaasContaId,
+        // sem apiKey, e o GET /accounts da plataforma nao a enxerga.
+        public bool CarteiraExterna => TemSubconta && string.IsNullOrWhiteSpace(AsaasContaId);
     }
 }

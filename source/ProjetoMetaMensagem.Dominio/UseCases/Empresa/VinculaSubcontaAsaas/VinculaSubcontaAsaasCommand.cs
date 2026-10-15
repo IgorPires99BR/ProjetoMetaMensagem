@@ -10,5 +10,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas
     {
         public Guid EmpresaId { get; set; }
         public string? WalletId { get; set; }
+
+        // True = conta Asaas propria da empresa, fora da plataforma. O Asaas nao tem como
+        // confirmar de quem e a carteira: quem vincula responde por ter recebido o walletId do titular.
+        public bool CarteiraExterna { get; set; }
     }
 }

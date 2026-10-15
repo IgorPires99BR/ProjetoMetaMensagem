@@ -101,6 +101,16 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(empresaId);
             if (dados == null || !dados.CobrancaPixAtiva) return preparadas;
 
+            // Conta Asaas propria da empresa: o GET /accounts da plataforma nao a enxerga, entao o
+            // cliente padrao sai do cadastro da empresa.
+            PagadorPix? pagadorExterno = null;
+            if (dados.CarteiraExterna)
+            {
+                var empresa = await _unitOfWork.Empresa.ObterPorId(empresaId);
+                if (empresa != null && DocumentoHelper.CpfCnpjValido(empresa.Cnpj))
+                    pagadorExterno = new PagadorPix($"Clientes {empresa.Nome}", DocumentoHelper.SoDigitos(empresa.Cnpj)!, null);
+            }
+
             using var limite = new SemaphoreSlim(ChamadasSimultaneas);
             var contatoPorId = contatos.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
 
@@ -109,7 +119,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 await limite.WaitAsync();
                 try
                 {
-                    await GerarPix(dados, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
+                    await GerarPix(dados, pagadorExterno, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
                 }
                 finally
                 {
@@ -120,7 +130,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             return preparadas;
         }
 
-        private async Task GerarPix(DadosBancariosEmpresa dados, CobrancaPreparada preparada, Contato contato, DateTime agora)
+        private async Task GerarPix(DadosBancariosEmpresa dados, PagadorPix? pagadorExterno, CobrancaPreparada preparada, Contato contato, DateTime agora)
         {
             var cobranca = preparada.Cobranca;
             if (cobranca.ValorCobrado is not > 0m)
@@ -159,7 +169,9 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 // padrao da empresa; o nome dele continua na descricao da cobranca.
                 var pagador = DocumentoHelper.CpfCnpjValido(contato.CpfCnpj)
                     ? new PagadorPix(string.IsNullOrWhiteSpace(nome) ? contato.Telefone : nome!, contato.CpfCnpj!, contato.Email)
-                    : await _pix.PagadorPadraoDaSubcontaAsync(dados.AsaasWalletId!);
+                    : dados.CarteiraExterna
+                        ? pagadorExterno ?? throw new PixException("a empresa não tem CNPJ válido no cadastro para usar como cliente padrão.")
+                        : await _pix.PagadorPadraoDaSubcontaAsync(dados.AsaasWalletId!);
 
                 var pix = await _pix.CriarCobrancaAsync(new NovaCobrancaPix(
                     txid, cobranca.ValorCobrado.Value, expiraEm.Date, descricao,

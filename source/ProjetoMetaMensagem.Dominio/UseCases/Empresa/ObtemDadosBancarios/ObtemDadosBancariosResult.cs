@@ -15,6 +15,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios
             AsaasContaId = dados.AsaasContaId;
             AsaasWalletId = dados.AsaasWalletId;
             AsaasContaCriadaEm = dados.AsaasContaCriadaEm;
+            CarteiraExterna = dados.CarteiraExterna;
             ComissaoTipo = dados.ComissaoTipo;
             ComissaoValor = dados.ComissaoValor;
             CobrancaPixAtiva = dados.CobrancaPixAtiva;
@@ -26,6 +27,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios
         public string? AsaasWalletId { get; set; }
         public DateTime? AsaasContaCriadaEm { get; set; }
         public bool TemSubconta => !string.IsNullOrWhiteSpace(AsaasWalletId);
+        public bool CarteiraExterna { get; set; }
         public string? ComissaoTipo { get; set; }
         public decimal? ComissaoValor { get; set; }
         public bool CobrancaPixAtiva { get; set; }

@@ -5,9 +5,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemSituacaoSubconta
 {
     public class ObtemSituacaoSubcontaResult
     {
-        // False quando a subconta foi vinculada pelo painel: a apiKey dela nunca passou pela
-        // plataforma, entao a situacao so pode ser vista no painel do Asaas.
+        // False quando a subconta foi vinculada pelo painel (ou e conta propria da empresa): a
+        // apiKey dela nunca passou pela plataforma, entao a situacao so pode ser vista no Asaas.
         public bool ConsultaDisponivel { get; set; }
+        public bool CarteiraExterna { get; set; }
 
         public string? Geral { get; set; }
         public string? DadosComerciais { get; set; }

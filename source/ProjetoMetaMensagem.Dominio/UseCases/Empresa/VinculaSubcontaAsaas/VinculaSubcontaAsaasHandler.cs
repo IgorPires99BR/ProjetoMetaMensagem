@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Help.Error;
+using ProjetoMetaMensagem.Dominio.Helpers;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
@@ -39,7 +40,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas
                     return response;
                 }
 
-                if (await _unitOfWork.Empresa.ObterPorId(command.EmpresaId) == null)
+                var empresa = await _unitOfWork.Empresa.ObterPorId(command.EmpresaId);
+                if (empresa == null)
                 {
                     response.AddErro("Empresa não encontrada.", 404);
                     return response;
@@ -66,16 +68,24 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas
                     return response;
                 }
 
-                // Repasse para uma carteira fora da nossa conta nao funcionaria (e poderia mandar
-                // dinheiro para a pessoa errada): so aceita subconta da plataforma.
-                if (subconta == null)
+                // Carteira fora da plataforma so com a marcacao explicita: um walletId digitado
+                // errado que por acaso exista mandaria o repasse para outra pessoa.
+                if (subconta == null && !command.CarteiraExterna)
                 {
-                    response.AddErro("Nenhuma subconta da conta Asaas da plataforma tem esse walletId. Confira o valor no painel do Asaas.");
+                    response.AddErro("Nenhuma subconta da conta Asaas da plataforma tem esse walletId. Confira o valor no painel do Asaas ou, se for a conta Asaas própria da empresa, marque essa opção.");
                     return response;
                 }
 
-                dados.AsaasContaId = subconta.Id;
-                dados.AsaasWalletId = subconta.WalletId;
+                // Sem subconta nao ha CNPJ no Asaas para o cliente padrao (contato sem CPF/CNPJ):
+                // ele sai do cadastro da empresa.
+                if (subconta == null && !DocumentoHelper.CpfCnpjValido(empresa.Cnpj))
+                {
+                    response.AddErro("Para vincular a conta Asaas própria, cadastre antes um CNPJ válido na empresa.");
+                    return response;
+                }
+
+                dados.AsaasContaId = subconta?.Id;
+                dados.AsaasWalletId = subconta?.WalletId ?? command.WalletId;
                 // Aberta pelo painel: a apiKey da subconta nunca passou por aqui.
                 dados.AsaasApiKeyCriptografada = null;
                 dados.AsaasContaCriadaEm = DateTime.Now;
@@ -92,14 +102,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas
                 }
                 _unitOfWork.Commit();
 
-                _logger.LogInformation("AsaasPix: subconta {ContaId} (wallet {WalletId}) vinculada a empresa {EmpresaId}",
-                    subconta.Id, subconta.WalletId, command.EmpresaId);
+                _logger.LogInformation("AsaasPix: {Tipo} {ContaId} (wallet {WalletId}) vinculada a empresa {EmpresaId}",
+                    subconta == null ? "carteira externa" : "subconta", subconta?.Id ?? "-", dados.AsaasWalletId, command.EmpresaId);
 
                 dados.DataAtualizacao = DateTime.Now;
                 response.AddValue(new VinculaSubcontaAsaasResult
                 {
                     DadosBancarios = new ObtemDadosBancariosResult(command.EmpresaId, dados),
-                    NomeSubconta = subconta.Nome
+                    NomeSubconta = subconta?.Nome ?? empresa.Nome
                 });
             }
             catch (Exception ex)

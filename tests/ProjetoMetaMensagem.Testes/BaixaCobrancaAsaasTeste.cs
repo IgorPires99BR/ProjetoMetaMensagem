@@ -78,7 +78,30 @@ public class BaixaCobrancaAsaasTeste
         Assert.Equal(0, pix.ConsultasDeSubconta);
     }
 
-    private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj)
+    [Fact]
+    public async Task Conta_Asaas_propria_usa_o_CNPJ_da_empresa_como_cliente_padrao()
+    {
+        // Carteira externa: o GET /accounts da plataforma nao a enxerga.
+        var (pix, preparada) = await PrepararPara(cpfCnpj: null, carteiraExterna: true);
+
+        Assert.True(preparada.TemPix, preparada.Erro);
+        Assert.Equal(new PagadorPix("Clientes Sebrecon", "19183412000132", null), pix.Criadas.Single().Pagador);
+        Assert.Equal("wal_sebrecon", pix.Criadas.Single().WalletIdRepasse);
+        Assert.Equal(0, pix.ConsultasDeSubconta);
+    }
+
+    [Fact]
+    public async Task Conta_Asaas_propria_sem_CNPJ_na_empresa_nao_gera_Pix()
+    {
+        var (pix, preparada) = await PrepararPara(cpfCnpj: null, carteiraExterna: true, cnpjEmpresa: "");
+
+        Assert.False(preparada.TemPix);
+        Assert.Contains("CNPJ", preparada.Erro);
+        Assert.Empty(pix.Criadas);
+    }
+
+    private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj, bool carteiraExterna = false,
+        string cnpjEmpresa = "19.183.412/0001-32")
     {
         var empresaId = Guid.NewGuid();
         var contato = new Contato
@@ -89,15 +112,35 @@ public class BaixaCobrancaAsaasTeste
         var dados = new DadosBancariosEmpresa
         {
             EmpresaId = empresaId, CobrancaPixAtiva = true, AsaasWalletId = "wal_sebrecon",
+            AsaasContaId = carteiraExterna ? null : "acc_sebrecon",
             ComissaoTipo = DadosBancariosEmpresa.ComissaoFixa, ComissaoValor = 3.50m
         };
         var pix = new PixFalso("PENDING");
-        var uow = new UnitOfWorkFalso(new CobrancaRepositorioFalso(new CobrancaCliente()), new DadosBancariosFalso(dados));
+        var uow = new UnitOfWorkFalso(new CobrancaRepositorioFalso(new CobrancaCliente()), new DadosBancariosFalso(dados),
+            new EmpresaFalsa(new Empresa { Id = empresaId, Nome = "Sebrecon", Cnpj = cnpjEmpresa }));
 
         var preparadas = await new PreparadorCobrancaPix(uow, pix, NullLogger<PreparadorCobrancaPix>.Instance)
             .PrepararAsync(empresaId, new Template { Id = Guid.NewGuid() }, new[] { contato }, new DateTime(2026, 10, 14, 10, 0, 0));
 
         return (pix, preparadas[contato.Id]);
+    }
+
+    private class EmpresaFalsa : IEmpresaRepository
+    {
+        private readonly Empresa _empresa;
+        public EmpresaFalsa(Empresa empresa) => _empresa = empresa;
+        public Task<Empresa?> ObterPorId(Guid id) => Task.FromResult<Empresa?>(id == _empresa.Id ? _empresa : null);
+        public Task<Guid> Incluir(Empresa empresa) => throw new NotSupportedException();
+        public Task<Guid> Alterar(Empresa empresa) => throw new NotSupportedException();
+        public Task<int> Excluir(string id) => throw new NotSupportedException();
+        public Task<string?> ObterMetaAccessToken(Guid id) => throw new NotSupportedException();
+        public Task<string?> ObterWabaId(Guid id) => throw new NotSupportedException();
+        public Task<string?> ObterPhoneNumberId(Guid id) => throw new NotSupportedException();
+        public Task<string?> ObterAppIdMeta(Guid id) => throw new NotSupportedException();
+        public Task<Guid?> ObterPorPhoneNumberId(string phoneNumberId) => throw new NotSupportedException();
+        public Task AtualizarWabaId(Guid id, string wabaId) => throw new NotSupportedException();
+        public Task AtualizarCredenciaisMeta(Guid id, string? wabaId, string? phoneNumberId, string? metaAccessToken) => throw new NotSupportedException();
+        public Task<List<Empresa>> Obter() => throw new NotSupportedException();
     }
 
     private class DadosBancariosFalso : IDadosBancariosEmpresaRepository
@@ -218,11 +261,13 @@ public class BaixaCobrancaAsaasTeste
     private class UnitOfWorkFalso : IUnitOfWork
     {
         private readonly IDadosBancariosEmpresaRepository? _dadosBancarios;
+        private readonly IEmpresaRepository? _empresa;
 
-        public UnitOfWorkFalso(ICobrancaClienteRepository cobrancas, IDadosBancariosEmpresaRepository? dadosBancarios = null)
+        public UnitOfWorkFalso(ICobrancaClienteRepository cobrancas, IDadosBancariosEmpresaRepository? dadosBancarios = null, IEmpresaRepository? empresa = null)
         {
             CobrancaCliente = cobrancas;
             _dadosBancarios = dadosBancarios;
+            _empresa = empresa;
         }
 
         public ICobrancaClienteRepository CobrancaCliente { get; }
@@ -231,7 +276,7 @@ public class BaixaCobrancaAsaasTeste
         public IFlowsRepository FlowsRepository => throw new NotSupportedException();
         public IFlowRepository Flow => throw new NotSupportedException();
         public IConversationsRepository ConversationsRepository => throw new NotSupportedException();
-        public IEmpresaRepository Empresa => throw new NotSupportedException();
+        public IEmpresaRepository Empresa => _empresa ?? throw new NotSupportedException();
         public IUsuarioRepository Usuario => throw new NotSupportedException();
         public IContatoRepository Contato => throw new NotSupportedException();
         public IPerfilRepository Perfil => throw new NotSupportedException();

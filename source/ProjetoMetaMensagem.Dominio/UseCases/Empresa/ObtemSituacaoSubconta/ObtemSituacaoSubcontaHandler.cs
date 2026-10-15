@@ -47,7 +47,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemSituacaoSubconta
 
                 if (string.IsNullOrWhiteSpace(dados.AsaasApiKeyCriptografada))
                 {
-                    response.AddValue(new ObtemSituacaoSubcontaResult { ConsultaDisponivel = false });
+                    response.AddValue(new ObtemSituacaoSubcontaResult { ConsultaDisponivel = false, CarteiraExterna = dados.CarteiraExterna });
                     return response;
                 }
 
