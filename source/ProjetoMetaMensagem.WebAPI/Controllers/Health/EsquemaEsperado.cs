@@ -121,6 +121,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
             new("BD/54", "DadosBancariosEmpresa", "AsaasWalletId"),
             new("BD/54", "CobrancaCliente", "PixIdExterno"),
             new("BD/54", "Contato", "CpfCnpj"),
+
+            new("BD/55", "TemplateGatilho"),
+            new("BD/55", "TemplateGatilhoEnvio"),
         };
     }
 }

@@ -133,6 +133,13 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         private async Task GerarPix(DadosBancariosEmpresa dados, PagadorPix? pagadorExterno, CobrancaPreparada preparada, Contato contato, DateTime agora)
         {
             var cobranca = preparada.Cobranca;
+            var faltando = FaltaDadoDeCobranca(contato);
+            if (faltando != null)
+            {
+                preparada.Erro = $"Pix não gerado: o cadastro do contato está sem {faltando}, obrigatório para cobrar pelo Asaas.";
+                return;
+            }
+
             if (cobranca.ValorCobrado is not > 0m)
             {
                 preparada.Erro = "Contato sem valor de fatura cadastrado: não dá para gerar o Pix.";
@@ -194,6 +201,20 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 _logger.LogError(ex, "AsaasPix: erro inesperado ao gerar Pix do contato {ContatoId}", contato.Id);
                 preparada.Erro = "Pix não gerado: erro inesperado ao falar com o Asaas.";
             }
+        }
+
+        // Valor, vencimento e juros sao opcionais no cadastro do contato, mas sem eles o Pix sairia
+        // com vencimento "hoje" e sem multa/juros, que ninguem combinou com o cliente. Zero vale
+        // (contrato sem juros); so o campo em branco barra.
+        public static string? FaltaDadoDeCobranca(Contato contato)
+        {
+            var faltando = new List<string>();
+            if (!contato.ValorFatura.HasValue) faltando.Add("valor da fatura");
+            if (!contato.DiaVencimento.HasValue) faltando.Add("dia de vencimento");
+            if (!contato.TaxaJuros.HasValue) faltando.Add("taxa de juros (multa)");
+            if (!contato.TaxaJurosMensal.HasValue) faltando.Add("juros ao mês");
+
+            return faltando.Count == 0 ? null : string.Join(", ", faltando);
         }
 
         public async Task DescartarAsync(Guid empresaId, IEnumerable<CobrancaPreparada> naoEnviadas)

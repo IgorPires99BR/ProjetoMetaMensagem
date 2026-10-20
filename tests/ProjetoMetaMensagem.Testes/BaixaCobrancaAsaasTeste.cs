@@ -100,14 +100,25 @@ public class BaixaCobrancaAsaasTeste
         Assert.Empty(pix.Criadas);
     }
 
+    [Fact]
+    public async Task Contato_sem_dados_de_cobranca_nao_gera_Pix()
+    {
+        var (pix, preparada) = await PrepararPara(cpfCnpj: "52998224725", semJuros: true);
+
+        Assert.False(preparada.TemPix);
+        Assert.Contains("juros", preparada.Erro);
+        Assert.Empty(pix.Criadas);
+    }
+
     private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj, bool carteiraExterna = false,
-        string cnpjEmpresa = "19.183.412/0001-32")
+        string cnpjEmpresa = "19.183.412/0001-32", bool semJuros = false)
     {
         var empresaId = Guid.NewGuid();
         var contato = new Contato
         {
             Id = Guid.NewGuid(), EmpresaId = empresaId, Telefone = "5511999990000",
-            NomeCliente = "Maria Souza", DiaVencimento = 20, ValorFatura = 405m, CpfCnpj = cpfCnpj
+            NomeCliente = "Maria Souza", DiaVencimento = 20, ValorFatura = 405m, CpfCnpj = cpfCnpj,
+            TaxaJuros = semJuros ? null : 2m, TaxaJurosMensal = semJuros ? null : 1m
         };
         var dados = new DadosBancariosEmpresa
         {

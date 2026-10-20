@@ -14,6 +14,9 @@ namespace ProjetoMetaMensagem.Dominio.Common
         public const string AgendadorAutomatico = "Agendador Automático";
         public const string FlowAutomatico = "Flow Automático";
         public const string ChatManual = "Chat Manual";
+        // Momento de disparo do template (ver TemplateGatilho). Fora de Validas de proposito:
+        // so o proprio DisparoPorGatilho grava essa origem, nunca o corpo de uma requisicao.
+        public const string GatilhoTemplate = "Gatilho de Template";
 
         private static readonly HashSet<string> Validas = new(StringComparer.OrdinalIgnoreCase)
         {

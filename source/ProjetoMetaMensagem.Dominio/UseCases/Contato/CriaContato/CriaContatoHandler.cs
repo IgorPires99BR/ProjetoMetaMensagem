@@ -58,9 +58,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
                 // Sem checagem de numero repetido entre contatos: a mesma pessoa pode responder
                 // por varias empresas do cliente (caso da Sebrecon). O ObterPorTelefone ja
                 // desempata qual contato recebe a resposta no webhook.
-                await _unitOfWork.Contato.Incluir(new Entidades.Contato(command));
+                var contato = new Entidades.Contato(command);
+                await _unitOfWork.Contato.Incluir(contato);
 
-                response.AddValue(new CriaContatoResult());
+                response.AddValue(new CriaContatoResult { ContatoId = contato.Id, EmpresaId = contato.EmpresaId });
                 _unitOfWork.Commit();
             }
             catch (Exception ex)

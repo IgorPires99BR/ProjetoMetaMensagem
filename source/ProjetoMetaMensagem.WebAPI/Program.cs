@@ -311,6 +311,7 @@ builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.AsaasConfig
 builder.Services.AddSingleton<IPixService, ProjetoMetaMensagem.Servico.Cobranca.AsaasPixService>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IPreparadorCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.PreparadorCobrancaPix>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.BaixaCobrancaPix>();
+builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IDisparoPorGatilho, ProjetoMetaMensagem.Dominio.Servicos.DisparoPorGatilho>();
 builder.Services.AddScoped<INotificadorChat, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorChat>();
 builder.Services.AddScoped<INotificadorCobranca, ProjetoMetaMensagem.WebAPI.Hubs.NotificadorCobranca>();
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MetaConversoesConfiguration>(
@@ -474,6 +475,20 @@ try
 catch (Exception ex)
 {
     app.Logger.LogError(ex, "Falha ao registrar o job de consulta dos Pix do Asaas no HangFire.");
+}
+
+// Gatilho "atraso de pagamento" dos templates: uma passada por dia, 12:00 UTC (9h de Brasilia),
+// pra o aviso nao chegar de madrugada.
+try
+{
+    RecurringJob.AddOrUpdate<ProjetoMetaMensagem.Dominio.Servicos.IDisparoPorGatilho>(
+        "gatilho-atraso-pagamento",
+        servico => servico.ProcessarAtrasosAsync(),
+        "0 12 * * *");
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Falha ao registrar o job de gatilho de atraso de pagamento no HangFire.");
 }
 
 app.MapControllers();

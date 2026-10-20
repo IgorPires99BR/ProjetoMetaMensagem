@@ -17,13 +17,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             Id = Guid.NewGuid();
         }
 
-        // Padrao de negocio atual (2026): quem preenche os dados financeiros do contato e
-        // nao informa um valor especifico cai nesses defaults -- mesmos valores que estavam
-        // na entidade Cliente removida (ver historico: unificada aqui a pedido do Igor).
-        public const int DiaVencimentoPadrao = 20;
-        public const decimal TaxaJurosPadrao = 2.00m;
-        public const decimal TaxaJurosMensalPadrao = 2.00m;
-        public const decimal ValorFaturaPadrao = 405.00m;
+        // Dados de cobranca (vencimento, juros, fatura) sao opcionais no cadastro e ficam nulos
+        // quando nao informados. Antes caiam em defaults (dia 20, 2%, R$ 405) e todo contato
+        // parecia pronto para cobrar com um valor que ninguem digitou. A exigencia agora fica
+        // na hora de gerar o Pix no Asaas (PreparadorCobrancaPix.FaltaDadoDeCobranca).
 
         public Contato(CriaContatoCommand command)
         {
@@ -36,10 +33,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             Email = command.Email;
             NomeCliente = command.NomeCliente;
             CpfCnpj = Helpers.DocumentoHelper.SoDigitos(command.CpfCnpj);
-            DiaVencimento = command.DiaVencimento ?? DiaVencimentoPadrao;
-            TaxaJuros = command.TaxaJuros ?? TaxaJurosPadrao;
-            TaxaJurosMensal = command.TaxaJurosMensal ?? TaxaJurosMensalPadrao;
-            ValorFatura = command.ValorFatura ?? ValorFaturaPadrao;
+            DiaVencimento = command.DiaVencimento;
+            TaxaJuros = command.TaxaJuros;
+            TaxaJurosMensal = command.TaxaJurosMensal;
+            ValorFatura = command.ValorFatura;
             DataCriacao = DateTime.Now;
         }
 
@@ -54,10 +51,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
             Email = command.Email;
             NomeCliente = command.NomeCliente;
             CpfCnpj = Helpers.DocumentoHelper.SoDigitos(command.CpfCnpj);
-            DiaVencimento = command.DiaVencimento ?? DiaVencimentoPadrao;
-            TaxaJuros = command.TaxaJuros ?? TaxaJurosPadrao;
-            TaxaJurosMensal = command.TaxaJurosMensal ?? TaxaJurosMensalPadrao;
-            ValorFatura = command.ValorFatura ?? ValorFaturaPadrao;
+            DiaVencimento = command.DiaVencimento;
+            TaxaJuros = command.TaxaJuros;
+            TaxaJurosMensal = command.TaxaJurosMensal;
+            ValorFatura = command.ValorFatura;
             DataCriacao = DateTime.Now;
         }
 

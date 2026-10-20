@@ -43,6 +43,8 @@ namespace ProjetoMetaMensagem.Servico.Meta
             if (string.IsNullOrWhiteSpace(empresa.AppIdMeta)) empresa.AppIdMeta = plataforma.AppIdMeta;
         }
 
+        public async Task<string?> ObterWabaIdDaPlataforma() => (await ObterEmpresaDaPlataforma())?.WabaId;
+
         private async Task<Empresa?> ObterEmpresaDaPlataforma()
         {
             if (Guid.TryParse(_configuration["CaktoConfiguration:EmpresaOperacaoId"], out var id))

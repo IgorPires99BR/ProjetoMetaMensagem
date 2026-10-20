@@ -10,8 +10,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
 {
     public class ObtemEmpresaResult
     {
-        public ObtemEmpresaResult(Entidades.Empresa empresa)
+        // Como a empresa fala com a Meta. Conta propria = WABA diferente do da plataforma, que
+        // so chega via Embedded Signup ("Conectar ao WhatsApp") ou credencial digitada a mao.
+        public const string ConexaoContaPropria = "CONTA_PROPRIA";
+        public const string ConexaoContactSolution = "CONTACT_SOLUTION";
+
+        public ObtemEmpresaResult(Entidades.Empresa empresa, string? wabaIdDaPlataforma)
         {
+            // Empresa nova recebe uma COPIA das credenciais da plataforma (CredenciaisMetaDaPlataforma),
+            // entao WabaId preenchido nao basta: tem que ser diferente do da Contact Solution.
+            TipoConexao = !string.IsNullOrWhiteSpace(empresa.WabaId)
+                && !string.Equals(empresa.WabaId.Trim(), wabaIdDaPlataforma?.Trim(), StringComparison.Ordinal)
+                    ? ConexaoContaPropria
+                    : ConexaoContactSolution;
+            AppIdMeta = empresa.AppIdMeta;
+
             Id = empresa.Id;
             Nome = empresa.Nome;
             Email = empresa.Email;
@@ -42,6 +55,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
         public string? PhoneNumberId { get; set; }
         public string? WabaId { get; set; }
         public string? PlanoId { get; set; }
+        // Nao e segredo (vai no SDK do navegador) e a tela precisa dele: sem ele, salvar a
+        // empresa pela tela apagava o AppIdMeta, que o AlteraEmpresaHandler grava como veio.
+        public string? AppIdMeta { get; set; }
+        public string TipoConexao { get; set; }
         public DateTimeOffset DataCriacao { get; set; }
 
         // Prefixo reconhecido pelo AlteraEmpresaHandler: se o valor voltar assim, quer dizer

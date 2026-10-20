@@ -2,6 +2,7 @@ using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using System;
 using System.Collections.Generic;
@@ -14,10 +15,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
     public class ObtemEmpresaHandler : IRequestHandler<ObtemEmpresaCommand, Response<List<ObtemEmpresaResult>>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICredenciaisMetaDaPlataforma _credenciaisMetaDaPlataforma;
 
-        public ObtemEmpresaHandler(IUnitOfWork unitOfWork)
+        public ObtemEmpresaHandler(IUnitOfWork unitOfWork, ICredenciaisMetaDaPlataforma credenciaisMetaDaPlataforma)
         {
             _unitOfWork = unitOfWork;
+            _credenciaisMetaDaPlataforma = credenciaisMetaDaPlataforma;
         }
 
 
@@ -54,9 +57,11 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa
                     empresaBanco = empresaBanco.Where(e => e.Id == command.EmpresaIdSolicitante.Value).ToList();
                 }
 
+                var wabaDaPlataforma = await _credenciaisMetaDaPlataforma.ObterWabaIdDaPlataforma();
+
                 foreach (var empresa in empresaBanco)
                 {
-                    listaEmpresa.Add(new ObtemEmpresaResult(empresa));
+                    listaEmpresa.Add(new ObtemEmpresaResult(empresa, wabaDaPlataforma));
                 }
 
                 response.AddValue(listaEmpresa);

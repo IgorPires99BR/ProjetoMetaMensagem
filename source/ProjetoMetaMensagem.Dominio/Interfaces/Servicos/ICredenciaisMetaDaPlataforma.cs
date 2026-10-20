@@ -11,5 +11,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     {
         // So preenche o que veio em branco: credencial digitada no cadastro prevalece.
         Task PreencherEmBranco(Empresa empresa);
+
+        // WABA da Contact Solution: empresa com esse mesmo WabaId dispara pelo numero da
+        // plataforma; com outro, tem conta Meta propria (Embedded Signup). Null = nao encontrada.
+        Task<string?> ObterWabaIdDaPlataforma();
     }
 }

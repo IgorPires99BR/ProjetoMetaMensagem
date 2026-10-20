@@ -1,4 +1,5 @@
 ﻿using ProjetoMetaMensagem.Dominio.Help.Error;
+using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
@@ -16,11 +17,13 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
     {
         private readonly IMediator _mediator;
         private readonly ILogger<ContatosController> _logger;
+        private readonly IBackgroundJobClient _jobs;
 
-        public ContatosController(IMediator mediator, ILogger<ContatosController> logger)
+        public ContatosController(IMediator mediator, ILogger<ContatosController> logger, IBackgroundJobClient jobs)
         {
             _mediator = mediator;
             _logger = logger;
+            _jobs = jobs;
         }
 
         [HttpPost("api/contato/incluir")]
@@ -32,6 +35,16 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
                 command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
 
                 var resultado = await _mediator.Send(command);
+
+                // Momento de disparo "ao cadastrar contato" (TemplateGatilho): em segundo plano, o
+                // cadastro nao espera a Meta e uma falha no envio nao desfaz o contato.
+                if (resultado != null && !resultado.HasValidations && resultado.Value != null)
+                {
+                    var empresaId = resultado.Value.EmpresaId;
+                    var contatoId = resultado.Value.ContatoId;
+                    _jobs.Enqueue<ProjetoMetaMensagem.Dominio.Servicos.IDisparoPorGatilho>(s => s.DispararCadastroContatoAsync(empresaId, contatoId));
+                }
+
                 return this.ValidateResponse(resultado != null ? (int)HttpStatusCode.Created : (int)HttpStatusCode.BadRequest, resultado);
             }
             catch (Exception ex)

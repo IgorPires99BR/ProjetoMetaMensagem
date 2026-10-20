@@ -12,9 +12,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
         public string? NomeContato { get; set; }
         public string? Email { get; set; }
 
-        // Dados financeiros (ver Contato.DiaVencimentoPadrao/TaxaJurosPadrao/etc): nulo aqui
-        // vira o padrao de negocio no Handler, nao no default do parametro, pra o front
-        // poder mandar explicitamente um valor diferente sem mexer no Command.
+        // Dados financeiros: opcionais no cadastro (nulo fica nulo). So sao exigidos para gerar
+        // o Pix da cobranca no Asaas (ver PreparadorCobrancaPix).
         public string? NomeCliente { get; set; }
         public string? CpfCnpj { get; set; }
         public int? DiaVencimento { get; set; }

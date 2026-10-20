@@ -7,6 +7,8 @@ using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.DeletaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaGatilhosTemplate;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.SalvaGatilhosTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplateConexoes;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.CriaTemplateConexao;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.ExcluiTemplateConexao;
@@ -135,6 +137,43 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.AlterarFlagCobranca"), tipo = "Servico" });
+            }
+        }
+
+        // Momentos de disparo automatico (ao cadastrar contato, atraso de pagamento). Tambem so
+        // locais, sem passar pela Meta.
+        [HttpGet("api/template/gatilhos/{empresaId}")]
+        public async Task<IActionResult> ListarGatilhos(Guid empresaId)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ListaGatilhosTemplateCommand
+                {
+                    EmpresaId = empresaId,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.ListarGatilhos"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPut("api/template/{id}/gatilhos")]
+        public async Task<IActionResult> SalvarGatilhos(Guid id, [FromBody] SalvaGatilhosTemplateCommand command)
+        {
+            try
+            {
+                command.TemplateId = id;
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.SalvarGatilhos"), tipo = "Servico" });
             }
         }
 

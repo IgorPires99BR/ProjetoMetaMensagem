@@ -29,5 +29,18 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // porque esse reenvia o template pra Meta e exige status REJECTED, e ligar/desligar
         // cobranca e uma flag puramente nossa, sem relacao com a analise do template.
         Task<int> AlterarFlagCobranca(Guid id, Guid? empresaIdSolicitante, bool geraCobranca);
+
+        // Gatilhos de disparo automatico (BD/55). Ficam aqui e nao num repositorio proprio porque
+        // so existem pendurados num template.
+        Task<IEnumerable<TemplateGatilho>> ObterGatilhosPorEmpresa(Guid empresaId);
+        Task<IEnumerable<TemplateGatilho>> ObterGatilhosAtivos(Guid empresaId, string tipo);
+        // Troca todos os gatilhos do template pelos informados (lista vazia = remove todos).
+        Task SubstituirGatilhos(Guid templateId, Guid empresaId, IEnumerable<TemplateGatilho> gatilhos);
+
+        // Cobrancas em aberto que ja passaram dos DiasAtraso de algum gatilho ativo e que esse
+        // gatilho ainda nao avisou. So entra cobranca que atingiu o atraso depois da criacao do
+        // gatilho: ligar um gatilho hoje nao pode disparar para meses de cobrancas antigas.
+        Task<IEnumerable<CobrancaEmAtraso>> ObterCobrancasEmAtrasoSemAviso(DateTime hoje);
+        Task RegistrarEnvioGatilho(Guid gatilhoId, Guid cobrancaClienteId);
     }
 }

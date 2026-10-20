@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato
 {
     public class CriaContatoResult
     {
-
+        // Usados pelo controller para enfileirar o gatilho "ao cadastrar contato".
+        public Guid ContatoId { get; set; }
+        public Guid EmpresaId { get; set; }
     }
 }

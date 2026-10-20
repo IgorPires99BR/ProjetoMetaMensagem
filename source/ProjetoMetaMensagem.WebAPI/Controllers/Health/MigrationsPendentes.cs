@@ -186,6 +186,31 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/54", "Contato", "CpfCnpj",
                 "ALTER TABLE Contato ADD CpfCnpj NVARCHAR(14) NULL;"),
+
+            new("BD/55", "TemplateGatilho", null,
+                @"CREATE TABLE TemplateGatilho (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+                    EmpresaId UNIQUEIDENTIFIER NOT NULL,
+                    TemplateId UNIQUEIDENTIFIER NOT NULL,
+                    Tipo NVARCHAR(30) NOT NULL,
+                    DiasAtraso INT NULL,
+                    VariaveisJson NVARCHAR(MAX) NULL,
+                    Ativo BIT NOT NULL DEFAULT (1),
+                    DataCriacao DATETIME NOT NULL DEFAULT (GETDATE()),
+                    DataAtualizacao DATETIME NULL,
+                    CONSTRAINT FK_TemplateGatilho_Empresa FOREIGN KEY (EmpresaId) REFERENCES Empresa(Id),
+                    CONSTRAINT FK_TemplateGatilho_Template FOREIGN KEY (TemplateId) REFERENCES Template(Id) ON DELETE CASCADE,
+                    CONSTRAINT UQ_TemplateGatilho_Template_Tipo UNIQUE (TemplateId, Tipo)
+                );"),
+
+            new("BD/55", "TemplateGatilhoEnvio", null,
+                @"CREATE TABLE TemplateGatilhoEnvio (
+                    GatilhoId UNIQUEIDENTIFIER NOT NULL,
+                    CobrancaClienteId UNIQUEIDENTIFIER NOT NULL,
+                    DataEnvio DATETIME NOT NULL DEFAULT (GETDATE()),
+                    CONSTRAINT PK_TemplateGatilhoEnvio PRIMARY KEY (GatilhoId, CobrancaClienteId),
+                    CONSTRAINT FK_TemplateGatilhoEnvio_Gatilho FOREIGN KEY (GatilhoId) REFERENCES TemplateGatilho(Id) ON DELETE CASCADE
+                );"),
         };
     }
 }
