@@ -32,11 +32,17 @@ pipeline, templates Meta). Frontend em `../AngularContact` (mesma pasta pai
 ## Padrões de código (siga ao adicionar/alterar algo)
 
 - **Mediator manual, não MediatR**: todo caso de uso é `Command` + `Handler` +
-  `Result` + `Validator` em `Dominio/UseCases/<Área>/<Ação>/`, registrado manualmente em
-  `Program.cs` como `AddScoped<IRequestHandler<TCommand, Response<TResult>>, THandler>()`.
-  **Se você criar um handler novo e esquecer de registrar em `Program.cs`, ele compila
-  normalmente e só falha em runtime com 500 ("No service for type...")** — não há rede de
-  segurança do compilador para isso. Sempre confirme registrando E testando o endpoint.
+  `Result` + `Validator` em `Dominio/UseCases/<Área>/<Ação>/`.
+- **Handlers se registram sozinhos**: `AddHandlersDoDominio()` (`WebAPI/Common/RegistroDeHandlers.cs`,
+  chamado em `Program.cs`) varre o assembly do Domínio e registra como `Scoped` toda classe
+  concreta que implementa `IRequestHandler<,>`. Handler novo **não** precisa de linha em
+  `Program.cs`. Para trocar a implementação de um handler específico, registre-o à mão
+  *antes* dessa chamada — o registro manual vence. Se a varredura não achar nenhum handler,
+  a API falha no boot de propósito.
+- **Serviços continuam com registro manual**: repositórios, serviços de domínio (ex:
+  `IDisparoPorGatilho`) e jobs precisam de `AddScoped`/`AddHttpClient` em `Program.cs`.
+  Esquecer compila normalmente e só falha em runtime com 500 ("No service for type...") —
+  confirme registrando E testando o endpoint.
 - **Serviços com HttpClient tipado**: `AddHttpClient<IInterface, Implementacao>()` — só se
   a implementação recebe `HttpClient` no construtor. Se ela usa `IHttpClientFactory`
   diretamente (como `WebhookDispatcherService`), use `AddScoped` normal.
