@@ -124,6 +124,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/55", "TemplateGatilho"),
             new("BD/55", "TemplateGatilhoEnvio"),
+
+            new("BD/56", "Contato", "Ativo"),
+            new("BD/56", "Contato", "DataInativacao"),
         };
     }
 }

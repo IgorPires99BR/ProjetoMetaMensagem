@@ -112,5 +112,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public decimal? ValorFatura { get; set; }
 
         public DateTime DataCriacao { get; set; }
+
+        // Exclusao logica (BD/56): contato com historico nao pode ser apagado, entao "excluir"
+        // so inativa. Inativo some das listas e nao recebe disparo de agendamento/campanha.
+        public bool Ativo { get; set; } = true;
+
+        public DateTime? DataInativacao { get; set; }
     }
 }

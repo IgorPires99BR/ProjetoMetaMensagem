@@ -20,6 +20,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
             TaxaJurosMensal = contato.TaxaJurosMensal;
             ValorFatura = contato.ValorFatura;
             DataCriacao = contato.DataCriacao;
+            Ativo = contato.Ativo;
+            DataInativacao = contato.DataInativacao;
 
             // Origem gravada na primeira mensagem de quem chegou por um anuncio Click-to-
             // WhatsApp (OrigemLead), mas nunca lida fora do momento da compra -- ate agora
@@ -42,6 +44,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
         public decimal? TaxaJurosMensal { get; set; }
         public decimal? ValorFatura { get; set; }
         public DateTime DataCriacao { get; set; }
+        public bool Ativo { get; set; }
+        public DateTime? DataInativacao { get; set; }
         public string? OrigemAnuncio { get; set; }
         public DateTime? OrigemData { get; set; }
     }

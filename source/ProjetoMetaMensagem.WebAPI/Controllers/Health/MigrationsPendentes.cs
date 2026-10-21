@@ -211,6 +211,12 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                     CONSTRAINT PK_TemplateGatilhoEnvio PRIMARY KEY (GatilhoId, CobrancaClienteId),
                     CONSTRAINT FK_TemplateGatilhoEnvio_Gatilho FOREIGN KEY (GatilhoId) REFERENCES TemplateGatilho(Id) ON DELETE CASCADE
                 );"),
+
+            new("BD/56", "Contato", "Ativo",
+                "ALTER TABLE Contato ADD Ativo BIT NOT NULL CONSTRAINT DF_Contato_Ativo DEFAULT (1);"),
+
+            new("BD/56", "Contato", "DataInativacao",
+                "ALTER TABLE Contato ADD DataInativacao DATETIME NULL;"),
         };
     }
 }

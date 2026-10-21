@@ -111,11 +111,52 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 transaction: _session.Transaction);
         }
 
-        public async Task<int> Excluir(string id, Guid? empresaIdSolicitante)
+        public async Task<ResultadoExclusaoContato> Excluir(string id, Guid? empresaIdSolicitante)
+        {
+            // Tenta apagar de verdade e, se alguma FK barrar (547: ja tem disparo, conversa,
+            // cobranca, tag...), so inativa -- apagar levaria o historico junto, e todas as FKs
+            // pra Contato sao NO ACTION justamente pra isso nao acontecer. Deixar o banco decidir
+            // evita manter aqui uma lista de tabelas dependentes que fica velha a cada migration.
+            // Com XACT_ABORT OFF (padrao do SqlClient) o erro desfaz so o DELETE, nao a transacao.
+            var sql = $@"
+                DECLARE @Resultado INT = {(int)ResultadoExclusaoContato.NaoEncontrado};
+
+                IF EXISTS (SELECT 1 FROM {nameof(Contato)}
+                           WHERE {nameof(Contato.Id)} = @Id AND {nameof(Contato.Ativo)} = 1
+                           {RecorteDaEmpresa})
+                BEGIN
+                    BEGIN TRY
+                        DELETE FROM {nameof(Contato)}
+                        WHERE {nameof(Contato.Id)} = @Id
+                        {RecorteDaEmpresa};
+                        SET @Resultado = {(int)ResultadoExclusaoContato.Excluido};
+                    END TRY
+                    BEGIN CATCH
+                        IF ERROR_NUMBER() <> 547 OR XACT_STATE() = -1 THROW;
+
+                        UPDATE {nameof(Contato)}
+                        SET {nameof(Contato.Ativo)} = 0,
+                            {nameof(Contato.DataInativacao)} = GETDATE()
+                        WHERE {nameof(Contato.Id)} = @Id
+                        {RecorteDaEmpresa};
+                        SET @Resultado = {(int)ResultadoExclusaoContato.Inativado};
+                    END CATCH
+                END
+
+                SELECT @Resultado;";
+
+            return (ResultadoExclusaoContato)await _session.Connection.ExecuteScalarAsync<int>(sql,
+                new { Id = id, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
+        }
+
+        public async Task<int> Reativar(Guid id, Guid? empresaIdSolicitante)
         {
             var sql = $@"
-                DELETE FROM {nameof(Contato)}
-                WHERE {nameof(Contato.Id)} = @Id
+                UPDATE {nameof(Contato)}
+                SET {nameof(Contato.Ativo)} = 1,
+                    {nameof(Contato.DataInativacao)} = NULL
+                WHERE {nameof(Contato.Id)} = @Id AND {nameof(Contato.Ativo)} = 0
                 {RecorteDaEmpresa}";
 
             return await _session.Connection.ExecuteAsync(sql,
@@ -139,9 +180,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             //
             // Telefone2 tambem casa: o segundo socio que responde um disparo e o mesmo contato,
             // nao um lead novo a ser criado. Quem tem o numero como principal vem antes.
+            //
+            // Contato inativo (excluido pela tela) nao casa: quem voltar a escrever entra como
+            // contato novo, visivel na lista, em vez de cair num cadastro que ninguem enxerga.
             var sql = @"
         SELECT TOP 1 c.* FROM Contato c
         WHERE c.EmpresaId = @EmpresaId
+          AND c.Ativo = 1
           AND (REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
                OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone2, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone)
         ORDER BY
@@ -176,19 +221,23 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 transaction: _session.Transaction);
         }
 
-        public async Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId)
+        public async Task<IEnumerable<Contato>> ObterPorEmpresa(Guid? empresaId, bool apenasInativos = false)
         {
             // null = conta de plataforma, ve contatos de todas as empresas de uma vez.
             // Ordem pedida pelo Igor para as telas de Contatos, Disparos e Agendamentos (todas
             // usam esta lista): pelo cliente (titular da fatura), e quem nao tem cliente por ultimo.
+            // Inativos ficam fora dessas telas; so a aba de inativos (pra reativar) os pede.
             var sql = @"
                 SELECT * FROM Contato
                 WHERE (@EmpresaId IS NULL OR EmpresaId = @EmpresaId)
+                  AND Ativo = @Ativo
                 ORDER BY
                     CASE WHEN NULLIF(LTRIM(RTRIM(NomeCliente)), '') IS NULL THEN 1 ELSE 0 END,
                     NomeCliente, NomeContato";
 
-            return await _session.Connection.QueryAsync<Contato>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
+            return await _session.Connection.QueryAsync<Contato>(sql,
+                new { EmpresaId = empresaId, Ativo = !apenasInativos },
+                transaction: _session.Transaction);
         }
 
         public async Task<IEnumerable<Contato>> ObterPorIds(Guid empresaId, IEnumerable<Guid> ids)

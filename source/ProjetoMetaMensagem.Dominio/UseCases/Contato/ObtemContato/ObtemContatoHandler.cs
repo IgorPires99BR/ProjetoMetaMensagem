@@ -40,7 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato
                     return response;
                 }
 
-                var contatos = (await _unitOfWork.Contato.ObterPorEmpresa(command.EmpresaIdSolicitante)).ToList();
+                var contatos = (await _unitOfWork.Contato.ObterPorEmpresa(command.EmpresaIdSolicitante, command.ApenasInativos)).ToList();
 
                 // Contato guarda EmpresaId direto (antes precisava resolver pelo dono/Usuario).
                 static Guid? EmpresaDoContato(Entidades.Contato c) => c.EmpresaId;

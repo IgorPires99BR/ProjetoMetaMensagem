@@ -110,6 +110,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
                 contatos.AddRange(await _unitOfWork.Contato.ObterPorIds(agendamento.EmpresaId, lote));
             }
 
+            // Contato excluido pela tela depois de entrar no agendamento so foi inativado (ver
+            // ContatoRepository.Excluir) e continua vinculado aqui -- nao deve mais receber nada.
+            contatos = contatos.Where(c => c.Ativo).ToList();
+
             // VencimentoContato: a lista do agendamento pode ter contato de qualquer dia de
             // vencimento -- so quem "vence" hoje (com o mesmo clamp de fim de mes que a
             // recorrencia Mensal ja usa pro DiaDoMes) recebe disparo nesta passada. Os demais

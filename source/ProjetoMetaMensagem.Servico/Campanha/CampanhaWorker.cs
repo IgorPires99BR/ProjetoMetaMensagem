@@ -98,6 +98,16 @@ namespace ProjetoMetaMensagem.Servico.Campanha
                                             continue;
                                         }
 
+                                        // Excluido pela tela depois de entrar na campanha: so foi
+                                        // inativado (ver ContatoRepository.Excluir), nao envia.
+                                        if (!contato.Ativo)
+                                        {
+                                            vinculo.Processado = true;
+                                            vinculo.Sucesso = false;
+                                            vinculo.MensagemErro = "Contato inativo";
+                                            continue;
+                                        }
+
                                         var enviarCommand = new EnviarMensagemTemplateMetaCommand
                                         {
                                             IdEmpresa = campanha.EmpresaId,

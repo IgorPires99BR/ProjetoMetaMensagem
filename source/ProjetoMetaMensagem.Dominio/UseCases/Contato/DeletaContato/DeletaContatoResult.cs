@@ -8,5 +8,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato
 {
     public class DeletaContatoResult
     {
+        // true = o contato ja tinha historico e foi so inativado (some da lista, mas disparos e
+        // conversas continuam no banco); false = foi apagado de vez.
+        public bool Inativado { get; set; }
     }
 }

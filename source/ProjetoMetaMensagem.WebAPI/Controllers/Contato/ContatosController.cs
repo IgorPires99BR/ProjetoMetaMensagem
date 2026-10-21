@@ -6,6 +6,7 @@ using ProjetoMetaMensagem.Dominio.UseCases.Contato.AlteraContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.CriaContatoEmLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.DeletaContato;
+using ProjetoMetaMensagem.Dominio.UseCases.Contato.ReativaContato;
 using ProjetoMetaMensagem.Dominio.UseCases.Contato.ObtemContato;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
@@ -89,11 +90,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
         // filtrar: a lista e por empresa agora (ver ObtemContatoHandler), com o escopo vindo do
         // token -- nunca da rota, senao o proprio atacante escolheria a empresa.
         [HttpGet("api/contato/obter-por-usuario/{usuarioId}")]
-        public async Task<IActionResult> ObterPorUsuario(Guid usuarioId)
+        public async Task<IActionResult> ObterPorUsuario(Guid usuarioId, [FromQuery] bool inativos = false)
         {
             try
             {
-                var resultado = await _mediator.Send(new ObtemContatoCommand(this.EmpresaDoEscopo()));
+                var resultado = await _mediator.Send(new ObtemContatoCommand(this.EmpresaDoEscopo(), inativos));
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
@@ -117,6 +118,34 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Contato
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ContatosController.Excluir"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPut("api/contato/reativar/{id}")]
+        public async Task<IActionResult> Reativar(Guid id)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ReativaContatoCommand
+                {
+                    Id = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+
+                // Reativar conta como um cadastro novo pro gatilho "ao cadastrar contato": o
+                // pedido e justamente receber de novo a mensagem de boas-vindas, mesmo repetida.
+                if (resultado != null && !resultado.HasValidations && resultado.Value != null)
+                {
+                    var empresaId = resultado.Value.EmpresaId;
+                    var contatoId = resultado.Value.ContatoId;
+                    _jobs.Enqueue<ProjetoMetaMensagem.Dominio.Servicos.IDisparoPorGatilho>(s => s.DispararCadastroContatoAsync(empresaId, contatoId));
+                }
+
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "ContatosController.Reativar"), tipo = "Servico" });
             }
         }
     }
