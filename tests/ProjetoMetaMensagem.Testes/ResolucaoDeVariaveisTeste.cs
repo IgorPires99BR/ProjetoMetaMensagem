@@ -206,6 +206,36 @@ public class ResolucaoDeVariaveisTeste
     }
 
     [Theory]
+    [InlineData(1, "Janeiro")]
+    [InlineData(3, "Março")]
+    [InlineData(9, "Setembro")]
+    public void Mes_atual_sai_com_o_nome_do_mes_do_envio_em_portugues(int mes, string esperado)
+    {
+        var variavel = new AgendamentoVariavelDto { Origem = ResolvedorDeVariaveis.MesAtual };
+
+        Assert.False(ResolvedorDeVariaveis.DependeDoContato(variavel, SemParametros));
+        Assert.Equal(esperado, ResolvedorDeVariaveis.Resolver(variavel, null, SemParametros, new DateTime(2026, mes, 10)));
+    }
+
+    [Fact]
+    public void Preencher_poe_o_mes_atual_no_valor_global_e_no_de_cada_contato()
+    {
+        var variaveis = new List<AgendamentoVariavelDto>
+        {
+            new() { Origem = ResolvedorDeVariaveis.NomeCliente },
+            new() { Origem = ResolvedorDeVariaveis.MesAtual },
+        };
+        var comando = new EnviarMensagemTemplateMetaLoteCommand();
+        var ana = ContatoDeExemplo();
+
+        ResolvedorDeVariaveis.Preencher(comando, variaveis, new[] { ("5511111111111", ana) }, SemParametros, Setembro2026);
+
+        Assert.Equal(new[] { "", "Setembro" }, comando.ParametrosBody);
+        Assert.Equal(new[] { "Maria Souza", "Setembro" }, comando.ParametrosBodyDe("5511111111111", ana.Id.ToString()));
+    }
+
+    [Theory]
+    [InlineData("mesAtual", true)]
     [InlineData("fixo", true)]
     [InlineData("parametro", true)]
     [InlineData("valorFatura", true)]

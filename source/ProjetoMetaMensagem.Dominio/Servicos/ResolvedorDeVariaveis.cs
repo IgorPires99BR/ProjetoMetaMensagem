@@ -14,6 +14,9 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
     {
         public const string Fixo = "fixo";
         public const string ParametroCadastrado = "parametro";
+        // Nome do mes do envio (ex: "Outubro"), igual pra todos os destinatarios. Resolvido na
+        // hora do envio, entao num agendamento recorrente acompanha o mes de cada execucao.
+        public const string MesAtual = "mesAtual";
 
         // Campos do Contato que uma variavel (ou um Parametro CAMPO_CONTATO) pode puxar.
         public const string Nome = "nome";
@@ -46,13 +49,13 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         private static readonly CultureInfo Brasil = new("pt-BR");
 
         public static bool OrigemValida(string? origem) =>
-            origem == Fixo || origem == ParametroCadastrado || CamposDoContato.Contains(origem);
+            origem == Fixo || origem == ParametroCadastrado || origem == MesAtual || CamposDoContato.Contains(origem);
 
         // Diz se o valor muda de contato pra contato: so o texto fixo (direto ou via parametro
         // FIXO) vale igual pra todo mundo.
         public static bool DependeDoContato(AgendamentoVariavelDto variavel, IReadOnlyDictionary<Guid, Parametro> parametros)
         {
-            if (variavel.Origem == Fixo) return false;
+            if (variavel.Origem == Fixo || variavel.Origem == MesAtual) return false;
 
             if (variavel.Origem == ParametroCadastrado)
             {
@@ -70,6 +73,9 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         {
             if (variavel.Origem == Fixo)
                 return (variavel.ValorFixo ?? string.Empty).Trim();
+
+            if (variavel.Origem == MesAtual)
+                return NomeDoMes(hoje);
 
             if (variavel.Origem == ParametroCadastrado)
             {
@@ -122,6 +128,14 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             var vencimento = CalcularDataVencimento(contato.DiaVencimento, hoje) ?? hoje.Date;
             var valor = CalculoCobrancaPix.ValorAtualizado(contato.ValorFatura.Value, contato.TaxaJuros, contato.TaxaJurosMensal, vencimento, hoje);
             return $"R$ {valor.ToString("N2", Brasil)}";
+        }
+
+        // O pt-BR devolve o mes em minusculo ("outubro"); capitalizado porque costuma abrir frase
+        // ou vir depois de ":" no template.
+        public static string NomeDoMes(DateTime hoje)
+        {
+            var mes = Brasil.DateTimeFormat.GetMonthName(hoje.Month);
+            return char.ToUpper(mes[0], Brasil) + mes.Substring(1);
         }
 
         public static string DataDeVencimento(int? diaVencimento, DateTime hoje) =>
