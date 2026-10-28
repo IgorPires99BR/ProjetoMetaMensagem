@@ -3,7 +3,9 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.SimulaPagamentoSandbox;
 using Xunit;
 
 namespace ProjetoMetaMensagem.Testes;
@@ -110,6 +112,44 @@ public class BaixaCobrancaAsaasTeste
         Assert.Empty(pix.Criadas);
     }
 
+    [Fact]
+    public async Task Simular_pagamento_no_sandbox_paga_no_Asaas_e_ja_da_baixa()
+    {
+        var cenario = new Cenario(statusNoAsaas: "PENDING");
+
+        var resposta = await cenario.SimularPagamento();
+
+        Assert.Equal(new[] { "pay_123" }, cenario.Pix.PagamentosSimulados);
+        Assert.Equal(StatusCobrancaCliente.Paga, cenario.Cobranca.Status);
+        Assert.Equal(StatusCobrancaCliente.Paga, resposta.Value.Status);
+        Assert.Single(cenario.Notificador.Avisos);
+    }
+
+    [Fact]
+    public async Task Simular_pagamento_e_recusado_com_o_Asaas_em_producao()
+    {
+        var cenario = new Cenario(statusNoAsaas: "PENDING");
+        cenario.Pix.Sandbox = false;
+
+        var resposta = await cenario.SimularPagamento();
+
+        Assert.True(resposta.HasValidations);
+        Assert.Empty(cenario.Pix.PagamentosSimulados);
+        Assert.Equal(StatusCobrancaCliente.Pendente, cenario.Cobranca.Status);
+    }
+
+    [Fact]
+    public async Task Simular_pagamento_de_cobranca_ja_paga_nao_chama_o_Asaas()
+    {
+        var cenario = new Cenario(statusNoAsaas: "RECEIVED");
+        cenario.Cobranca.Status = StatusCobrancaCliente.Paga;
+
+        var resposta = await cenario.SimularPagamento();
+
+        Assert.True(resposta.HasValidations);
+        Assert.Empty(cenario.Pix.PagamentosSimulados);
+    }
+
     private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj, bool carteiraExterna = false,
         string cnpjEmpresa = "19.183.412/0001-32", bool semJuros = false)
     {
@@ -182,14 +222,20 @@ public class BaixaCobrancaAsaasTeste
             Cobranca.Txid = CobrancaCliente.TxidDe(Cobranca.Id);
 
             Pix = new PixFalso(statusNoAsaas);
-            Baixa = new BaixaCobrancaPix(new UnitOfWorkFalso(new CobrancaRepositorioFalso(Cobranca)), Pix, Notificador,
-                NullLogger<BaixaCobrancaPix>.Instance);
+            _unitOfWork = new UnitOfWorkFalso(new CobrancaRepositorioFalso(Cobranca));
+            Baixa = new BaixaCobrancaPix(_unitOfWork, Pix, Notificador, NullLogger<BaixaCobrancaPix>.Instance);
         }
+
+        private readonly UnitOfWorkFalso _unitOfWork;
+
+        public Task<Response<SimulaPagamentoSandboxResult>> SimularPagamento() =>
+            new SimulaPagamentoSandboxHandler(_unitOfWork, Pix, Baixa, NullLogger<SimulaPagamentoSandboxHandler>.Instance)
+                .Handle(new SimulaPagamentoSandboxCommand { CobrancaClienteId = Cobranca.Id });
     }
 
     private class PixFalso : IPixService
     {
-        private readonly string _status;
+        private string _status;
         public List<string> Consultas { get; } = new();
         public List<string> Canceladas { get; } = new();
 
@@ -227,6 +273,17 @@ public class BaixaCobrancaAsaasTeste
         public Task<SubcontaCriada> CriarSubcontaAsync(NovaSubconta subconta) => throw new NotSupportedException();
         public Task<SituacaoSubconta> ConsultarSituacaoSubcontaAsync(string apiKeySubconta) => throw new NotSupportedException();
         public Task TestarCredenciaisAsync() => Task.CompletedTask;
+
+        public bool Sandbox { get; set; } = true;
+        public List<string> PagamentosSimulados { get; } = new();
+
+        // Como no sandbox real: depois do confirm o GET /payments ja devolve RECEIVED.
+        public Task<string> ConfirmarPagamentoSandboxAsync(string idExterno)
+        {
+            PagamentosSimulados.Add(idExterno);
+            _status = "RECEIVED";
+            return Task.FromResult(_status);
+        }
         public string LinkPagamento(string txid) => $"https://teste/pix/{txid}";
         public string UrlQrCode(string txid) => $"https://teste/pix/{txid}/qrcode.png";
     }
@@ -264,7 +321,7 @@ public class BaixaCobrancaAsaasTeste
         }
 
         public Task Incluir(CobrancaCliente cobranca) => throw new NotSupportedException();
-        public Task<CobrancaCliente?> ObterPorId(Guid id, Guid? empresaIdSolicitante) => throw new NotSupportedException();
+        public Task<CobrancaCliente?> ObterPorId(Guid id, Guid? empresaIdSolicitante) => Task.FromResult<CobrancaCliente?>(id == _cobranca.Id ? _cobranca : null);
         public Task<IEnumerable<CobrancaCliente>> ObterPorEmpresa(Guid? empresaIdSolicitante, string? status, DateTime? dataInicio = null, DateTime? dataFim = null) => throw new NotSupportedException();
         public Task<int> MarcarPaga(Guid id, Guid? empresaIdSolicitante, DateTime dataPagamento) => throw new NotSupportedException();
     }

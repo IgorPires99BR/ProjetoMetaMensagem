@@ -25,6 +25,11 @@ pipeline, templates Meta). Frontend em `../AngularContact` (mesma pasta pai
   string aleatória forte), e as demais sections (`ApiWhatsappConnectionConfiguration`,
   `GmailConfig`, `GeminiConfiguration`) com placeholders óbvios se não tiver as credenciais
   reais — a API sobe e funciona sem elas, só as integrações reais (Meta/Gmail/Gemini) não.
+  Modelo da seção do Asaas (cobranças Pix) em `appsettings.Development.exemplo.json`: local
+  sempre `Asaas:Ambiente=SANDBOX` com chave `$aact_hmlg_...`; produção (Render) usa env vars
+  `Asaas__Ambiente=PRODUCAO` + `$aact_prod_...`. Chave do ambiente errado é barrada antes de
+  chamar o Asaas e aparece como `fail` no log de boot. Para testar a baixa localmente (o webhook
+  não alcança a máquina), `POST /api/cobranca-cliente/{id}/simular-pagamento-sandbox`.
 - Scripts SQL em `BD/` são numerados e devem rodar em ordem (00 → 22, depois `Y01`/`Y02`).
   Pule `006_Create_MensagemRecebida.sql` — é uma versão antiga/duplicada, superada pelo
   `14 - CREATE_TABLE_MensagemRecebida.sql` (rodar os dois quebra, o 14 não tem `IF NOT EXISTS`).

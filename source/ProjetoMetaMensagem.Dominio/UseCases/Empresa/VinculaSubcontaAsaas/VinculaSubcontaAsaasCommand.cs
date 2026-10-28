@@ -14,5 +14,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas
         // True = conta Asaas propria da empresa, fora da plataforma. O Asaas nao tem como
         // confirmar de quem e a carteira: quem vincula responde por ter recebido o walletId do titular.
         public bool CarteiraExterna { get; set; }
+
+        // True = troca a conta que ja recebe o repasse (ex: Sebrecon saindo da conta Asaas propria
+        // para uma subconta). Pix ja gerados mantem o split antigo -- o Asaas fixa na criacao.
+        public bool Substituir { get; set; }
     }
 }

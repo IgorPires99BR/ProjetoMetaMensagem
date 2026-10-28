@@ -39,6 +39,13 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         // pelos links (onboardingUrl) que vem aqui.
         Task<SituacaoSubconta> ConsultarSituacaoSubcontaAsync(string apiKeySubconta);
 
+        // Asaas:Ambiente diferente de PRODUCAO.
+        bool Sandbox { get; }
+
+        // POST /sandbox/payment/{id}/confirm: paga a cobranca de mentira, para testar a baixa sem
+        // dinheiro real. Devolve o status do Asaas depois da simulacao. Em producao lanca PixException.
+        Task<string> ConfirmarPagamentoSandboxAsync(string idExterno);
+
         // Chamada leve (saldo): confirma a apiKey da plataforma sem gerar cobranca.
         Task TestarCredenciaisAsync();
 

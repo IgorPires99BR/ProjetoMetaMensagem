@@ -37,5 +37,20 @@ namespace ProjetoMetaMensagem.Servico.Configuration
         public int IntervaloConsultaMinutos { get; set; } = 10;
 
         public bool Configurada => !string.IsNullOrWhiteSpace(ApiKey);
+
+        public bool Producao => string.Equals(Ambiente, AmbienteProducao, StringComparison.OrdinalIgnoreCase);
+
+        // Chave de producao comeca com $aact_prod_ e a de sandbox com $aact_hmlg_. Chave do
+        // ambiente errado so volta 401 sem motivo do Asaas; aqui o erro diz o que trocar.
+        // Formato desconhecido (chave antiga) nao e barrado.
+        public string? ErroChaveDoAmbiente()
+        {
+            var chave = (ApiKey ?? string.Empty).Trim().TrimStart('$');
+            if (Producao && chave.StartsWith("aact_hmlg_"))
+                return "A chave do Asaas configurada é de SANDBOX, mas Asaas:Ambiente está PRODUCAO.";
+            if (!Producao && chave.StartsWith("aact_prod_"))
+                return "A chave do Asaas configurada é de PRODUÇÃO, mas Asaas:Ambiente está SANDBOX.";
+            return null;
+        }
     }
 }

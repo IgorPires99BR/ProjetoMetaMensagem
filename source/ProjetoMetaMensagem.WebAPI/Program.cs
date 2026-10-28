@@ -471,6 +471,17 @@ try
         "baixa-pix-asaas",
         servico => servico.ConsultarPendentesAsync(),
         $"*/{intervaloPix} * * * *");
+
+    // O ambiente vem de appsettings.{Environment}.json ou de Asaas__Ambiente: no log de boot
+    // fica claro qual conta (sandbox ou producao) esta instancia vai cobrar.
+    var asaas = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<ProjetoMetaMensagem.Servico.Configuration.AsaasConfiguration>>().Value;
+    if (!asaas.Configurada)
+        app.Logger.LogWarning("Asaas: sem Asaas:ApiKey, nenhum Pix sera gerado (ambiente {Ambiente}).", asaas.Ambiente);
+    else if (asaas.ErroChaveDoAmbiente() is { } erroAmbiente)
+        app.Logger.LogError("Asaas: {Erro} Os Pix vao falhar ate corrigir.", erroAmbiente);
+    else
+        app.Logger.LogInformation("Asaas: ambiente {Ambiente}, Pix gerados em {Url}.", asaas.Ambiente,
+            asaas.Producao ? asaas.UrlApiProducao : asaas.UrlApiSandbox);
 }
 catch (Exception ex)
 {

@@ -50,12 +50,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas
                 var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(command.EmpresaId)
                             ?? new DadosBancariosEmpresa { EmpresaId = command.EmpresaId };
 
-                // Mesma regra da criacao: trocar a conta que recebe o dinheiro e decisao do suporte.
-                if (dados.TemSubconta)
+                // Trocar a conta que recebe o dinheiro so de proposito: o endpoint ja e restrito a
+                // conta da plataforma, e a troca precisa vir marcada.
+                if (dados.TemSubconta && !command.Substituir)
                 {
-                    response.AddErro("Esta empresa já tem uma subconta Asaas. Para trocar, fale com o suporte da Contact Solution.");
+                    response.AddErro("Esta empresa já tem uma conta Asaas vinculada para o repasse. Marque a opção de substituir para trocar.");
                     return response;
                 }
+                var walletAnterior = dados.AsaasWalletId;
 
                 SubcontaExistente? subconta;
                 try
@@ -102,8 +104,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.VinculaSubcontaAsaas
                 }
                 _unitOfWork.Commit();
 
-                _logger.LogInformation("AsaasPix: {Tipo} {ContaId} (wallet {WalletId}) vinculada a empresa {EmpresaId}",
-                    subconta == null ? "carteira externa" : "subconta", subconta?.Id ?? "-", dados.AsaasWalletId, command.EmpresaId);
+                _logger.LogInformation("AsaasPix: {Tipo} {ContaId} (wallet {WalletId}) vinculada a empresa {EmpresaId}; wallet anterior: {WalletAnterior}",
+                    subconta == null ? "carteira externa" : "subconta", subconta?.Id ?? "-", dados.AsaasWalletId, command.EmpresaId, walletAnterior ?? "-");
 
                 dados.DataAtualizacao = DateTime.Now;
                 response.AddValue(new VinculaSubcontaAsaasResult

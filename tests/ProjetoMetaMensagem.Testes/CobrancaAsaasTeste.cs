@@ -136,4 +136,39 @@ public class CobrancaAsaasTeste
         Assert.Equal("https://asaas.com/onboarding/abc", documento.LinkEnvio);
         Assert.Equal("2026-10-21 10:00:00", documento.LinkExpiraEm);
     }
+
+    // Chave de um ambiente com Asaas:Ambiente do outro so volta 401 do Asaas, sem motivo.
+    [Theory]
+    [InlineData("PRODUCAO", "$aact_hmlg_abc", true)]
+    [InlineData("SANDBOX", "$aact_prod_abc", true)]
+    [InlineData("producao", "$aact_prod_abc", false)]
+    [InlineData("SANDBOX", "$aact_hmlg_abc", false)]
+    [InlineData("SANDBOX", "$aact_YTU5YTE0M2M2N2I4MTliNzk0YTI5N2U5MzdjNWZmNDQ6", false)] // formato antigo: nao barra
+    public void Chave_do_ambiente_errado_e_apontada(string ambiente, string chave, bool erro)
+    {
+        var config = new AsaasConfiguration { Ambiente = ambiente, ApiKey = chave };
+
+        Assert.Equal(erro, config.ErroChaveDoAmbiente() != null);
+    }
+
+    [Fact]
+    public async Task Chave_do_ambiente_errado_falha_antes_de_chamar_o_Asaas()
+    {
+        var servico = new AsaasPixService(Options.Create(new AsaasConfiguration { Ambiente = "PRODUCAO", ApiKey = "$aact_hmlg_abc" }),
+            NullLogger<AsaasPixService>.Instance);
+
+        var erro = await Assert.ThrowsAsync<PixException>(() => servico.TestarCredenciaisAsync());
+
+        Assert.Contains("SANDBOX", erro.Message);
+    }
+
+    [Fact]
+    public async Task Simular_pagamento_em_producao_e_barrado_no_servico()
+    {
+        var servico = new AsaasPixService(Options.Create(new AsaasConfiguration { Ambiente = "PRODUCAO", ApiKey = "$aact_prod_abc" }),
+            NullLogger<AsaasPixService>.Instance);
+
+        Assert.False(servico.Sandbox);
+        await Assert.ThrowsAsync<PixException>(() => servico.ConfirmarPagamentoSandboxAsync("pay_123"));
+    }
 }

@@ -220,6 +220,19 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 grupos);
         }
 
+        public bool Sandbox => !_config.Producao;
+
+        public async Task<string> ConfirmarPagamentoSandboxAsync(string idExterno)
+        {
+            // A rota nem existe em producao, mas a trava fica aqui para nenhuma tela chegar a
+            // "pagar" uma cobranca real por engano.
+            if (!Sandbox)
+                throw new PixException("Simular pagamento só é permitido com o Asaas em SANDBOX.");
+
+            var resposta = await EnviarAsync(HttpMethod.Post, $"/sandbox/payment/{Uri.EscapeDataString(idExterno)}/confirm", new JObject(), "simular o pagamento no sandbox");
+            return resposta["status"]?.ToString() ?? string.Empty;
+        }
+
         public async Task TestarCredenciaisAsync()
         {
             await EnviarAsync(HttpMethod.Get, "/finance/balance", null, "conferir a conta");
@@ -260,6 +273,9 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
         {
             if (apiKey == null && !_config.Configurada)
                 throw new PixException("A integração com o Asaas não está configurada no servidor (Asaas:ApiKey). Avise o suporte.");
+
+            if (apiKey == null && _config.ErroChaveDoAmbiente() is { } erroAmbiente)
+                throw new PixException($"{erroAmbiente} Avise o suporte.");
 
             using var requisicao = new HttpRequestMessage(metodo, UrlApi + caminho);
             requisicao.Headers.TryAddWithoutValidation("access_token", apiKey ?? _config.ApiKey);
@@ -314,8 +330,7 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
 
         private static readonly CultureInfo Brasil = new("pt-BR");
 
-        private bool Producao => string.Equals(_config.Ambiente, AsaasConfiguration.AmbienteProducao, StringComparison.OrdinalIgnoreCase);
-        private string UrlApi => (Producao ? _config.UrlApiProducao : _config.UrlApiSandbox).TrimEnd('/');
+        private string UrlApi => (_config.Producao ? _config.UrlApiProducao : _config.UrlApiSandbox).TrimEnd('/');
 
         // Erro do Asaas: { "errors": [ { "code": "...", "description": "..." } ] }.
         private static string MensagemDoAsaas(string conteudo, int status)
