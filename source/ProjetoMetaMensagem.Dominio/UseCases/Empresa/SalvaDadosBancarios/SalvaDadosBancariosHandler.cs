@@ -14,13 +14,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
     public class SalvaDadosBancariosHandler : IRequestHandler<SalvaDadosBancariosCommand, Response<SalvaDadosBancariosResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IPixService _pix;
+        private readonly IProvedoresCobranca _provedores;
         private readonly ILogger<SalvaDadosBancariosHandler> _logger;
 
-        public SalvaDadosBancariosHandler(IUnitOfWork unitOfWork, IPixService pix, ILogger<SalvaDadosBancariosHandler> logger)
+        public SalvaDadosBancariosHandler(IUnitOfWork unitOfWork, IProvedoresCobranca provedores, ILogger<SalvaDadosBancariosHandler> logger)
         {
             _unitOfWork = unitOfWork;
-            _pix = pix;
+            _provedores = provedores;
             _logger = logger;
         }
 
@@ -54,15 +54,21 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
                 {
                     dados.ComissaoTipo = command.ComissaoTipo;
                     dados.ComissaoValor = command.ComissaoValor;
+                    if (command.RecebimentoNaPlataforma.HasValue)
+                        dados.RecebimentoNaPlataforma = command.RecebimentoNaPlataforma.Value;
                 }
 
-                if (dados.CobrancaPixAtiva && !dados.TemSubconta)
+                // Sem split (empresa recebendo na conta da plataforma, ou provedor ativo sem split,
+                // como o Mercado Pago) subconta e comissao nao entram.
+                var exigeSubconta = dados.CobrancaPixAtiva && !dados.RecebimentoNaPlataforma && ProvedorAtivoFazSplit();
+
+                if (exigeSubconta && !dados.TemSubconta)
                 {
                     response.AddErro("Crie a subconta Asaas da empresa antes de ativar a cobrança via Pix: é nela que o valor das cobranças é depositado.");
                     return response;
                 }
 
-                if (dados.CobrancaPixAtiva && !dados.ComissaoDefinida)
+                if (exigeSubconta && !dados.ComissaoDefinida)
                 {
                     response.AddErro(command.SolicitanteEhAdminDaPlataforma
                         ? "Defina a comissão da plataforma para ativar a cobrança via Pix."
@@ -91,7 +97,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
                 };
 
                 if (dados.CobrancaPixAtiva)
-                    await ConferirComAsaas(resultado);
+                    await ConferirComProvedor(resultado);
 
                 response.AddValue(resultado);
             }
@@ -103,23 +109,31 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
             return response;
         }
 
+        // Provedor mal configurado: na duvida exige a subconta, o erro de configuracao aparece na
+        // conferencia logo depois.
+        private bool ProvedorAtivoFazSplit()
+        {
+            try { return _provedores.Ativo.SuportaSplit; }
+            catch (PixException) { return true; }
+        }
+
         // Credencial da plataforma errada so apareceria no primeiro disparo, com cada cliente
         // da lista falhando. Os dados ja foram gravados: falha aqui vira aviso, nunca erro.
-        private async Task ConferirComAsaas(SalvaDadosBancariosResult resultado)
+        private async Task ConferirComProvedor(SalvaDadosBancariosResult resultado)
         {
             try
             {
-                await _pix.TestarCredenciaisAsync();
+                await _provedores.Ativo.TestarCredenciaisAsync();
                 resultado.CredenciaisConferidas = true;
             }
             catch (PixException ex)
             {
-                resultado.AvisoIntegracao = $"Dados salvos, mas a conexão com o Asaas falhou: {ex.Message}";
+                resultado.AvisoIntegracao = $"Dados salvos, mas a conexão com o provedor de pagamento falhou: {ex.Message}";
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "AsaasPix: erro inesperado ao conferir credenciais");
-                resultado.AvisoIntegracao = "Dados salvos, mas a conexão com o Asaas falhou: erro inesperado.";
+                _logger.LogWarning(ex, "Pix: erro inesperado ao conferir credenciais do provedor ativo");
+                resultado.AvisoIntegracao = "Dados salvos, mas a conexão com o provedor de pagamento falhou: erro inesperado.";
             }
         }
     }

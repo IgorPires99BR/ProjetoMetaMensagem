@@ -33,6 +33,7 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     AsaasContaCriadaEm = @AsaasContaCriadaEm,
                     ComissaoTipo = @ComissaoTipo,
                     ComissaoValor = @ComissaoValor,
+                    RecebimentoNaPlataforma = @RecebimentoNaPlataforma,
                     CobrancaPixAtiva = @CobrancaPixAtiva,
                     DataAtualizacao = GETDATE()
                 WHERE EmpresaId = @EmpresaId;
@@ -40,10 +41,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 IF @@ROWCOUNT = 0
                     INSERT INTO DadosBancariosEmpresa (
                         EmpresaId, AsaasContaId, AsaasWalletId, AsaasApiKeyCriptografada, AsaasContaCriadaEm,
-                        ComissaoTipo, ComissaoValor, CobrancaPixAtiva, DataCriacao)
+                        ComissaoTipo, ComissaoValor, RecebimentoNaPlataforma, CobrancaPixAtiva, DataCriacao)
                     VALUES (
                         @EmpresaId, @AsaasContaId, @AsaasWalletId, @AsaasApiKeyCriptografada, @AsaasContaCriadaEm,
-                        @ComissaoTipo, @ComissaoValor, @CobrancaPixAtiva, GETDATE());";
+                        @ComissaoTipo, @ComissaoValor, @RecebimentoNaPlataforma, @CobrancaPixAtiva, GETDATE());";
 
             await _session.Connection.ExecuteAsync(sql, dados, transaction: _session.Transaction);
         }

@@ -103,6 +103,41 @@ public class BaixaCobrancaAsaasTeste
     }
 
     [Fact]
+    public async Task Recebimento_na_plataforma_gera_Pix_sem_split_mesmo_sem_subconta_e_comissao()
+    {
+        var (pix, preparada) = await PrepararPara(cpfCnpj: "52998224725", recebimentoNaPlataforma: true, semSubconta: true);
+
+        Assert.True(preparada.TemPix, preparada.Erro);
+        var criada = pix.Criadas.Single();
+        Assert.Null(criada.WalletIdRepasse);
+        Assert.Null(criada.ValorRepasse);
+        Assert.True(preparada.Cobranca.RecebidaNaPlataforma);
+        Assert.Null(preparada.Cobranca.ValorComissao);
+        Assert.Null(preparada.Cobranca.ValorRepasse);
+    }
+
+    [Fact]
+    public async Task Recebimento_na_plataforma_ignora_a_subconta_vinculada()
+    {
+        var (pix, preparada) = await PrepararPara(cpfCnpj: null, recebimentoNaPlataforma: true);
+
+        Assert.True(preparada.TemPix, preparada.Erro);
+        Assert.Null(pix.Criadas.Single().WalletIdRepasse);
+        // Cliente padrao sai do cadastro da empresa, sem consultar a subconta.
+        Assert.Equal(new PagadorPix("Clientes Sebrecon", "19183412000132", null), pix.Criadas.Single().Pagador);
+        Assert.Equal(0, pix.ConsultasDeSubconta);
+    }
+
+    [Fact]
+    public async Task Com_subconta_o_Pix_continua_com_split()
+    {
+        var (_, preparada) = await PrepararPara(cpfCnpj: "52998224725");
+
+        Assert.False(preparada.Cobranca.RecebidaNaPlataforma);
+        Assert.Equal(3.50m, preparada.Cobranca.ValorComissao);
+    }
+
+    [Fact]
     public async Task Contato_sem_dados_de_cobranca_nao_gera_Pix()
     {
         var (pix, preparada) = await PrepararPara(cpfCnpj: "52998224725", semJuros: true);
@@ -150,27 +185,121 @@ public class BaixaCobrancaAsaasTeste
         Assert.Empty(cenario.Pix.PagamentosSimulados);
     }
 
+    // --- Mercado Pago como provedor ativo (Asaas de reserva) ---
+
+    [Fact]
+    public async Task Mercado_Pago_gera_a_order_sem_split_e_sem_exigir_subconta_nem_comissao()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+
+        var (asaas, preparada) = await PrepararPara(cpfCnpj: null, semSubconta: true, ativo: mp, email: "maria@exemplo.com");
+
+        Assert.True(preparada.TemPix, preparada.Erro);
+        var criada = Assert.Single(mp.Criadas);
+        Assert.Null(criada.WalletIdRepasse);
+        Assert.Equal(405m, criada.Valor);
+        // Sem documento do contato: nada de cliente padrao da empresa, so o e-mail dele.
+        Assert.Equal("", criada.Pagador.CpfCnpj);
+        Assert.Equal("maria@exemplo.com", criada.Pagador.Email);
+        Assert.Empty(asaas.Criadas);
+        Assert.Equal(0, asaas.ConsultasDeSubconta);
+
+        Assert.Equal(ProvedorCobranca.MercadoPago, preparada.Cobranca.Provedor);
+        Assert.Equal("ORD_NOVA", preparada.Cobranca.PixIdExterno);
+        Assert.Equal("https://www.mercadopago.com.br/payments/1/ticket", preparada.Cobranca.LinkPagamentoExterno);
+        Assert.True(preparada.Cobranca.RecebidaNaPlataforma);
+        Assert.Null(preparada.Cobranca.ValorRepasse);
+        // O link enviado no WhatsApp continua sendo a nossa pagina (botao do template aprovado).
+        Assert.Equal($"https://teste/pix/{preparada.Cobranca.Txid}", preparada.LinkPagamento);
+    }
+
+    [Fact]
+    public async Task Webhook_do_Mercado_Pago_da_baixa_reconsultando_a_order()
+    {
+        var mp = new MercadoPagoFalso("processed");
+        var cenario = new Cenario(statusNoAsaas: "PENDING", ativo: mp, provedorDaCobranca: ProvedorCobranca.MercadoPago);
+
+        await cenario.Baixa.ProcessarWebhookAsync(new[] { cenario.Cobranca.Txid! });
+
+        Assert.Equal(new[] { "pay_123" }, mp.Consultas);
+        Assert.Empty(cenario.Pix.Consultas);
+        Assert.Equal(StatusCobrancaCliente.Paga, cenario.Cobranca.Status);
+        Assert.Equal(405m, cenario.Cobranca.ValorPago);
+    }
+
+    [Fact]
+    public async Task Order_ainda_aguardando_Pix_nao_da_baixa()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+        var cenario = new Cenario(statusNoAsaas: "PENDING", ativo: mp, provedorDaCobranca: ProvedorCobranca.MercadoPago);
+
+        await cenario.Baixa.ProcessarWebhookAsync(new[] { cenario.Cobranca.Txid! });
+
+        Assert.Equal(StatusCobrancaCliente.Pendente, cenario.Cobranca.Status);
+        Assert.Empty(cenario.Notificador.Avisos);
+    }
+
+    [Fact]
+    public async Task Cobranca_antiga_do_Asaas_continua_sendo_baixada_no_Asaas_com_Mercado_Pago_ativo()
+    {
+        var mp = new MercadoPagoFalso("processed");
+        var cenario = new Cenario(statusNoAsaas: "RECEIVED", ativo: mp, provedorDaCobranca: null);
+
+        await cenario.Baixa.ProcessarWebhookAsync(new[] { cenario.Cobranca.Txid! });
+
+        Assert.Equal(new[] { "pay_123" }, cenario.Pix.Consultas);
+        Assert.Empty(mp.Consultas);
+        Assert.Equal(StatusCobrancaCliente.Paga, cenario.Cobranca.Status);
+    }
+
+    [Fact]
+    public async Task Order_expirada_sem_pagamento_e_cancelada_no_Mercado_Pago()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+        var cenario = new Cenario(statusNoAsaas: "PENDING", ativo: mp, provedorDaCobranca: ProvedorCobranca.MercadoPago);
+        cenario.Cobranca.PixExpiraEm = HorarioBrasilia.Agora().AddHours(-1);
+
+        await cenario.Baixa.ConsultarPendentesAsync();
+
+        Assert.Equal(new[] { "pay_123" }, mp.Canceladas);
+        Assert.Empty(cenario.Pix.Canceladas);
+    }
+
+    [Fact]
+    public async Task Simular_pagamento_nao_vale_para_order_do_Mercado_Pago()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+        var cenario = new Cenario(statusNoAsaas: "PENDING", ativo: mp, provedorDaCobranca: ProvedorCobranca.MercadoPago);
+
+        var resposta = await cenario.SimularPagamento();
+
+        Assert.True(resposta.HasValidations);
+        Assert.Empty(cenario.Pix.PagamentosSimulados);
+    }
+
     private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj, bool carteiraExterna = false,
-        string cnpjEmpresa = "19.183.412/0001-32", bool semJuros = false)
+        string cnpjEmpresa = "19.183.412/0001-32", bool semJuros = false, bool recebimentoNaPlataforma = false, bool semSubconta = false,
+        IProvedorCobranca? ativo = null, string? email = null)
     {
         var empresaId = Guid.NewGuid();
         var contato = new Contato
         {
             Id = Guid.NewGuid(), EmpresaId = empresaId, Telefone = "5511999990000",
-            NomeCliente = "Maria Souza", DiaVencimento = 20, ValorFatura = 405m, CpfCnpj = cpfCnpj,
+            NomeCliente = "Maria Souza", DiaVencimento = 20, ValorFatura = 405m, CpfCnpj = cpfCnpj, Email = email,
             TaxaJuros = semJuros ? null : 2m, TaxaJurosMensal = semJuros ? null : 1m
         };
         var dados = new DadosBancariosEmpresa
         {
-            EmpresaId = empresaId, CobrancaPixAtiva = true, AsaasWalletId = "wal_sebrecon",
-            AsaasContaId = carteiraExterna ? null : "acc_sebrecon",
-            ComissaoTipo = DadosBancariosEmpresa.ComissaoFixa, ComissaoValor = 3.50m
+            EmpresaId = empresaId, CobrancaPixAtiva = true, RecebimentoNaPlataforma = recebimentoNaPlataforma,
+            AsaasWalletId = semSubconta ? null : "wal_sebrecon",
+            AsaasContaId = carteiraExterna || semSubconta ? null : "acc_sebrecon",
+            ComissaoTipo = semSubconta ? null : DadosBancariosEmpresa.ComissaoFixa, ComissaoValor = semSubconta ? null : 3.50m
         };
         var pix = new PixFalso("PENDING");
         var uow = new UnitOfWorkFalso(new CobrancaRepositorioFalso(new CobrancaCliente()), new DadosBancariosFalso(dados),
             new EmpresaFalsa(new Empresa { Id = empresaId, Nome = "Sebrecon", Cnpj = cnpjEmpresa }));
 
-        var preparadas = await new PreparadorCobrancaPix(uow, pix, NullLogger<PreparadorCobrancaPix>.Instance)
+        var preparadas = await new PreparadorCobrancaPix(uow, pix, new ProvedoresFalsos(ativo ?? pix, pix), NullLogger<PreparadorCobrancaPix>.Instance)
             .PrepararAsync(empresaId, new Template { Id = Guid.NewGuid() }, new[] { contato }, new DateTime(2026, 10, 14, 10, 0, 0));
 
         return (pix, preparadas[contato.Id]);
@@ -209,7 +338,7 @@ public class BaixaCobrancaAsaasTeste
         public NotificadorFalso Notificador { get; } = new();
         public BaixaCobrancaPix Baixa { get; }
 
-        public Cenario(string statusNoAsaas)
+        public Cenario(string statusNoAsaas, IProvedorCobranca? ativo = null, string? provedorDaCobranca = null)
         {
             Cobranca = new CobrancaCliente
             {
@@ -217,13 +346,14 @@ public class BaixaCobrancaAsaasTeste
                 Valor = 405m,
                 ValorCobrado = 405m,
                 PixIdExterno = "pay_123",
-                PixExpiraEm = HorarioBrasilia.Agora().AddHours(5)
+                PixExpiraEm = HorarioBrasilia.Agora().AddHours(5),
+                Provedor = provedorDaCobranca
             };
             Cobranca.Txid = CobrancaCliente.TxidDe(Cobranca.Id);
 
             Pix = new PixFalso(statusNoAsaas);
             _unitOfWork = new UnitOfWorkFalso(new CobrancaRepositorioFalso(Cobranca));
-            Baixa = new BaixaCobrancaPix(_unitOfWork, Pix, Notificador, NullLogger<BaixaCobrancaPix>.Instance);
+            Baixa = new BaixaCobrancaPix(_unitOfWork, new ProvedoresFalsos(ativo ?? Pix, Pix), Notificador, NullLogger<BaixaCobrancaPix>.Instance);
         }
 
         private readonly UnitOfWorkFalso _unitOfWork;
@@ -233,13 +363,16 @@ public class BaixaCobrancaAsaasTeste
                 .Handle(new SimulaPagamentoSandboxCommand { CobrancaClienteId = Cobranca.Id });
     }
 
-    private class PixFalso : IPixService
+    private class PixFalso : IPixService, IProvedorCobranca
     {
         private string _status;
         public List<string> Consultas { get; } = new();
         public List<string> Canceladas { get; } = new();
 
         public PixFalso(string status) => _status = status;
+
+        public string Nome => ProvedorCobranca.Asaas;
+        public bool SuportaSplit => true;
 
         public Task<ConsultaCobrancaPix> ConsultarCobrancaAsync(string idExterno)
         {
@@ -286,6 +419,58 @@ public class BaixaCobrancaAsaasTeste
         }
         public string LinkPagamento(string txid) => $"https://teste/pix/{txid}";
         public string UrlQrCode(string txid) => $"https://teste/pix/{txid}/qrcode.png";
+    }
+
+    private class ProvedoresFalsos : IProvedoresCobranca
+    {
+        private readonly IProvedorCobranca[] _todos;
+
+        public ProvedoresFalsos(IProvedorCobranca ativo, params IProvedorCobranca[] outros)
+        {
+            Ativo = ativo;
+            _todos = outros.Prepend(ativo).ToArray();
+        }
+
+        public IProvedorCobranca Ativo { get; }
+
+        public IProvedorCobranca Do(string? nome) =>
+            _todos.First(p => p.Nome == (nome ?? ProvedorCobranca.Asaas));
+    }
+
+    // Status da order: "processed" = paga (accredited), "action_required" = aguardando o Pix.
+    private class MercadoPagoFalso : IProvedorCobranca
+    {
+        private readonly string _status;
+        public List<NovaCobrancaPix> Criadas { get; } = new();
+        public List<string> Consultas { get; } = new();
+        public List<string> Canceladas { get; } = new();
+
+        public MercadoPagoFalso(string status) => _status = status;
+
+        public string Nome => ProvedorCobranca.MercadoPago;
+        public bool SuportaSplit => false;
+
+        public Task<PixGerado> CriarCobrancaAsync(NovaCobrancaPix cobranca)
+        {
+            Criadas.Add(cobranca);
+            return Task.FromResult(new PixGerado("ORD_NOVA", "000201...mp", "action_required", "https://www.mercadopago.com.br/payments/1/ticket"));
+        }
+
+        public Task<ConsultaCobrancaPix> ConsultarCobrancaAsync(string idExterno)
+        {
+            Consultas.Add(idExterno);
+            var paga = _status == "processed";
+            return Task.FromResult(new ConsultaCobrancaPix(_status, paga ? 405m : null, paga ? DateTime.Now : null, null,
+                PagaNoProvedor: paga, AguardandoPagamento: _status == "action_required"));
+        }
+
+        public Task CancelarCobrancaAsync(string idExterno)
+        {
+            Canceladas.Add(idExterno);
+            return Task.CompletedTask;
+        }
+
+        public Task TestarCredenciaisAsync() => Task.CompletedTask;
     }
 
     private class NotificadorFalso : INotificadorCobranca

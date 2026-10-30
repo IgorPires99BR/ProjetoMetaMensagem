@@ -16,9 +16,13 @@ using System.Threading.Tasks;
 namespace ProjetoMetaMensagem.Servico.Cobranca
 {
     // Singleton: guarda um HttpClient e o cache de customers. Um HttpClient novo por chamada
-    // esgotaria sockets num disparo em lote.
-    public class AsaasPixService : IPixService
+    // esgotaria sockets num disparo em lote. Desde o Mercado Pago (BD/58) e o provedor de reserva:
+    // so gera Pix com Cobranca:Provedor=ASAAS, mas continua dando baixa nas cobrancas dele.
+    public class AsaasPixService : IPixService, IProvedorCobranca
     {
+        public string Nome => ProvedorCobranca.Asaas;
+        public bool SuportaSplit => true;
+
         private readonly AsaasConfiguration _config;
         private readonly ILogger<AsaasPixService> _logger;
         private readonly HttpClient _cliente;
@@ -50,11 +54,18 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
 
         public async Task<PixGerado> CriarCobrancaAsync(NovaCobrancaPix cobranca)
         {
+            var comSplit = !string.IsNullOrWhiteSpace(cobranca.WalletIdRepasse);
+            if (comSplit && !cobranca.ValorRepasse.HasValue)
+                throw new PixException("a cobrança tem conta de repasse mas não tem o valor do repasse.");
+
             // Split fixo maior que o liquido e bloqueado pelo Asaas DEPOIS do pagamento -- o
             // cliente pagaria e o dinheiro ficaria preso. Barra antes de gerar o Pix.
-            var comissao = cobranca.Valor - cobranca.ValorRepasse;
-            if (comissao < _config.TaxaPix)
-                throw new PixException($"a comissão da plataforma (R$ {comissao.ToString("N2", Brasil)}) não cobre a taxa do Asaas por Pix (R$ {_config.TaxaPix.ToString("N2", Brasil)}). Ajuste a comissão da empresa.");
+            if (comSplit)
+            {
+                var comissao = cobranca.Valor - cobranca.ValorRepasse!.Value;
+                if (comissao < _config.TaxaPix)
+                    throw new PixException($"a comissão da plataforma (R$ {comissao.ToString("N2", Brasil)}) não cobre a taxa do Asaas por Pix (R$ {_config.TaxaPix.ToString("N2", Brasil)}). Ajuste a comissão da empresa.");
+            }
 
             var customer = await ObterOuCriarCustomerAsync(cobranca.Pagador);
 
@@ -68,17 +79,18 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 // Encargos ja estao no valor (CalculoCobrancaPix). Sem zerar, valeriam a multa e
                 // os juros configurados na conta da plataforma, e o valor sairia diferente da mensagem.
                 ["fine"] = new JObject { ["value"] = 0 },
-                ["interest"] = new JObject { ["value"] = 0 },
-                ["split"] = new JArray
+                ["interest"] = new JObject { ["value"] = 0 }
+            };
+            if (comSplit)
+                corpo["split"] = new JArray
                 {
                     new JObject
                     {
                         ["walletId"] = cobranca.WalletIdRepasse,
-                        ["fixedValue"] = Math.Round(cobranca.ValorRepasse, 2),
+                        ["fixedValue"] = Math.Round(cobranca.ValorRepasse!.Value, 2),
                         ["externalReference"] = cobranca.Txid
                     }
-                }
-            };
+                };
             if (!string.IsNullOrWhiteSpace(cobranca.Descricao))
                 corpo["description"] = cobranca.Descricao.Length > 500 ? cobranca.Descricao[..500] : cobranca.Descricao;
 

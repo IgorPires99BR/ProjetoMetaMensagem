@@ -79,6 +79,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Cobranca
 <p class=""nota"">Abra o app do seu banco, escolha Pix &gt; Pix Copia e Cola e cole o código abaixo.</p>
 <textarea id=""codigo"" readonly rows=""4"">{copiaECola}</textarea>
 <button id=""copiar"" type=""button"">Copiar código Pix</button>
+{(LinkExternoSeguro(cobranca.LinkPagamentoExterno) is { } linkExterno ? $@"<a class=""externo"" href=""{WebUtility.HtmlEncode(linkExterno)}"" target=""_blank"" rel=""noopener"">Abrir no Mercado Pago</a>" : "")}
 {(validoAte == null ? "" : $@"<p class=""nota"">Válido até {validoAte}.</p>")}
 <script>
 document.getElementById('copiar').addEventListener('click', function () {{
@@ -94,6 +95,14 @@ document.getElementById('copiar').addEventListener('click', function () {{
             Response.Headers.CacheControl = "no-store";
             return Content(Montar(titulo, corpo), "text/html; charset=utf-8");
         }
+
+        // O ticket_url vem da resposta do provedor, mas vira link numa pagina publica: so https do
+        // proprio Mercado Pago.
+        private static string? LinkExternoSeguro(string? link) =>
+            Uri.TryCreate(link, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps
+            && (uri.Host.EndsWith(".mercadopago.com.br") || uri.Host.EndsWith(".mercadopago.com") || uri.Host == "mercadopago.com.br")
+                ? uri.ToString()
+                : null;
 
         private async Task<Dominio.Entidades.CobrancaCliente?> ObterCobranca(string txid)
         {
@@ -123,6 +132,7 @@ document.getElementById('copiar').addEventListener('click', function () {{
   .qr {{ display:block; width:240px; max-width:100%; height:auto; margin:16px auto; background:#fff; padding:8px; border-radius:8px; }}
   textarea {{ width:100%; font:13px/1.4 ui-monospace,Menlo,Consolas,monospace; padding:10px; border:1px solid var(--borda); border-radius:8px; background:var(--bg); color:var(--texto); resize:none; word-break:break-all; }}
   button {{ width:100%; margin-top:10px; padding:13px; border:0; border-radius:10px; background:var(--azul); color:#fff; font-size:1rem; font-weight:600; cursor:pointer; }}
+  .externo {{ display:block; margin-top:10px; padding:12px; border:1px solid var(--azul); border-radius:10px; color:var(--azul); text-align:center; font-weight:600; text-decoration:none; }}
   .ok {{ color:var(--verde); font-weight:600; }}
   .aviso {{ color:var(--alerta); }}
 </style>

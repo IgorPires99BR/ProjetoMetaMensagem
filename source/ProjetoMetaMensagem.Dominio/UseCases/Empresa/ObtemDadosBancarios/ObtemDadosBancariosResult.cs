@@ -18,6 +18,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios
             CarteiraExterna = dados.CarteiraExterna;
             ComissaoTipo = dados.ComissaoTipo;
             ComissaoValor = dados.ComissaoValor;
+            RecebimentoNaPlataforma = dados.RecebimentoNaPlataforma;
             CobrancaPixAtiva = dados.CobrancaPixAtiva;
             DataAtualizacao = dados.DataAtualizacao ?? (dados.DataCriacao == default ? null : dados.DataCriacao);
         }
@@ -30,6 +31,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios
         public bool CarteiraExterna { get; set; }
         public string? ComissaoTipo { get; set; }
         public decimal? ComissaoValor { get; set; }
+        public bool RecebimentoNaPlataforma { get; set; }
+
+        // Provedor que gera os Pix novos (Cobranca:Provedor). Sem split (Mercado Pago) a tela nao
+        // exige subconta nem comissao. So preenchido na consulta.
+        public string? ProvedorAtivo { get; set; }
+        public bool ProvedorFazSplit { get; set; } = true;
         public bool CobrancaPixAtiva { get; set; }
         public DateTime? DataAtualizacao { get; set; }
     }

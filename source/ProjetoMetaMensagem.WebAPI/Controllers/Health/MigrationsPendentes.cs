@@ -217,6 +217,20 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/56", "Contato", "DataInativacao",
                 "ALTER TABLE Contato ADD DataInativacao DATETIME NULL;"),
+
+            new("BD/57", "DadosBancariosEmpresa", "RecebimentoNaPlataforma",
+                @"ALTER TABLE DadosBancariosEmpresa ADD RecebimentoNaPlataforma BIT NOT NULL
+                    CONSTRAINT DF_DadosBancariosEmpresa_RecebimentoNaPlataforma DEFAULT (0);"),
+
+            new("BD/57", "CobrancaCliente", "RecebidaNaPlataforma",
+                @"ALTER TABLE CobrancaCliente ADD RecebidaNaPlataforma BIT NOT NULL
+                    CONSTRAINT DF_CobrancaCliente_RecebidaNaPlataforma DEFAULT (0);"),
+
+            new("BD/58", "CobrancaCliente", "Provedor",
+                "ALTER TABLE CobrancaCliente ADD Provedor NVARCHAR(20) NULL;"),
+
+            new("BD/58", "CobrancaCliente", "LinkPagamentoExterno",
+                "ALTER TABLE CobrancaCliente ADD LinkPagamentoExterno NVARCHAR(500) NULL;"),
         };
     }
 }

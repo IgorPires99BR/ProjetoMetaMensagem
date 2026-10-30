@@ -73,6 +73,58 @@ public class CobrancaAsaasTeste
     }
 
     [Fact]
+    public async Task Pix_recebido_na_plataforma_vai_ao_Asaas_sem_split()
+    {
+        // Sem repasse nao ha comissao para cobrir a taxa: valor baixo tambem passa.
+        var livre = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        livre.Start();
+        var porta = ((System.Net.IPEndPoint)livre.LocalEndpoint).Port;
+        livre.Stop();
+        using var servidor = new System.Net.HttpListener();
+        servidor.Prefixes.Add($"http://localhost:{porta}/");
+        servidor.Start();
+
+        string? corpoDoPagamento = null;
+        var atendimento = Task.Run(async () =>
+        {
+            for (var i = 0; i < 3; i++)
+            {
+                var ctx = await servidor.GetContextAsync();
+                var caminho = ctx.Request.Url!.AbsolutePath;
+                string json;
+                if (caminho.EndsWith("/customers"))
+                    json = """{"data":[{"id":"cus_1"}]}""";
+                else if (caminho.EndsWith("/pixQrCode"))
+                    json = """{"payload":"000201..."}""";
+                else
+                {
+                    using var leitor = new StreamReader(ctx.Request.InputStream);
+                    corpoDoPagamento = await leitor.ReadToEndAsync();
+                    json = """{"id":"pay_1","status":"PENDING"}""";
+                }
+                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.OutputStream.WriteAsync(bytes);
+                ctx.Response.Close();
+            }
+        });
+
+        var servico = new AsaasPixService(Options.Create(new AsaasConfiguration
+        {
+            ApiKey = "$aact_plataforma",
+            UrlApiSandbox = $"http://localhost:{porta}/v3"
+        }), NullLogger<AsaasPixService>.Instance);
+
+        var pix = await servico.CriarCobrancaAsync(new NovaCobrancaPix("abc", 1m, DateTime.Today, null,
+            new PagadorPix("Fulano", "52998224725", null), null, null));
+        await atendimento;
+
+        Assert.Equal("pay_1", pix.IdExterno);
+        Assert.NotNull(corpoDoPagamento);
+        Assert.DoesNotContain("split", corpoDoPagamento);
+    }
+
+    [Fact]
     public void Comissao_percentual_sai_da_parte_da_empresa()
     {
         var r = CalculoComissao.Calcular(405m, DadosBancariosEmpresa.ComissaoPercentual, 3m)!;

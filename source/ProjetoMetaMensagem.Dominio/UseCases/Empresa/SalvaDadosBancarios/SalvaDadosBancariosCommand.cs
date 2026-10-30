@@ -16,6 +16,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
         public string? ComissaoTipo { get; set; }
         public decimal? ComissaoValor { get; set; }
 
+        // Mesma regra da comissao: so o admin da plataforma decide que o dinheiro cai na conta
+        // da Contact Solution. Nulo = manter o que esta gravado.
+        public bool? RecebimentoNaPlataforma { get; set; }
+
         // Vem do token, nunca do corpo (preenchido pelo controller).
         public bool SolicitanteEhAdminDaPlataforma { get; set; }
     }

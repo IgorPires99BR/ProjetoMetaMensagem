@@ -304,11 +304,21 @@ builder.Services.AddScoped<IDadosBancariosEmpresaRepository, DadosBancariosEmpre
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.CriptografiaConfiguration>(
     builder.Configuration.GetSection("Criptografia"));
 builder.Services.AddSingleton<ICriptografiaService, ProjetoMetaMensagem.Servico.Configuration.CriptografiaService>();
-// Pix (Asaas, conta da plataforma com split para a subconta da empresa) nas cobrancas aos
-// clientes. Singleton: guarda o HttpClient e o cache de customers.
+// Pix das cobrancas aos clientes. Mercado Pago (orders na conta da plataforma) gera os novos;
+// Asaas (split para a subconta da empresa) fica de reserva e segue dando baixa nos dele.
+// Cobranca:Provedor escolhe o ativo. Singletons: guardam o HttpClient e o cache de customers.
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.AsaasConfiguration>(
     builder.Configuration.GetSection("Asaas"));
-builder.Services.AddSingleton<IPixService, ProjetoMetaMensagem.Servico.Cobranca.AsaasPixService>();
+builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MercadoPagoConfiguration>(
+    builder.Configuration.GetSection("MercadoPago"));
+builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.CobrancaConfiguration>(
+    builder.Configuration.GetSection("Cobranca"));
+builder.Services.AddSingleton<ProjetoMetaMensagem.Servico.Cobranca.AsaasPixService>();
+// A mesma instancia nas duas interfaces: um HttpClient e um cache de customers so.
+builder.Services.AddSingleton<IPixService>(sp => sp.GetRequiredService<ProjetoMetaMensagem.Servico.Cobranca.AsaasPixService>());
+builder.Services.AddSingleton<IProvedorCobranca>(sp => sp.GetRequiredService<ProjetoMetaMensagem.Servico.Cobranca.AsaasPixService>());
+builder.Services.AddSingleton<IProvedorCobranca, ProjetoMetaMensagem.Servico.Cobranca.MercadoPagoOrderService>();
+builder.Services.AddSingleton<IProvedoresCobranca, ProjetoMetaMensagem.Servico.Cobranca.ProvedoresCobranca>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IPreparadorCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.PreparadorCobrancaPix>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.BaixaCobrancaPix>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IDisparoPorGatilho, ProjetoMetaMensagem.Dominio.Servicos.DisparoPorGatilho>();
@@ -457,20 +467,43 @@ catch (Exception ex)
     app.Logger.LogError(ex, "Falha ao sincronizar os jobs de agendamento no HangFire.");
 }
 
-// Rede de seguranca do webhook do Asaas: confere as cobrancas Pix pendentes e cancela no
-// Asaas as que passaram da validade (ver BaixaCobrancaPix).
+// Rede de seguranca dos webhooks de pagamento: confere as cobrancas Pix pendentes (de qualquer
+// provedor) e cancela no provedor as que passaram da validade (ver BaixaCobrancaPix).
 try
 {
-    // Jobs das integracoes antigas: chamam o mesmo metodo e rodariam em dobro.
+    // Jobs anteriores: chamam o mesmo metodo e rodariam em dobro.
     RecurringJob.RemoveIfExists("baixa-pix-itau");
     RecurringJob.RemoveIfExists("baixa-pix-transfeera");
+    RecurringJob.RemoveIfExists("baixa-pix-asaas");
 
     var intervaloPix = Math.Clamp(
         app.Configuration.GetValue<int?>("Asaas:IntervaloConsultaMinutos") ?? 10, 1, 59);
     RecurringJob.AddOrUpdate<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix>(
-        "baixa-pix-asaas",
+        "baixa-pix",
         servico => servico.ConsultarPendentesAsync(),
         $"*/{intervaloPix} * * * *");
+
+    // Qual provedor gera os Pix novos e se ele esta pronto, logo no boot.
+    var provedores = app.Services.GetRequiredService<IProvedoresCobranca>();
+    var mercadoPago = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<ProjetoMetaMensagem.Servico.Configuration.MercadoPagoConfiguration>>().Value;
+    try
+    {
+        var ativo = provedores.Ativo;
+        app.Logger.LogInformation("Cobranca: Pix novos gerados pelo provedor {Provedor}.", ativo.Nome);
+        if (ativo.Nome == ProvedorCobranca.MercadoPago)
+        {
+            if (!mercadoPago.Configurada)
+                app.Logger.LogError("MercadoPago: sem MercadoPago:AccessToken, nenhum Pix sera gerado.");
+            if (string.IsNullOrWhiteSpace(mercadoPago.WebhookSecret))
+                app.Logger.LogWarning("MercadoPago: sem MercadoPago:WebhookSecret, o webhook aceita qualquer chamada (a baixa ainda reconsulta a order).");
+            if (string.IsNullOrWhiteSpace(mercadoPago.EmailPagadorPadrao))
+                app.Logger.LogWarning("MercadoPago: sem MercadoPago:EmailPagadorPadrao, contato sem e-mail nao recebe Pix.");
+        }
+    }
+    catch (PixException ex)
+    {
+        app.Logger.LogError("Cobranca: {Erro}", ex.Message);
+    }
 
     // O ambiente vem de appsettings.{Environment}.json ou de Asaas__Ambiente: no log de boot
     // fica claro qual conta (sandbox ou producao) esta instancia vai cobrar.
@@ -485,7 +518,7 @@ try
 }
 catch (Exception ex)
 {
-    app.Logger.LogError(ex, "Falha ao registrar o job de consulta dos Pix do Asaas no HangFire.");
+    app.Logger.LogError(ex, "Falha ao registrar o job de consulta dos Pix no HangFire.");
 }
 
 // Gatilho "atraso de pagamento" dos templates: uma passada por dia, 12:00 UTC (9h de Brasilia),

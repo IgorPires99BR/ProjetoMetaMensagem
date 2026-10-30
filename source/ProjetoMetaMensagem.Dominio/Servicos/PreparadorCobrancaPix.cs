@@ -66,18 +66,22 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
 
     public class PreparadorCobrancaPix : IPreparadorCobrancaPix
     {
-        // Lote de centenas de contatos nao pode abrir centenas de conexoes simultaneas no Asaas
-        // (cada Pix sao 2 a 4 chamadas: cliente, cobranca e QR).
+        // Lote de centenas de contatos nao pode abrir centenas de conexoes simultaneas no provedor
+        // (no Asaas cada Pix sao 2 a 4 chamadas: cliente, cobranca e QR).
         private const int ChamadasSimultaneas = 5;
 
         private readonly IUnitOfWork _unitOfWork;
+        // Asaas: cliente padrao da subconta e os links da nossa pagina do Pix (que servem a
+        // qualquer provedor). Quem gera o Pix e o provedor ativo.
         private readonly IPixService _pix;
+        private readonly IProvedoresCobranca _provedores;
         private readonly ILogger<PreparadorCobrancaPix> _logger;
 
-        public PreparadorCobrancaPix(IUnitOfWork unitOfWork, IPixService pix, ILogger<PreparadorCobrancaPix> logger)
+        public PreparadorCobrancaPix(IUnitOfWork unitOfWork, IPixService pix, IProvedoresCobranca provedores, ILogger<PreparadorCobrancaPix> logger)
         {
             _unitOfWork = unitOfWork;
             _pix = pix;
+            _provedores = provedores;
             _logger = logger;
         }
 
@@ -101,10 +105,25 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(empresaId);
             if (dados == null || !dados.CobrancaPixAtiva) return preparadas;
 
+            IProvedorCobranca provedor;
+            try
+            {
+                provedor = _provedores.Ativo;
+            }
+            catch (PixException ex)
+            {
+                foreach (var preparada in preparadas.Values) preparada.Erro = $"Pix não gerado: {ex.Message}";
+                return preparadas;
+            }
+
+            // Split so no Asaas e quando a empresa nao recebe pela conta da plataforma.
+            var comSplit = provedor.SuportaSplit && !dados.RecebimentoNaPlataforma;
+
             // Conta Asaas propria da empresa: o GET /accounts da plataforma nao a enxerga, entao o
-            // cliente padrao sai do cadastro da empresa.
+            // cliente padrao sai do cadastro da empresa. Sem split tambem: pode nem existir
+            // subconta para consultar.
             PagadorPix? pagadorExterno = null;
-            if (dados.CarteiraExterna)
+            if (provedor.SuportaSplit && (dados.CarteiraExterna || !comSplit))
             {
                 var empresa = await _unitOfWork.Empresa.ObterPorId(empresaId);
                 if (empresa != null && DocumentoHelper.CpfCnpjValido(empresa.Cnpj))
@@ -119,7 +138,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 await limite.WaitAsync();
                 try
                 {
-                    await GerarPix(dados, pagadorExterno, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
+                    await GerarPix(provedor, comSplit, dados, pagadorExterno, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
                 }
                 finally
                 {
@@ -130,13 +149,14 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             return preparadas;
         }
 
-        private async Task GerarPix(DadosBancariosEmpresa dados, PagadorPix? pagadorExterno, CobrancaPreparada preparada, Contato contato, DateTime agora)
+        private async Task GerarPix(IProvedorCobranca provedor, bool comSplit, DadosBancariosEmpresa dados, PagadorPix? pagadorExterno,
+                                    CobrancaPreparada preparada, Contato contato, DateTime agora)
         {
             var cobranca = preparada.Cobranca;
             var faltando = FaltaDadoDeCobranca(contato);
             if (faltando != null)
             {
-                preparada.Erro = $"Pix não gerado: o cadastro do contato está sem {faltando}, obrigatório para cobrar pelo Asaas.";
+                preparada.Erro = $"Pix não gerado: o cadastro do contato está sem {faltando}, obrigatório para gerar a cobrança Pix.";
                 return;
             }
 
@@ -146,18 +166,22 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 return;
             }
 
-            // A ativacao ja exige os dois, mas o registro pode ter sido mexido direto no banco.
-            if (!dados.TemSubconta || !dados.ComissaoDefinida)
+            CalculoComissao.Resultado? divisao = null;
+            if (comSplit)
             {
-                preparada.Erro = "Pix não gerado: a empresa está sem subconta Asaas ou sem comissão definida nos dados bancários.";
-                return;
-            }
+                // A ativacao ja exige os dois, mas o registro pode ter sido mexido direto no banco.
+                if (!dados.TemSubconta || !dados.ComissaoDefinida)
+                {
+                    preparada.Erro = "Pix não gerado: a empresa está sem subconta Asaas ou sem comissão definida nos dados bancários.";
+                    return;
+                }
 
-            var divisao = CalculoComissao.Calcular(cobranca.ValorCobrado.Value, dados.ComissaoTipo!, dados.ComissaoValor!.Value);
-            if (divisao == null)
-            {
-                preparada.Erro = "Pix não gerado: o valor da cobrança não cobre a comissão da plataforma.";
-                return;
+                divisao = CalculoComissao.Calcular(cobranca.ValorCobrado.Value, dados.ComissaoTipo!, dados.ComissaoValor!.Value);
+                if (divisao == null)
+                {
+                    preparada.Erro = "Pix não gerado: o valor da cobrança não cobre a comissão da plataforma.";
+                    return;
+                }
             }
 
             var txid = CobrancaCliente.TxidDe(cobranca.Id);
@@ -165,7 +189,8 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             // Minimo de 1 hora: disparo feito as 23:50 de um dia vencido nao pode sair com um Pix
             // que expira em 10 minutos.
             // O QR do Asaas continua pagavel depois do vencimento; quem faz valer esta validade e
-            // a BaixaCobrancaPix, cancelando no Asaas o que passou dela.
+            // a BaixaCobrancaPix, cancelando no Asaas o que passou dela. A order do Mercado Pago
+            // expira sozinha (expiration_time).
             if (expiraEm < agora.AddHours(1)) expiraEm = agora.AddHours(1);
 
             var nome = string.IsNullOrWhiteSpace(contato.NomeCliente) ? contato.NomeContato : contato.NomeCliente;
@@ -174,21 +199,29 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             {
                 // Contato sem documento (a Sebrecon nao tem o dos clientes) vai para o cliente
                 // padrao da empresa; o nome dele continua na descricao da cobranca.
+                var nomePagador = string.IsNullOrWhiteSpace(nome) ? contato.Telefone : nome!;
                 var pagador = DocumentoHelper.CpfCnpjValido(contato.CpfCnpj)
-                    ? new PagadorPix(string.IsNullOrWhiteSpace(nome) ? contato.Telefone : nome!, contato.CpfCnpj!, contato.Email)
-                    : dados.CarteiraExterna
-                        ? pagadorExterno ?? throw new PixException("a empresa não tem CNPJ válido no cadastro para usar como cliente padrão.")
-                        : await _pix.PagadorPadraoDaSubcontaAsync(dados.AsaasWalletId!);
+                    ? new PagadorPix(nomePagador, contato.CpfCnpj!, contato.Email)
+                    // O Mercado Pago nao exige documento do pagador, so e-mail (com fallback no
+                    // servico): nada de cliente padrao.
+                    : !provedor.SuportaSplit
+                        ? new PagadorPix(nomePagador, string.Empty, contato.Email)
+                        : dados.CarteiraExterna || !comSplit
+                            ? pagadorExterno ?? throw new PixException("a empresa não tem CNPJ válido no cadastro para usar como cliente padrão.")
+                            : await _pix.PagadorPadraoDaSubcontaAsync(dados.AsaasWalletId!);
 
-                var pix = await _pix.CriarCobrancaAsync(new NovaCobrancaPix(
+                var pix = await provedor.CriarCobrancaAsync(new NovaCobrancaPix(
                     txid, cobranca.ValorCobrado.Value, expiraEm.Date, descricao,
-                    pagador, dados.AsaasWalletId!, divisao.Repasse));
+                    pagador, divisao == null ? null : dados.AsaasWalletId, divisao?.Repasse));
                 cobranca.Txid = txid;
                 cobranca.PixIdExterno = pix.IdExterno;
                 cobranca.PixCopiaECola = pix.PixCopiaECola;
                 cobranca.PixExpiraEm = expiraEm;
-                cobranca.ValorComissao = divisao.Comissao;
-                cobranca.ValorRepasse = divisao.Repasse;
+                cobranca.ValorComissao = divisao?.Comissao;
+                cobranca.ValorRepasse = divisao?.Repasse;
+                cobranca.RecebidaNaPlataforma = divisao == null;
+                cobranca.Provedor = provedor.Nome;
+                cobranca.LinkPagamentoExterno = pix.LinkExterno;
                 preparada.LinkPagamento = _pix.LinkPagamento(txid);
                 preparada.UrlQrCode = _pix.UrlQrCode(txid);
             }
@@ -198,8 +231,8 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "AsaasPix: erro inesperado ao gerar Pix do contato {ContatoId}", contato.Id);
-                preparada.Erro = "Pix não gerado: erro inesperado ao falar com o Asaas.";
+                _logger.LogError(ex, "Pix {Provedor}: erro inesperado ao gerar Pix do contato {ContatoId}", provedor.Nome, contato.Id);
+                preparada.Erro = "Pix não gerado: erro inesperado ao falar com o provedor de pagamento.";
             }
         }
 
@@ -223,15 +256,15 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             {
                 try
                 {
-                    await _pix.CancelarCobrancaAsync(preparada.Cobranca.PixIdExterno!);
+                    await _provedores.Do(preparada.Cobranca.Provedor).CancelarCobrancaAsync(preparada.Cobranca.PixIdExterno!);
                 }
                 catch (Exception ex)
                 {
                     // A CobrancaCliente nao e gravada, entao a consulta periodica nao volta a
-                    // esse Pix: fica so no Asaas, pendente. Ninguem recebeu o codigo, entao o
+                    // esse Pix: fica so no provedor, pendente. Ninguem recebeu o codigo, entao o
                     // risco e baixo; o log da o id para cancelar pelo painel.
-                    _logger.LogWarning(ex, "AsaasPix: nao foi possivel cancelar a cobranca {IdExterno} (txid {Txid}) de mensagem nao enviada (empresa {EmpresaId})",
-                        preparada.Cobranca.PixIdExterno, preparada.Cobranca.Txid, empresaId);
+                    _logger.LogWarning(ex, "Pix {Provedor}: nao foi possivel cancelar a cobranca {IdExterno} (txid {Txid}) de mensagem nao enviada (empresa {EmpresaId})",
+                        preparada.Cobranca.Provedor, preparada.Cobranca.PixIdExterno, preparada.Cobranca.Txid, empresaId);
                 }
             }
         }

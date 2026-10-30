@@ -53,7 +53,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.SimulaPagamentoSa
                     return response;
                 }
 
-                if (cobranca.Status != StatusCobrancaCliente.Pendente || string.IsNullOrEmpty(cobranca.PixIdExterno) || string.IsNullOrEmpty(cobranca.Txid))
+                // O sandbox do Mercado Pago nao tem rota para "pagar" uma order: o teste e com
+                // credenciais e usuario comprador de teste.
+                if (cobranca.Status != StatusCobrancaCliente.Pendente || string.IsNullOrEmpty(cobranca.PixIdExterno) || string.IsNullOrEmpty(cobranca.Txid)
+                    || (cobranca.Provedor ?? ProvedorCobranca.Asaas) != ProvedorCobranca.Asaas)
                 {
                     response.AddErro("Só dá para simular o pagamento de uma cobrança pendente com Pix do Asaas.");
                     return response;

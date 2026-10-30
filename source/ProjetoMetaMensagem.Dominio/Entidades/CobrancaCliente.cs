@@ -45,9 +45,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? UtmContentCakto { get; set; }
         public string? EventoIdCakto { get; set; }
 
-        // Pix gerado na conta Asaas da plataforma (ver BD/52 e BD/54). Nulos quando a empresa nao
-        // tem cobranca Pix ativa -- a cobranca continua existindo, so sem baixa automatica.
-        // Txid e nosso (externalReference no Asaas); PixIdExterno e o id da cobranca no Asaas.
+        // Pix gerado na conta da plataforma no provedor ativo (ver BD/52, BD/54 e BD/58). Nulos
+        // quando a empresa nao tem cobranca Pix ativa -- a cobranca continua existindo, so sem
+        // baixa automatica. Txid e nosso (externalReference no Asaas, external_reference no
+        // Mercado Pago); PixIdExterno e o id da cobranca no Asaas ou da order no Mercado Pago.
         public string? Txid { get; set; }
         public string? PixIdExterno { get; set; }
         public string? PixCopiaECola { get; set; }
@@ -63,6 +64,18 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // depois nao altera cobranca ja enviada.
         public decimal? ValorComissao { get; set; }
         public decimal? ValorRepasse { get; set; }
+
+        // Pix gerado sem split, com o valor inteiro na conta da plataforma (ver BD/57): comissao e
+        // repasse ficam nulos e o acerto com a empresa e feito por fora. Snapshot do disparo.
+        public bool RecebidaNaPlataforma { get; set; }
+
+        // Quem gerou o Pix (ProvedorCobranca, ver BD/58): a baixa e o cancelamento voltam nele
+        // mesmo depois de o provedor ativo mudar. Nulo = Asaas (cobrancas anteriores a coluna).
+        public string? Provedor { get; set; }
+
+        // Pagina de pagamento do proprio provedor (ticket_url do Mercado Pago). O link enviado ao
+        // cliente continua sendo a nossa pagina /pix/{txid}, que aponta para esta.
+        public string? LinkPagamentoExterno { get; set; }
 
         // Txid no formato aceito pelo Bacen (26 a 35 alfanumericos): o proprio Id sem hifens.
         public static string TxidDe(Guid id) => id.ToString("N");

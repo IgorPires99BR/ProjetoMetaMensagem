@@ -37,6 +37,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
             PagoViaPix = cobranca.ValorPago != null;
             ValorComissao = cobranca.ValorComissao;
             ValorRepasse = cobranca.ValorRepasse;
+            RecebidaNaPlataforma = cobranca.RecebidaNaPlataforma;
+            Provedor = cobranca.Txid != null ? cobranca.Provedor ?? Interfaces.Servicos.ProvedorCobranca.Asaas : null;
             LinkPagamento = cobranca.Txid != null ? linkPagamento : null;
         }
 
@@ -53,6 +55,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
         // Split do Pix: o que fica com a plataforma e o que vai para a subconta da empresa.
         public decimal? ValorComissao { get; set; }
         public decimal? ValorRepasse { get; set; }
+
+        // Sem split: o valor inteiro caiu na conta da Contact Solution (acerto feito por fora).
+        public bool RecebidaNaPlataforma { get; set; }
+
+        // Quem gerou o Pix (ASAAS ou MERCADOPAGO); nulo sem Pix.
+        public string? Provedor { get; set; }
 
         // Mesma pagina enviada ao cliente no botao do WhatsApp: a empresa pode reenviar o link
         // ou conferir o que o cliente esta vendo. So mostra o que o cliente ja recebeu.

@@ -80,7 +80,7 @@ public class CobrancaPixTeste
 
         var cobranca = new CobrancaCliente { Txid = "abc", PixCopiaECola = "00020126PIX" };
         var preparada = new CobrancaPreparada { Cobranca = cobranca, LinkPagamento = "https://x/pix/abc" };
-        var erro = new PreparadorCobrancaPix(null!, null!, null!).AplicarNasVariaveis(valores, preparada);
+        var erro = new PreparadorCobrancaPix(null!, null!, null!, null!).AplicarNasVariaveis(valores, preparada);
 
         Assert.Null(erro);
         Assert.Equal(new[] { "00020126PIX", "https://x/pix/abc", "texto fixo" }, valores);
@@ -92,7 +92,7 @@ public class CobrancaPixTeste
         var valores = new List<string> { ResolvedorDeVariaveis.MarcadorPixCopiaECola };
         var semPix = new CobrancaPreparada { Cobranca = new CobrancaCliente() };
 
-        var erro = new PreparadorCobrancaPix(null!, null!, null!).AplicarNasVariaveis(valores, semPix);
+        var erro = new PreparadorCobrancaPix(null!, null!, null!, null!).AplicarNasVariaveis(valores, semPix);
 
         Assert.NotNull(erro);
         Assert.Equal(ResolvedorDeVariaveis.MarcadorPixCopiaECola, valores[0]);

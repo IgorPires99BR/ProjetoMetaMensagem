@@ -3,6 +3,7 @@ using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using System;
 using System.Threading.Tasks;
 
@@ -11,11 +12,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios
     public class ObtemDadosBancariosHandler : IRequestHandler<ObtemDadosBancariosCommand, Response<ObtemDadosBancariosResult>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IProvedoresCobranca _provedores;
         private readonly ILogger<ObtemDadosBancariosHandler> _logger;
 
-        public ObtemDadosBancariosHandler(IUnitOfWork unitOfWork, ILogger<ObtemDadosBancariosHandler> logger)
+        public ObtemDadosBancariosHandler(IUnitOfWork unitOfWork, IProvedoresCobranca provedores, ILogger<ObtemDadosBancariosHandler> logger)
         {
             _unitOfWork = unitOfWork;
+            _provedores = provedores;
             _logger = logger;
         }
 
@@ -39,7 +42,18 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios
                 }
 
                 var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(command.EmpresaId);
-                response.AddValue(new ObtemDadosBancariosResult(command.EmpresaId, dados));
+                var resultado = new ObtemDadosBancariosResult(command.EmpresaId, dados);
+                try
+                {
+                    resultado.ProvedorAtivo = _provedores.Ativo.Nome;
+                    resultado.ProvedorFazSplit = _provedores.Ativo.SuportaSplit;
+                }
+                catch (PixException)
+                {
+                    // Cobranca:Provedor invalido: a tela segue com o padrao (exige subconta) e o
+                    // erro aparece ao salvar.
+                }
+                response.AddValue(resultado);
             }
             catch (Exception ex)
             {

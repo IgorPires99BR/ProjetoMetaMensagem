@@ -10,7 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     // Erros vem como PixException, com mensagem que pode ser mostrada ao usuario.
     public interface IPixService
     {
-        // POST /customers (ou reaproveita o do mesmo CPF/CNPJ) + POST /payments com split +
+        // POST /customers (ou reaproveita o do mesmo CPF/CNPJ) + POST /payments (com split se houver repasse) +
         // GET /payments/{id}/pixQrCode.
         Task<PixGerado> CriarCobrancaAsync(NovaCobrancaPix cobranca);
 
@@ -55,22 +55,32 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
         string UrlQrCode(string txid);
     }
 
-    // Quem paga: o Asaas exige nome e CPF/CNPJ para criar o customer. Telefone fica de fora: o
-    // do contato e o do WhatsApp (com DDI, as vezes fixo) e o Asaas recusaria o customer por ele.
+    // Quem paga: o Asaas exige nome e CPF/CNPJ para criar o customer; o Mercado Pago exige e-mail.
+    // Telefone fica de fora: o do contato e o do WhatsApp (com DDI, as vezes fixo) e o Asaas
+    // recusaria o customer por ele.
     public record PagadorPix(string Nome, string CpfCnpj, string? Email);
 
     // Repasse = parte da empresa (ValorCobrado - comissao), enviada para a subconta dela.
+    // WalletIdRepasse nulo = sem split, o valor inteiro fica na conta da plataforma (ver
+    // DadosBancariosEmpresa.RecebimentoNaPlataforma).
     // Txid vai no externalReference: e por ele que o webhook acha a CobrancaCliente.
     public record NovaCobrancaPix(string Txid, decimal Valor, DateTime Vencimento, string? Descricao,
-                                  PagadorPix Pagador, string WalletIdRepasse, decimal ValorRepasse);
+                                  PagadorPix Pagador, string? WalletIdRepasse, decimal? ValorRepasse);
 
-    public record PixGerado(string IdExterno, string PixCopiaECola, string Status);
+    // LinkExterno: pagina de pagamento do proprio provedor (ticket_url do Mercado Pago), oferecida
+    // na nossa pagina do Pix como alternativa.
+    public record PixGerado(string IdExterno, string PixCopiaECola, string Status, string? LinkExterno = null);
 
-    // Horario ja convertido para Brasilia.
-    public record ConsultaCobrancaPix(string Status, decimal? ValorPago, DateTime? PagoEm, string? EndToEndId)
+    // Horario ja convertido para Brasilia. Status e o do provedor, sem traducao; os padroes de
+    // PagaNoProvedor/AguardandoPagamento sao os do Asaas, os outros provedores informam os seus.
+    public record ConsultaCobrancaPix(string Status, decimal? ValorPago, DateTime? PagoEm, string? EndToEndId,
+                                      bool? PagaNoProvedor = null, bool? AguardandoPagamento = null)
     {
         // CONFIRMED no Pix e o bloqueio cautelar de ate 72h do Asaas: ainda nao e dinheiro recebido.
-        public bool Paga => Status == "RECEIVED" && ValorPago.HasValue;
+        public bool Paga => (PagaNoProvedor ?? Status == "RECEIVED") && ValorPago.HasValue;
+
+        // Ainda pagavel: so assim a cobranca vencida e cancelada no provedor.
+        public bool Pendente => AguardandoPagamento ?? Status is "PENDING" or "OVERDUE";
     }
 
     // Dados exigidos pelo Asaas para abrir a subconta. DataNascimento so para CPF, TipoEmpresa

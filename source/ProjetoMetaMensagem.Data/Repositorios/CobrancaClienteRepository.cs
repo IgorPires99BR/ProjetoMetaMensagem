@@ -23,12 +23,14 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                                              Valor, DataVencimento, Status, DataPagamento,
                                              UtmContentCakto, EventoIdCakto, DataCriacao,
                                              Txid, PixIdExterno, PixCopiaECola, PixExpiraEm, Multa, Juros, ValorCobrado,
-                                             ValorComissao, ValorRepasse)
+                                             ValorComissao, ValorRepasse, RecebidaNaPlataforma,
+                                             Provedor, LinkPagamentoExterno)
                 VALUES (@Id, @EmpresaId, @ContatoId, @TemplateId, @HistoricoDisparoId,
                         @Valor, @DataVencimento, @Status, @DataPagamento,
                         @UtmContentCakto, @EventoIdCakto, @DataCriacao,
                         @Txid, @PixIdExterno, @PixCopiaECola, @PixExpiraEm, @Multa, @Juros, @ValorCobrado,
-                        @ValorComissao, @ValorRepasse)";
+                        @ValorComissao, @ValorRepasse, @RecebidaNaPlataforma,
+                        @Provedor, @LinkPagamentoExterno)";
 
             await _session.Connection.ExecuteAsync(sql, cobranca, transaction: _session.Transaction);
         }

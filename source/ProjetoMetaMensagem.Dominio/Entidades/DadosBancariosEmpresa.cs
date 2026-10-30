@@ -24,6 +24,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? ComissaoTipo { get; set; }
         public decimal? ComissaoValor { get; set; }
 
+        // Definido so pelo admin da plataforma (ver BD/57). Pix sem split: o valor inteiro fica na
+        // conta Asaas da Contact Solution e o acerto com a empresa e feito por fora. Dispensa
+        // subconta e comissao, e vale mesmo se a empresa ja tiver subconta vinculada.
+        public bool RecebimentoNaPlataforma { get; set; }
+
         public bool CobrancaPixAtiva { get; set; }
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
