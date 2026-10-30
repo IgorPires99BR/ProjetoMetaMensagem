@@ -46,12 +46,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios
                 try
                 {
                     resultado.ProvedorAtivo = _provedores.Ativo.Nome;
-                    resultado.ProvedorFazSplit = _provedores.Ativo.SuportaSplit;
                 }
                 catch (PixException)
                 {
-                    // Cobranca:Provedor invalido: a tela segue com o padrao (exige subconta) e o
-                    // erro aparece ao salvar.
+                    // Cobranca:Provedor invalido: a tela segue sem o nome e o erro aparece ao salvar.
                 }
                 response.AddValue(resultado);
             }

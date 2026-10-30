@@ -21,7 +21,11 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
     public class AsaasPixService : IPixService, IProvedorCobranca
     {
         public string Nome => ProvedorCobranca.Asaas;
-        public bool SuportaSplit => true;
+        public bool ExigeCpfCnpjDoPagador => true;
+
+        // Tudo no Asaas e com a chave da plataforma (a divisao e o split da propria cobranca).
+        Task<ConsultaCobrancaPix> IProvedorCobranca.ConsultarCobrancaAsync(string idExterno, string? tokenConta) => ConsultarCobrancaAsync(idExterno);
+        Task IProvedorCobranca.CancelarCobrancaAsync(string idExterno, string? tokenConta) => CancelarCobrancaAsync(idExterno);
 
         private readonly AsaasConfiguration _config;
         private readonly ILogger<AsaasPixService> _logger;

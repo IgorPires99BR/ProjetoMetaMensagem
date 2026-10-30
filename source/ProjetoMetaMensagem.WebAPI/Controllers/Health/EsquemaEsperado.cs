@@ -133,6 +133,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/58", "CobrancaCliente", "Provedor"),
             new("BD/58", "CobrancaCliente", "LinkPagamentoExterno"),
+
+            new("BD/59", "DadosBancariosEmpresa", "ProvedorRecebimento"),
+            new("BD/59", "DadosBancariosEmpresa", "MercadoPagoUserId"),
         };
     }
 }

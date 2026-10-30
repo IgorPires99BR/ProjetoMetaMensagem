@@ -7,6 +7,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
     {
         public SalvaDadosBancariosValidator()
         {
+            RuleFor(x => x.ProvedorRecebimento)
+                .Must(p => p == null || Interfaces.Servicos.ProvedorCobranca.Valido(p))
+                .WithMessage("Escolha se a empresa recebe pelo Mercado Pago ou pelo Asaas.");
+
             RuleFor(x => x.EmpresaId)
                 .NotEmpty().WithMessage("Não foi possível identificar a empresa.");
 

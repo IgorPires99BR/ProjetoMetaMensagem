@@ -31,6 +31,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
             try
             {
                 command.ComissaoTipo = string.IsNullOrWhiteSpace(command.ComissaoTipo) ? null : command.ComissaoTipo.Trim().ToUpperInvariant();
+                command.ProvedorRecebimento = string.IsNullOrWhiteSpace(command.ProvedorRecebimento) ? null : command.ProvedorRecebimento.Trim().ToUpperInvariant();
 
                 var validateResult = new SalvaDadosBancariosValidator().Validate(command);
                 if (!validateResult.IsValid)
@@ -50,6 +51,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
 
                 dados.CobrancaPixAtiva = command.CobrancaPixAtiva;
 
+                // A propria empresa escolhe onde recebe; nulo = manter.
+                if (command.ProvedorRecebimento != null)
+                    dados.ProvedorRecebimento = command.ProvedorRecebimento;
+
                 if (command.SolicitanteEhAdminDaPlataforma)
                 {
                     dados.ComissaoTipo = command.ComissaoTipo;
@@ -58,23 +63,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
                         dados.RecebimentoNaPlataforma = command.RecebimentoNaPlataforma.Value;
                 }
 
-                // Sem split (empresa recebendo na conta da plataforma, ou provedor ativo sem split,
-                // como o Mercado Pago) subconta e comissao nao entram.
-                var exigeSubconta = dados.CobrancaPixAtiva && !dados.RecebimentoNaPlataforma && ProvedorAtivoFazSplit();
-
-                if (exigeSubconta && !dados.TemSubconta)
-                {
-                    response.AddErro("Crie a subconta Asaas da empresa antes de ativar a cobrança via Pix: é nela que o valor das cobranças é depositado.");
-                    return response;
-                }
-
-                if (exigeSubconta && !dados.ComissaoDefinida)
-                {
-                    response.AddErro(command.SolicitanteEhAdminDaPlataforma
-                        ? "Defina a comissão da plataforma para ativar a cobrança via Pix."
-                        : "A comissão da plataforma para esta empresa ainda não foi definida. Fale com o suporte da Contact Solution para ativar a cobrança via Pix.");
-                    return response;
-                }
+                // Nada mais barra a ativacao: sem conta da empresa ou sem comissao, a cobranca sai
+                // pela conta da Contact Solution (DestinoRecebimento). A tela mostra qual vale.
 
                 _unitOfWork.BeginTransaction();
                 try
@@ -107,14 +97,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
             }
 
             return response;
-        }
-
-        // Provedor mal configurado: na duvida exige a subconta, o erro de configuracao aparece na
-        // conferencia logo depois.
-        private bool ProvedorAtivoFazSplit()
-        {
-            try { return _provedores.Ativo.SuportaSplit; }
-            catch (PixException) { return true; }
         }
 
         // Credencial da plataforma errada so apareceria no primeiro disparo, com cada cliente

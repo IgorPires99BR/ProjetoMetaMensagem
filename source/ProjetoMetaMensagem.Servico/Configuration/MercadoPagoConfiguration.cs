@@ -27,7 +27,15 @@ namespace ProjetoMetaMensagem.Servico.Configuration
         // ser pago por qualquer pessoa e a baixa casa pelo external_reference, nao pelo pagador.
         public string? EmailPagadorPadrao { get; set; }
 
+        // OAuth da conta das empresas (cobranca em nome delas, com comissao). A URL de retorno
+        // precisa estar cadastrada IGUAL nas "URLs de redirecionamento" do app no painel; depois
+        // dela a API devolve o usuario para a tela de Empresas do front.
+        public string UrlAutorizacao { get; set; } = "https://auth.mercadopago.com/authorization";
+        public string UrlRetornoOAuth { get; set; } = "https://contactsolution.onrender.com/api/mercadopago/oauth/retorno";
+        public string UrlTelaEmpresas { get; set; } = "https://contactsolution.com.br/empresas";
+
         public bool Configurada => !string.IsNullOrWhiteSpace(AccessToken);
+        public bool OAuthConfigurado => !string.IsNullOrWhiteSpace(ClientId) && !string.IsNullOrWhiteSpace(ClientSecret);
     }
 
     // Secao Cobranca: qual provedor gera os Pix novos (ver ProvedorCobranca). As cobrancas ja

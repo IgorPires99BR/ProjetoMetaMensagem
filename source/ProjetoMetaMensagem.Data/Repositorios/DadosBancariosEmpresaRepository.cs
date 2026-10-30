@@ -2,6 +2,7 @@ using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Data.Repositorios
@@ -27,7 +28,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         {
             var sql = @"
                 UPDATE DadosBancariosEmpresa
-                SET AsaasContaId = @AsaasContaId,
+                SET ProvedorRecebimento = @ProvedorRecebimento,
+                    MercadoPagoUserId = @MercadoPagoUserId,
+                    MercadoPagoAccessTokenCriptografado = @MercadoPagoAccessTokenCriptografado,
+                    MercadoPagoRefreshTokenCriptografado = @MercadoPagoRefreshTokenCriptografado,
+                    MercadoPagoTokenExpiraEm = @MercadoPagoTokenExpiraEm,
+                    MercadoPagoConectadoEm = @MercadoPagoConectadoEm,
+                    AsaasContaId = @AsaasContaId,
                     AsaasWalletId = @AsaasWalletId,
                     AsaasApiKeyCriptografada = @AsaasApiKeyCriptografada,
                     AsaasContaCriadaEm = @AsaasContaCriadaEm,
@@ -40,13 +47,29 @@ namespace ProjetoMetaMensagem.Data.Repositorios
 
                 IF @@ROWCOUNT = 0
                     INSERT INTO DadosBancariosEmpresa (
-                        EmpresaId, AsaasContaId, AsaasWalletId, AsaasApiKeyCriptografada, AsaasContaCriadaEm,
+                        EmpresaId, ProvedorRecebimento,
+                        MercadoPagoUserId, MercadoPagoAccessTokenCriptografado, MercadoPagoRefreshTokenCriptografado,
+                        MercadoPagoTokenExpiraEm, MercadoPagoConectadoEm,
+                        AsaasContaId, AsaasWalletId, AsaasApiKeyCriptografada, AsaasContaCriadaEm,
                         ComissaoTipo, ComissaoValor, RecebimentoNaPlataforma, CobrancaPixAtiva, DataCriacao)
                     VALUES (
-                        @EmpresaId, @AsaasContaId, @AsaasWalletId, @AsaasApiKeyCriptografada, @AsaasContaCriadaEm,
+                        @EmpresaId, @ProvedorRecebimento,
+                        @MercadoPagoUserId, @MercadoPagoAccessTokenCriptografado, @MercadoPagoRefreshTokenCriptografado,
+                        @MercadoPagoTokenExpiraEm, @MercadoPagoConectadoEm,
+                        @AsaasContaId, @AsaasWalletId, @AsaasApiKeyCriptografada, @AsaasContaCriadaEm,
                         @ComissaoTipo, @ComissaoValor, @RecebimentoNaPlataforma, @CobrancaPixAtiva, GETDATE());";
 
             await _session.Connection.ExecuteAsync(sql, dados, transaction: _session.Transaction);
+        }
+
+        public async Task<IEnumerable<DadosBancariosEmpresa>> ObterComMercadoPagoVencendo(DateTime ate)
+        {
+            var sql = @"
+                SELECT * FROM DadosBancariosEmpresa
+                WHERE MercadoPagoRefreshTokenCriptografado IS NOT NULL
+                  AND (MercadoPagoTokenExpiraEm IS NULL OR MercadoPagoTokenExpiraEm <= @Ate)";
+
+            return await _session.Connection.QueryAsync<DadosBancariosEmpresa>(sql, new { Ate = ate }, transaction: _session.Transaction);
         }
     }
 }

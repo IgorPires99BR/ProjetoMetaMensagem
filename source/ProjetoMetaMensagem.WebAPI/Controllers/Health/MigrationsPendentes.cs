@@ -231,6 +231,18 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/58", "CobrancaCliente", "LinkPagamentoExterno",
                 "ALTER TABLE CobrancaCliente ADD LinkPagamentoExterno NVARCHAR(500) NULL;"),
+
+            new("BD/59", "DadosBancariosEmpresa", "ProvedorRecebimento",
+                @"ALTER TABLE DadosBancariosEmpresa ADD ProvedorRecebimento NVARCHAR(20) NOT NULL
+                    CONSTRAINT DF_DadosBancariosEmpresa_ProvedorRecebimento DEFAULT ('MERCADOPAGO');"),
+
+            new("BD/59", "DadosBancariosEmpresa", "MercadoPagoUserId",
+                @"ALTER TABLE DadosBancariosEmpresa ADD
+                    MercadoPagoUserId NVARCHAR(50) NULL,
+                    MercadoPagoAccessTokenCriptografado NVARCHAR(MAX) NULL,
+                    MercadoPagoRefreshTokenCriptografado NVARCHAR(MAX) NULL,
+                    MercadoPagoTokenExpiraEm DATETIME NULL,
+                    MercadoPagoConectadoEm DATETIME NULL;"),
         };
     }
 }

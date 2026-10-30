@@ -1,5 +1,6 @@
 using ProjetoMetaMensagem.Dominio.Entidades;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
@@ -9,5 +10,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<DadosBancariosEmpresa?> ObterPorEmpresa(Guid empresaId);
         // Insere ou atualiza: e uma linha por empresa, criada no primeiro salvamento.
         Task Salvar(DadosBancariosEmpresa dados);
+
+        // Contas Mercado Pago conectadas cujo token vence ate "ate" (job de renovacao).
+        Task<IEnumerable<DadosBancariosEmpresa>> ObterComMercadoPagoVencendo(DateTime ate);
     }
 }

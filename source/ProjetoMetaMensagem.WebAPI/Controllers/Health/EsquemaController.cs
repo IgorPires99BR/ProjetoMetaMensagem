@@ -69,6 +69,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 new { chave = "MercadoPago:AccessToken", configurado = Existe("MercadoPago:AccessToken"), usadoPara = "Gerar e consultar as orders Pix das cobrancas aos clientes (provedor ativo). Sem isto nenhum Pix sai." },
                 new { chave = "MercadoPago:WebhookSecret", configurado = Existe("MercadoPago:WebhookSecret"), usadoPara = "Validar a assinatura do webhook do Mercado Pago. Sem isto o webhook aceita qualquer chamada (a baixa ainda reconsulta a order)." },
                 new { chave = "MercadoPago:EmailPagadorPadrao", configurado = Existe("MercadoPago:EmailPagadorPadrao"), usadoPara = "E-mail exigido pelo Mercado Pago quando o contato nao tem e-mail. Sem isto esses contatos nao recebem Pix." },
+                new { chave = "MercadoPago:ClientId", configurado = Existe("MercadoPago:ClientId"), usadoPara = "App do OAuth: as empresas conectam a conta Mercado Pago delas. Sem isto todas cobram pela conta da Contact Solution." },
+                new { chave = "MercadoPago:ClientSecret", configurado = Existe("MercadoPago:ClientSecret"), usadoPara = "App do OAuth (troca do code e renovacao dos tokens das empresas)." },
                 new { chave = "Criptografia:Chave", configurado = Existe("Criptografia:Chave"), usadoPara = "Guardar a apiKey das subcontas Asaas. Sem isto nao da para criar subconta." },
             };
 

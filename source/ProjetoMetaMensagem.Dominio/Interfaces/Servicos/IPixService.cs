@@ -60,12 +60,13 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Servicos
     // recusaria o customer por ele.
     public record PagadorPix(string Nome, string CpfCnpj, string? Email);
 
-    // Repasse = parte da empresa (ValorCobrado - comissao), enviada para a subconta dela.
-    // WalletIdRepasse nulo = sem split, o valor inteiro fica na conta da plataforma (ver
-    // DadosBancariosEmpresa.RecebimentoNaPlataforma).
+    // Asaas: Repasse = parte da empresa (ValorCobrado - comissao), enviada para a subconta dela.
+    // Mercado Pago: TokenConta = conta da empresa, que cria a order; Comissao vai no marketplace_fee.
+    // Sem nenhum dos dois o valor inteiro fica na conta da plataforma (ver DestinoRecebimento).
     // Txid vai no externalReference: e por ele que o webhook acha a CobrancaCliente.
     public record NovaCobrancaPix(string Txid, decimal Valor, DateTime Vencimento, string? Descricao,
-                                  PagadorPix Pagador, string? WalletIdRepasse, decimal? ValorRepasse);
+                                  PagadorPix Pagador, string? WalletIdRepasse, decimal? ValorRepasse,
+                                  string? TokenConta = null, decimal? Comissao = null);
 
     // LinkExterno: pagina de pagamento do proprio provedor (ticket_url do Mercado Pago), oferecida
     // na nossa pagina do Pix como alternativa.

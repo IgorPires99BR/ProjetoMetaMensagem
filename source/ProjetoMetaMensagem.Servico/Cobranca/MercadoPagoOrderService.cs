@@ -40,13 +40,22 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
         }
 
         public string Nome => ProvedorCobranca.MercadoPago;
-        public bool SuportaSplit => false;
+        public bool ExigeCpfCnpjDoPagador => false;
 
         public async Task<PixGerado> CriarCobrancaAsync(NovaCobrancaPix cobranca)
         {
-            // Repasse pedido aqui seria silenciosamente ignorado e a empresa nao receberia.
+            // Split do Asaas pedido aqui seria silenciosamente ignorado e a empresa nao receberia.
             if (!string.IsNullOrWhiteSpace(cobranca.WalletIdRepasse))
-                throw new PixException("o Mercado Pago não faz repasse automático para a subconta da empresa.");
+                throw new PixException("o Mercado Pago não repassa para subconta Asaas.");
+
+            // Comissao sem a conta da empresa cairia na propria conta da plataforma: nao e comissao.
+            var emNomeDaEmpresa = !string.IsNullOrWhiteSpace(cobranca.TokenConta);
+            if (cobranca.Comissao.HasValue && !emNomeDaEmpresa)
+                throw new PixException("a comissão só vale para cobrança na conta Mercado Pago da empresa.");
+            if (emNomeDaEmpresa && !cobranca.Comissao.HasValue)
+                throw new PixException("a cobrança na conta Mercado Pago da empresa precisa da comissão da plataforma.");
+            if (cobranca.Comissao >= cobranca.Valor)
+                throw new PixException("a comissão da plataforma não pode ser igual ou maior que o valor da cobrança.");
 
             var email = EmailValido(cobranca.Pagador.Email) ? cobranca.Pagador.Email!.Trim()
                       : EmailValido(_config.EmailPagadorPadrao) ? _config.EmailPagadorPadrao!.Trim()
@@ -79,9 +88,14 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 }
             };
 
+            // Order na conta da empresa: o Mercado Pago tira a taxa dele do valor da empresa e
+            // credita o marketplace_fee inteiro na conta da plataforma (dona do app do OAuth).
+            if (emNomeDaEmpresa)
+                corpo["marketplace_fee"] = Valor(cobranca.Comissao!.Value);
+
             // Idempotencia pelo txid: um retry depois de timeout devolve a mesma order em vez de
             // abrir um segundo Pix para a mesma cobranca.
-            var order = await EnviarAsync(HttpMethod.Post, "/v1/orders", corpo, "gerar a cobrança", cobranca.Txid);
+            var order = await EnviarAsync(HttpMethod.Post, "/v1/orders", corpo, "gerar a cobrança", cobranca.Txid, cobranca.TokenConta);
             var id = order["id"]?.ToString();
             if (string.IsNullOrWhiteSpace(id))
                 throw new PixException("O Mercado Pago criou a order mas não devolveu o identificador dela.");
@@ -91,7 +105,7 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             if (string.IsNullOrWhiteSpace(copiaECola))
             {
                 // Order sem Pix nunca vai ser enviada: nao pode ficar aberta.
-                try { await CancelarCobrancaAsync(id); }
+                try { await CancelarCobrancaAsync(id, cobranca.TokenConta); }
                 catch (Exception ex) { _logger.LogWarning(ex, "MercadoPago: order {IdExterno} ficou aberta sem Pix", id); }
                 throw new PixException($"O Mercado Pago não gerou o código Pix (situação da order: {order["status"]}/{order["status_detail"]}).");
             }
@@ -99,9 +113,10 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             return new PixGerado(id, copiaECola, order["status"]?.ToString() ?? string.Empty, metodo?["ticket_url"]?.ToString());
         }
 
-        public async Task<ConsultaCobrancaPix> ConsultarCobrancaAsync(string idExterno)
+        // A order da conta da empresa so e visivel com o token dela.
+        public async Task<ConsultaCobrancaPix> ConsultarCobrancaAsync(string idExterno, string? tokenConta)
         {
-            var order = await EnviarAsync(HttpMethod.Get, $"/v1/orders/{Uri.EscapeDataString(idExterno)}", null, "consultar a cobrança");
+            var order = await EnviarAsync(HttpMethod.Get, $"/v1/orders/{Uri.EscapeDataString(idExterno)}", null, "consultar a cobrança", null, tokenConta);
 
             var status = order["status"]?.ToString() ?? string.Empty;
             var detalhe = order["status_detail"]?.ToString() ?? string.Empty;
@@ -123,9 +138,9 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 PagaNoProvedor: paga, AguardandoPagamento: status == "action_required");
         }
 
-        public async Task CancelarCobrancaAsync(string idExterno)
+        public async Task CancelarCobrancaAsync(string idExterno, string? tokenConta)
         {
-            await EnviarAsync(HttpMethod.Post, $"/v1/orders/{Uri.EscapeDataString(idExterno)}/cancel", null, "cancelar a cobrança", $"cancelar-{idExterno}");
+            await EnviarAsync(HttpMethod.Post, $"/v1/orders/{Uri.EscapeDataString(idExterno)}/cancel", null, "cancelar a cobrança", $"cancelar-{idExterno}", tokenConta);
         }
 
         public async Task TestarCredenciaisAsync()
@@ -165,13 +180,16 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
             catch (FormatException) { return false; }
         }
 
-        private async Task<JObject> EnviarAsync(HttpMethod metodo, string caminho, JObject? corpo, string operacao, string? chaveIdempotencia = null)
+        // tokenConta informado = chamada em nome da conta da empresa; sem ele, conta da plataforma.
+        private async Task<JObject> EnviarAsync(HttpMethod metodo, string caminho, JObject? corpo, string operacao,
+                                                string? chaveIdempotencia = null, string? tokenConta = null)
         {
-            if (!_config.Configurada)
+            var daEmpresa = !string.IsNullOrWhiteSpace(tokenConta);
+            if (!daEmpresa && !_config.Configurada)
                 throw new PixException("A integração com o Mercado Pago não está configurada no servidor (MercadoPago:AccessToken). Avise o suporte.");
 
             using var requisicao = new HttpRequestMessage(metodo, _config.UrlApi.TrimEnd('/') + caminho);
-            requisicao.Headers.TryAddWithoutValidation("Authorization", $"Bearer {_config.AccessToken!.Trim()}");
+            requisicao.Headers.TryAddWithoutValidation("Authorization", $"Bearer {(daEmpresa ? tokenConta! : _config.AccessToken!).Trim()}");
             if (chaveIdempotencia != null)
                 requisicao.Headers.TryAddWithoutValidation("X-Idempotency-Key", chaveIdempotencia);
             if (corpo != null)
@@ -195,7 +213,9 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 if ((int)resposta.StatusCode == 401)
                 {
                     _logger.LogWarning("MercadoPago: HTTP 401 ao {Operacao}", operacao);
-                    throw new PixException("O Mercado Pago recusou o access token da plataforma. Avise o suporte.", 401);
+                    throw new PixException(daEmpresa
+                        ? "O Mercado Pago recusou a autorização da conta da empresa (pode ter sido revogada). Conecte a conta Mercado Pago de novo nos dados bancários."
+                        : "O Mercado Pago recusou o access token da plataforma. Avise o suporte.", 401);
                 }
 
                 if (!resposta.IsSuccessStatusCode)

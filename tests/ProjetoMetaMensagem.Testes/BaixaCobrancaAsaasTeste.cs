@@ -277,9 +277,96 @@ public class BaixaCobrancaAsaasTeste
         Assert.Empty(cenario.Pix.PagamentosSimulados);
     }
 
+    // --- Cobranca para terceiro: conta da empresa recebe, a plataforma fica com a comissao ---
+
+    [Fact]
+    public async Task Empresa_com_Mercado_Pago_conectado_e_comissao_cobra_em_nome_dela_e_a_plataforma_so_fica_com_a_comissao()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+
+        var (asaas, preparada) = await PrepararPara(cpfCnpj: "52998224725", email: "maria@exemplo.com",
+            ajustar: ContaMercadoPagoConectada, outros: mp);
+
+        Assert.True(preparada.TemPix, preparada.Erro);
+        var criada = Assert.Single(mp.Criadas);
+        Assert.Equal("APP_USR-da-empresa", criada.TokenConta);
+        Assert.Equal(40.50m, criada.Comissao);        // 10% de 405
+        Assert.Null(criada.WalletIdRepasse);
+        Assert.Empty(asaas.Criadas);
+
+        Assert.Equal(ProvedorCobranca.MercadoPago, preparada.Cobranca.Provedor);
+        Assert.False(preparada.Cobranca.RecebidaNaPlataforma);
+        Assert.Equal(40.50m, preparada.Cobranca.ValorComissao);
+        Assert.Equal(364.50m, preparada.Cobranca.ValorRepasse);
+    }
+
+    [Fact]
+    public async Task Empresa_sem_comissao_definida_cobra_pela_conta_da_Contact_Solution()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+
+        var (_, preparada) = await PrepararPara(cpfCnpj: "52998224725", email: "maria@exemplo.com", ativo: mp,
+            ajustar: d => { ContaMercadoPagoConectada(d); d.ComissaoTipo = null; d.ComissaoValor = null; });
+
+        var criada = Assert.Single(mp.Criadas);
+        Assert.Null(criada.TokenConta);
+        Assert.Null(criada.Comissao);
+        Assert.True(preparada.Cobranca.RecebidaNaPlataforma);
+    }
+
+    [Fact]
+    public async Task Autorizacao_do_Mercado_Pago_vencida_cobra_pela_conta_da_Contact_Solution()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+
+        var (_, preparada) = await PrepararPara(cpfCnpj: "52998224725", email: "maria@exemplo.com", ativo: mp,
+            ajustar: d => { ContaMercadoPagoConectada(d); d.MercadoPagoTokenExpiraEm = new DateTime(2026, 10, 1); });
+
+        Assert.Null(Assert.Single(mp.Criadas).TokenConta);
+        Assert.True(preparada.Cobranca.RecebidaNaPlataforma);
+    }
+
+    [Fact]
+    public async Task So_a_conta_escolhida_vale_Asaas_escolhido_sem_subconta_nao_usa_o_Mercado_Pago_conectado()
+    {
+        var mp = new MercadoPagoFalso("action_required");
+
+        var (_, preparada) = await PrepararPara(cpfCnpj: "52998224725", email: "maria@exemplo.com", ativo: mp, semSubconta: true,
+            ajustar: d => { ContaMercadoPagoConectada(d); d.ProvedorRecebimento = ProvedorCobranca.Asaas; });
+
+        Assert.Null(Assert.Single(mp.Criadas).TokenConta);
+        Assert.True(preparada.Cobranca.RecebidaNaPlataforma);
+    }
+
+    [Fact]
+    public async Task Baixa_de_order_feita_na_conta_da_empresa_consulta_com_o_token_dela()
+    {
+        var mp = new MercadoPagoFalso("processed");
+        var dados = new DadosBancariosEmpresa { EmpresaId = Guid.NewGuid() };
+        ContaMercadoPagoConectada(dados);
+        var cenario = new Cenario(statusNoAsaas: "PENDING", ativo: mp, provedorDaCobranca: ProvedorCobranca.MercadoPago, dadosDaEmpresa: dados);
+
+        await cenario.Baixa.ProcessarWebhookAsync(new[] { cenario.Cobranca.Txid! });
+
+        Assert.Equal(new string?[] { "APP_USR-da-empresa" }, mp.TokensUsados);
+        Assert.Equal(StatusCobrancaCliente.Paga, cenario.Cobranca.Status);
+    }
+
+    [Fact]
+    public async Task Baixa_de_order_da_Contact_Solution_consulta_com_o_token_da_plataforma()
+    {
+        var mp = new MercadoPagoFalso("processed");
+        var cenario = new Cenario(statusNoAsaas: "PENDING", ativo: mp, provedorDaCobranca: ProvedorCobranca.MercadoPago);
+
+        await cenario.Baixa.ProcessarWebhookAsync(new[] { cenario.Cobranca.Txid! });
+
+        Assert.Equal(new string?[] { null }, mp.TokensUsados);
+    }
+
     private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj, bool carteiraExterna = false,
         string cnpjEmpresa = "19.183.412/0001-32", bool semJuros = false, bool recebimentoNaPlataforma = false, bool semSubconta = false,
-        IProvedorCobranca? ativo = null, string? email = null)
+        IProvedorCobranca? ativo = null, string? email = null, string provedorRecebimento = ProvedorCobranca.Asaas,
+        Action<DadosBancariosEmpresa>? ajustar = null, params IProvedorCobranca[] outros)
     {
         var empresaId = Guid.NewGuid();
         var contato = new Contato
@@ -291,18 +378,40 @@ public class BaixaCobrancaAsaasTeste
         var dados = new DadosBancariosEmpresa
         {
             EmpresaId = empresaId, CobrancaPixAtiva = true, RecebimentoNaPlataforma = recebimentoNaPlataforma,
+            ProvedorRecebimento = provedorRecebimento,
             AsaasWalletId = semSubconta ? null : "wal_sebrecon",
             AsaasContaId = carteiraExterna || semSubconta ? null : "acc_sebrecon",
             ComissaoTipo = semSubconta ? null : DadosBancariosEmpresa.ComissaoFixa, ComissaoValor = semSubconta ? null : 3.50m
         };
+        ajustar?.Invoke(dados);
         var pix = new PixFalso("PENDING");
         var uow = new UnitOfWorkFalso(new CobrancaRepositorioFalso(new CobrancaCliente()), new DadosBancariosFalso(dados),
             new EmpresaFalsa(new Empresa { Id = empresaId, Nome = "Sebrecon", Cnpj = cnpjEmpresa }));
 
-        var preparadas = await new PreparadorCobrancaPix(uow, pix, new ProvedoresFalsos(ativo ?? pix, pix), NullLogger<PreparadorCobrancaPix>.Instance)
+        var preparadas = await new PreparadorCobrancaPix(uow, pix, new ProvedoresFalsos(ativo ?? pix, outros.Append(pix).ToArray()),
+                new CriptografiaFalsa(), NullLogger<PreparadorCobrancaPix>.Instance)
             .PrepararAsync(empresaId, new Template { Id = Guid.NewGuid() }, new[] { contato }, new DateTime(2026, 10, 14, 10, 0, 0));
 
         return (pix, preparadas[contato.Id]);
+    }
+
+    // Criptografia reversivel e visivel: o teste confere qual token chegou ao provedor.
+    private class CriptografiaFalsa : ICriptografiaService
+    {
+        public bool Configurada => true;
+        public string Criptografar(string textoPuro) => "cripto:" + textoPuro;
+        public string Descriptografar(string textoCriptografado) => textoCriptografado.Replace("cripto:", "");
+    }
+
+    private static void ContaMercadoPagoConectada(DadosBancariosEmpresa dados)
+    {
+        dados.ProvedorRecebimento = ProvedorCobranca.MercadoPago;
+        dados.MercadoPagoUserId = "123456";
+        dados.MercadoPagoAccessTokenCriptografado = "cripto:APP_USR-da-empresa";
+        dados.MercadoPagoRefreshTokenCriptografado = "cripto:TG-refresh";
+        dados.MercadoPagoTokenExpiraEm = DateTime.Now.AddDays(100);
+        dados.ComissaoTipo = DadosBancariosEmpresa.ComissaoPercentual;
+        dados.ComissaoValor = 10m;
     }
 
     private class EmpresaFalsa : IEmpresaRepository
@@ -329,6 +438,7 @@ public class BaixaCobrancaAsaasTeste
         public DadosBancariosFalso(DadosBancariosEmpresa dados) => _dados = dados;
         public Task<DadosBancariosEmpresa?> ObterPorEmpresa(Guid empresaId) => Task.FromResult<DadosBancariosEmpresa?>(_dados);
         public Task Salvar(DadosBancariosEmpresa dados) => throw new NotSupportedException();
+        public Task<IEnumerable<DadosBancariosEmpresa>> ObterComMercadoPagoVencendo(DateTime ate) => throw new NotSupportedException();
     }
 
     private class Cenario
@@ -338,22 +448,26 @@ public class BaixaCobrancaAsaasTeste
         public NotificadorFalso Notificador { get; } = new();
         public BaixaCobrancaPix Baixa { get; }
 
-        public Cenario(string statusNoAsaas, IProvedorCobranca? ativo = null, string? provedorDaCobranca = null)
+        // dadosDaEmpresa informado = cobranca feita na conta Mercado Pago da empresa (nao na plataforma).
+        public Cenario(string statusNoAsaas, IProvedorCobranca? ativo = null, string? provedorDaCobranca = null,
+                       DadosBancariosEmpresa? dadosDaEmpresa = null)
         {
             Cobranca = new CobrancaCliente
             {
-                EmpresaId = Guid.NewGuid(),
+                EmpresaId = dadosDaEmpresa?.EmpresaId ?? Guid.NewGuid(),
                 Valor = 405m,
                 ValorCobrado = 405m,
                 PixIdExterno = "pay_123",
                 PixExpiraEm = HorarioBrasilia.Agora().AddHours(5),
-                Provedor = provedorDaCobranca
+                Provedor = provedorDaCobranca,
+                RecebidaNaPlataforma = provedorDaCobranca == ProvedorCobranca.MercadoPago && dadosDaEmpresa == null
             };
             Cobranca.Txid = CobrancaCliente.TxidDe(Cobranca.Id);
 
             Pix = new PixFalso(statusNoAsaas);
-            _unitOfWork = new UnitOfWorkFalso(new CobrancaRepositorioFalso(Cobranca));
-            Baixa = new BaixaCobrancaPix(_unitOfWork, new ProvedoresFalsos(ativo ?? Pix, Pix), Notificador, NullLogger<BaixaCobrancaPix>.Instance);
+            _unitOfWork = new UnitOfWorkFalso(new CobrancaRepositorioFalso(Cobranca),
+                dadosDaEmpresa == null ? null : new DadosBancariosFalso(dadosDaEmpresa));
+            Baixa = new BaixaCobrancaPix(_unitOfWork, new ProvedoresFalsos(ativo ?? Pix, Pix), new CriptografiaFalsa(), Notificador, NullLogger<BaixaCobrancaPix>.Instance);
         }
 
         private readonly UnitOfWorkFalso _unitOfWork;
@@ -372,7 +486,10 @@ public class BaixaCobrancaAsaasTeste
         public PixFalso(string status) => _status = status;
 
         public string Nome => ProvedorCobranca.Asaas;
-        public bool SuportaSplit => true;
+        public bool ExigeCpfCnpjDoPagador => true;
+
+        Task<ConsultaCobrancaPix> IProvedorCobranca.ConsultarCobrancaAsync(string idExterno, string? tokenConta) => ConsultarCobrancaAsync(idExterno);
+        Task IProvedorCobranca.CancelarCobrancaAsync(string idExterno, string? tokenConta) => CancelarCobrancaAsync(idExterno);
 
         public Task<ConsultaCobrancaPix> ConsultarCobrancaAsync(string idExterno)
         {
@@ -448,7 +565,10 @@ public class BaixaCobrancaAsaasTeste
         public MercadoPagoFalso(string status) => _status = status;
 
         public string Nome => ProvedorCobranca.MercadoPago;
-        public bool SuportaSplit => false;
+        public bool ExigeCpfCnpjDoPagador => false;
+
+        // Token usado em cada consulta/cancelamento (nulo = conta da plataforma).
+        public List<string?> TokensUsados { get; } = new();
 
         public Task<PixGerado> CriarCobrancaAsync(NovaCobrancaPix cobranca)
         {
@@ -456,17 +576,19 @@ public class BaixaCobrancaAsaasTeste
             return Task.FromResult(new PixGerado("ORD_NOVA", "000201...mp", "action_required", "https://www.mercadopago.com.br/payments/1/ticket"));
         }
 
-        public Task<ConsultaCobrancaPix> ConsultarCobrancaAsync(string idExterno)
+        public Task<ConsultaCobrancaPix> ConsultarCobrancaAsync(string idExterno, string? tokenConta)
         {
             Consultas.Add(idExterno);
+            TokensUsados.Add(tokenConta);
             var paga = _status == "processed";
             return Task.FromResult(new ConsultaCobrancaPix(_status, paga ? 405m : null, paga ? DateTime.Now : null, null,
                 PagaNoProvedor: paga, AguardandoPagamento: _status == "action_required"));
         }
 
-        public Task CancelarCobrancaAsync(string idExterno)
+        public Task CancelarCobrancaAsync(string idExterno, string? tokenConta)
         {
             Canceladas.Add(idExterno);
+            TokensUsados.Add(tokenConta);
             return Task.CompletedTask;
         }
 

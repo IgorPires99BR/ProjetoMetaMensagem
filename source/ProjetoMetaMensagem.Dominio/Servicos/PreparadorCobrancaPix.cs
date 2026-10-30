@@ -75,13 +75,16 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         // qualquer provedor). Quem gera o Pix e o provedor ativo.
         private readonly IPixService _pix;
         private readonly IProvedoresCobranca _provedores;
+        private readonly ICriptografiaService _criptografia;
         private readonly ILogger<PreparadorCobrancaPix> _logger;
 
-        public PreparadorCobrancaPix(IUnitOfWork unitOfWork, IPixService pix, IProvedoresCobranca provedores, ILogger<PreparadorCobrancaPix> logger)
+        public PreparadorCobrancaPix(IUnitOfWork unitOfWork, IPixService pix, IProvedoresCobranca provedores,
+                                     ICriptografiaService criptografia, ILogger<PreparadorCobrancaPix> logger)
         {
             _unitOfWork = unitOfWork;
             _pix = pix;
             _provedores = provedores;
+            _criptografia = criptografia;
             _logger = logger;
         }
 
@@ -105,10 +108,14 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(empresaId);
             if (dados == null || !dados.CobrancaPixAtiva) return preparadas;
 
+            var destino = DestinoRecebimento.Resolver(dados, agora);
             IProvedorCobranca provedor;
+            string? tokenConta = null;
             try
             {
-                provedor = _provedores.Ativo;
+                provedor = destino.NaPlataforma ? _provedores.Ativo : _provedores.Do(destino.Provedor);
+                if (destino.Tipo == TipoDestinoRecebimento.ContaMercadoPagoEmpresa)
+                    tokenConta = _criptografia.Descriptografar(dados.MercadoPagoAccessTokenCriptografado!);
             }
             catch (PixException ex)
             {
@@ -116,14 +123,11 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 return preparadas;
             }
 
-            // Split so no Asaas e quando a empresa nao recebe pela conta da plataforma.
-            var comSplit = provedor.SuportaSplit && !dados.RecebimentoNaPlataforma;
-
             // Conta Asaas propria da empresa: o GET /accounts da plataforma nao a enxerga, entao o
-            // cliente padrao sai do cadastro da empresa. Sem split tambem: pode nem existir
-            // subconta para consultar.
+            // cliente padrao sai do cadastro da empresa. Na conta da plataforma tambem: pode nem
+            // existir subconta para consultar.
             PagadorPix? pagadorExterno = null;
-            if (provedor.SuportaSplit && (dados.CarteiraExterna || !comSplit))
+            if (provedor.ExigeCpfCnpjDoPagador && (dados.CarteiraExterna || destino.NaPlataforma))
             {
                 var empresa = await _unitOfWork.Empresa.ObterPorId(empresaId);
                 if (empresa != null && DocumentoHelper.CpfCnpjValido(empresa.Cnpj))
@@ -138,7 +142,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 await limite.WaitAsync();
                 try
                 {
-                    await GerarPix(provedor, comSplit, dados, pagadorExterno, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
+                    await GerarPix(provedor, destino, tokenConta, dados, pagadorExterno, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
                 }
                 finally
                 {
@@ -149,8 +153,8 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             return preparadas;
         }
 
-        private async Task GerarPix(IProvedorCobranca provedor, bool comSplit, DadosBancariosEmpresa dados, PagadorPix? pagadorExterno,
-                                    CobrancaPreparada preparada, Contato contato, DateTime agora)
+        private async Task GerarPix(IProvedorCobranca provedor, DestinoRecebimento destino, string? tokenConta, DadosBancariosEmpresa dados,
+                                    PagadorPix? pagadorExterno, CobrancaPreparada preparada, Contato contato, DateTime agora)
         {
             var cobranca = preparada.Cobranca;
             var faltando = FaltaDadoDeCobranca(contato);
@@ -166,16 +170,11 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                 return;
             }
 
+            // Na conta da empresa a comissao sempre existe: DestinoRecebimento so sai da plataforma
+            // com ela definida.
             CalculoComissao.Resultado? divisao = null;
-            if (comSplit)
+            if (!destino.NaPlataforma)
             {
-                // A ativacao ja exige os dois, mas o registro pode ter sido mexido direto no banco.
-                if (!dados.TemSubconta || !dados.ComissaoDefinida)
-                {
-                    preparada.Erro = "Pix não gerado: a empresa está sem subconta Asaas ou sem comissão definida nos dados bancários.";
-                    return;
-                }
-
                 divisao = CalculoComissao.Calcular(cobranca.ValorCobrado.Value, dados.ComissaoTipo!, dados.ComissaoValor!.Value);
                 if (divisao == null)
                 {
@@ -204,22 +203,26 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                     ? new PagadorPix(nomePagador, contato.CpfCnpj!, contato.Email)
                     // O Mercado Pago nao exige documento do pagador, so e-mail (com fallback no
                     // servico): nada de cliente padrao.
-                    : !provedor.SuportaSplit
+                    : !provedor.ExigeCpfCnpjDoPagador
                         ? new PagadorPix(nomePagador, string.Empty, contato.Email)
-                        : dados.CarteiraExterna || !comSplit
+                        : dados.CarteiraExterna || destino.NaPlataforma
                             ? pagadorExterno ?? throw new PixException("a empresa não tem CNPJ válido no cadastro para usar como cliente padrão.")
                             : await _pix.PagadorPadraoDaSubcontaAsync(dados.AsaasWalletId!);
 
+                var naSubconta = destino.Tipo == TipoDestinoRecebimento.SubcontaAsaas;
+                var naContaMercadoPago = destino.Tipo == TipoDestinoRecebimento.ContaMercadoPagoEmpresa;
                 var pix = await provedor.CriarCobrancaAsync(new NovaCobrancaPix(
-                    txid, cobranca.ValorCobrado.Value, expiraEm.Date, descricao,
-                    pagador, divisao == null ? null : dados.AsaasWalletId, divisao?.Repasse));
+                    txid, cobranca.ValorCobrado.Value, expiraEm.Date, descricao, pagador,
+                    naSubconta ? dados.AsaasWalletId : null, naSubconta ? divisao!.Repasse : null,
+                    naContaMercadoPago ? tokenConta : null, naContaMercadoPago ? divisao!.Comissao : null));
                 cobranca.Txid = txid;
                 cobranca.PixIdExterno = pix.IdExterno;
                 cobranca.PixCopiaECola = pix.PixCopiaECola;
                 cobranca.PixExpiraEm = expiraEm;
+                // No Mercado Pago o repasse gravado e o bruto: a taxa do Mercado Pago sai da parte da empresa.
                 cobranca.ValorComissao = divisao?.Comissao;
                 cobranca.ValorRepasse = divisao?.Repasse;
-                cobranca.RecebidaNaPlataforma = divisao == null;
+                cobranca.RecebidaNaPlataforma = destino.NaPlataforma;
                 cobranca.Provedor = provedor.Nome;
                 cobranca.LinkPagamentoExterno = pix.LinkExterno;
                 preparada.LinkPagamento = _pix.LinkPagamento(txid);
@@ -256,7 +259,8 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             {
                 try
                 {
-                    await _provedores.Do(preparada.Cobranca.Provedor).CancelarCobrancaAsync(preparada.Cobranca.PixIdExterno!);
+                    var token = preparada.Cobranca.RecebidaNaPlataforma ? null : await TokenDaContaAsync(empresaId, preparada.Cobranca.Provedor);
+                    await _provedores.Do(preparada.Cobranca.Provedor).CancelarCobrancaAsync(preparada.Cobranca.PixIdExterno!, token);
                 }
                 catch (Exception ex)
                 {
@@ -267,6 +271,13 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                         preparada.Cobranca.Provedor, preparada.Cobranca.PixIdExterno, preparada.Cobranca.Txid, empresaId);
                 }
             }
+        }
+
+        private async Task<string?> TokenDaContaAsync(Guid empresaId, string? provedor)
+        {
+            if (provedor != ProvedorCobranca.MercadoPago) return null;
+            var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(empresaId);
+            return ContaMercadoPagoEmpresa.Token(dados, _criptografia);
         }
 
         public string? AplicarNasVariaveis(List<string> valores, CobrancaPreparada? preparada)

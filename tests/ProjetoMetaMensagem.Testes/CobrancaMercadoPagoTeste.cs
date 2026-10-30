@@ -86,6 +86,128 @@ public class CobrancaMercadoPagoTeste
         Assert.Empty(api.Recebidas);
     }
 
+    // --- Cobranca na conta Mercado Pago da empresa (OAuth), com a comissao da plataforma ---
+
+    [Fact]
+    public async Task Order_na_conta_da_empresa_vai_com_o_token_dela_e_a_comissao_no_marketplace_fee()
+    {
+        using var api = new ApiFalsa("""{"id":"ORD1","status":"action_required","transactions":{"payments":[{"payment_method":{"qr_code":"000201"}}]}}""");
+
+        await api.Servico().CriarCobrancaAsync(new NovaCobrancaPix("txid9", 405m, DateTime.Today, null,
+            new PagadorPix("Maria", "", "maria@exemplo.com"), null, null, TokenConta: "APP_USR-da-empresa", Comissao: 40.5m));
+
+        var (_, _, cabecalhos, corpo) = api.Recebidas.Single();
+        Assert.Equal("Bearer APP_USR-da-empresa", cabecalhos["Authorization"]);
+        var json = JObject.Parse(corpo!);
+        Assert.Equal("40.50", json["marketplace_fee"]!.ToString());
+        Assert.Equal("405.00", json["total_amount"]!.ToString());
+    }
+
+    [Fact]
+    public async Task Order_da_Contact_Solution_nao_leva_marketplace_fee()
+    {
+        using var api = new ApiFalsa("""{"id":"ORD1","status":"action_required","transactions":{"payments":[{"payment_method":{"qr_code":"000201"}}]}}""");
+
+        await api.Servico().CriarCobrancaAsync(new NovaCobrancaPix("t", 10m, DateTime.Today, null,
+            new PagadorPix("Maria", "", "maria@exemplo.com"), null, null));
+
+        var (_, _, cabecalhos, corpo) = api.Recebidas.Single();
+        Assert.Equal("Bearer APP_USR-teste", cabecalhos["Authorization"]);
+        Assert.Null(JObject.Parse(corpo!)["marketplace_fee"]);
+    }
+
+    [Theory]
+    [InlineData(null, 5.0)]                   // comissao sem a conta da empresa: cairia na propria plataforma
+    [InlineData("APP_USR-da-empresa", null)]  // conta da empresa sem comissao: a plataforma nao receberia nada
+    [InlineData("APP_USR-da-empresa", 10.0)]  // comissao igual ao valor: nada para a empresa
+    public async Task Comissao_inconsistente_nem_chega_ao_Mercado_Pago(string? token, double? comissao)
+    {
+        using var api = new ApiFalsa("{}");
+
+        await Assert.ThrowsAsync<PixException>(() => api.Servico().CriarCobrancaAsync(new NovaCobrancaPix("t", 10m, DateTime.Today, null,
+            new PagadorPix("Maria", "", "maria@exemplo.com"), null, null, token, (decimal?)comissao)));
+        Assert.Empty(api.Recebidas);
+    }
+
+    [Fact]
+    public async Task Consulta_de_order_da_empresa_usa_o_token_dela()
+    {
+        using var api = new ApiFalsa("""{"id":"ORD1","status":"action_required","status_detail":"waiting_transfer"}""");
+
+        await api.Servico().ConsultarCobrancaAsync("ORD1", "APP_USR-da-empresa");
+
+        Assert.Equal("Bearer APP_USR-da-empresa", api.Recebidas.Single().Cabecalhos["Authorization"]);
+    }
+
+    // --- OAuth da conta da empresa ---
+
+    [Fact]
+    public void Link_de_autorizacao_leva_client_id_state_e_a_url_de_retorno_cadastrada()
+    {
+        var oauth = new MercadoPagoOAuthService(Options.Create(new MercadoPagoConfiguration
+        {
+            ClientId = "2725", ClientSecret = "segredo", UrlRetornoOAuth = "https://api.exemplo.com/api/mercadopago/oauth/retorno"
+        }), NullLogger<MercadoPagoOAuthService>.Instance);
+
+        var url = new Uri(oauth.UrlAutorizacao("estado+com/simbolos="));
+        var query = System.Web.HttpUtility.ParseQueryString(url.Query);
+
+        Assert.Equal("auth.mercadopago.com", url.Host);
+        Assert.Equal("2725", query["client_id"]);
+        Assert.Equal("code", query["response_type"]);
+        Assert.Equal("mp", query["platform_id"]);
+        Assert.Equal("estado+com/simbolos=", query["state"]);
+        Assert.Equal("https://api.exemplo.com/api/mercadopago/oauth/retorno", query["redirect_uri"]);
+    }
+
+    [Fact]
+    public async Task Code_do_retorno_vira_tokens_da_conta_da_empresa()
+    {
+        using var api = new ApiFalsa("""{"access_token":"APP_USR-novo","token_type":"bearer","expires_in":15552000,"scope":"offline_access read write","user_id":987654,"refresh_token":"TG-novo","public_key":"APP_USR-pk","live_mode":true}""");
+        var oauth = api.OAuth();
+
+        var tokens = await oauth.TrocarCodigoAsync("TG-code");
+
+        Assert.Equal("APP_USR-novo", tokens.AccessToken);
+        Assert.Equal("TG-novo", tokens.RefreshToken);
+        Assert.Equal("987654", tokens.UserId);
+        Assert.InRange(tokens.ExpiraEm, DateTime.Now.AddDays(179), DateTime.Now.AddDays(181));
+
+        var (metodo, caminho, _, corpo) = api.Recebidas.Single();
+        Assert.Equal("POST", metodo);
+        Assert.Equal("/oauth/token", caminho);
+        var json = JObject.Parse(corpo!);
+        Assert.Equal("authorization_code", json["grant_type"]!.ToString());
+        Assert.Equal("TG-code", json["code"]!.ToString());
+        Assert.Equal("https://retorno.teste/oauth", json["redirect_uri"]!.ToString());
+    }
+
+    [Fact]
+    public void State_do_OAuth_volta_a_mesma_empresa_e_vence()
+    {
+        var cripto = new CriptografiaDeTeste();
+        var empresaId = Guid.NewGuid();
+        var agora = new DateTime(2026, 10, 30, 10, 0, 0);
+
+        var state = Dominio.Servicos.EstadoOAuthMercadoPago.Gerar(empresaId, agora, cripto);
+
+        Assert.Equal(empresaId, Dominio.Servicos.EstadoOAuthMercadoPago.Ler(state, agora.AddMinutes(10), cripto));
+        Assert.Null(Dominio.Servicos.EstadoOAuthMercadoPago.Ler(state, agora.AddHours(1), cripto));      // vencido
+        Assert.Null(Dominio.Servicos.EstadoOAuthMercadoPago.Ler("lixo", agora, cripto));                // adulterado
+        Assert.Null(Dominio.Servicos.EstadoOAuthMercadoPago.Ler(null, agora, cripto));
+    }
+
+    // Reversivel e que recusa texto que nao gerou (como o AES-GCM recusa um state forjado).
+    private class CriptografiaDeTeste : ICriptografiaService
+    {
+        public bool Configurada => true;
+        public string Criptografar(string textoPuro) => "ok:" + Convert.ToBase64String(Encoding.UTF8.GetBytes(textoPuro));
+        public string Descriptografar(string textoCriptografado) =>
+            textoCriptografado.StartsWith("ok:")
+                ? Encoding.UTF8.GetString(Convert.FromBase64String(textoCriptografado[3..]))
+                : throw new CryptographicException("texto nao gerado aqui");
+    }
+
     [Fact]
     public async Task Order_processada_e_creditada_conta_como_paga()
     {
@@ -94,7 +216,7 @@ public class CobrancaMercadoPagoTeste
              "transactions":{"payments":[{"paid_amount":"405.50","date_approved":"2026-10-30T14:00:00.000-03:00"}]}}
             """);
 
-        var consulta = await api.Servico().ConsultarCobrancaAsync("ORD1");
+        var consulta = await api.Servico().ConsultarCobrancaAsync("ORD1", null);
 
         Assert.True(consulta.Paga);
         Assert.Equal(405.50m, consulta.ValorPago);
@@ -110,7 +232,7 @@ public class CobrancaMercadoPagoTeste
     {
         using var api = new ApiFalsa($$"""{"id":"ORD1","status":"{{status}}","status_detail":"{{detalhe}}","total_amount":"10.00"}""");
 
-        var consulta = await api.Servico().ConsultarCobrancaAsync("ORD1");
+        var consulta = await api.Servico().ConsultarCobrancaAsync("ORD1", null);
 
         Assert.False(consulta.Paga);
         Assert.Equal(aguardando, consulta.Pendente);
@@ -121,7 +243,7 @@ public class CobrancaMercadoPagoTeste
     {
         using var api = new ApiFalsa("""{"id":"ORD1","status":"canceled"}""");
 
-        await api.Servico().CancelarCobrancaAsync("ORD1");
+        await api.Servico().CancelarCobrancaAsync("ORD1", null);
 
         var recebida = api.Recebidas.Single();
         Assert.Equal("POST", recebida.Metodo);
@@ -240,6 +362,15 @@ public class CobrancaMercadoPagoTeste
                 UrlApi = $"http://localhost:{_porta}",
                 EmailPagadorPadrao = emailPadrao
             }), NullLogger<MercadoPagoOrderService>.Instance);
+
+        public MercadoPagoOAuthService OAuth() =>
+            new(Options.Create(new MercadoPagoConfiguration
+            {
+                ClientId = "2725",
+                ClientSecret = "segredo",
+                UrlApi = $"http://localhost:{_porta}",
+                UrlRetornoOAuth = "https://retorno.teste/oauth"
+            }), NullLogger<MercadoPagoOAuthService>.Instance);
 
         public void Dispose() => _servidor.Close();
     }

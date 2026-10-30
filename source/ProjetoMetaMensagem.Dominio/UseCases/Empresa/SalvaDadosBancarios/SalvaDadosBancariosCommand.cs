@@ -11,6 +11,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios
         public Guid EmpresaId { get; set; }
         public bool CobrancaPixAtiva { get; set; }
 
+        // Conta de recebimento escolhida pela empresa: MERCADOPAGO ou ASAAS. Nulo = manter.
+        public string? ProvedorRecebimento { get; set; }
+
         // So vale quando quem salva e admin da plataforma; para os demais o handler mantem a
         // comissao gravada -- senao o admin da empresa poderia zerar a propria comissao.
         public string? ComissaoTipo { get; set; }

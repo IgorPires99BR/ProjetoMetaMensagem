@@ -34,13 +34,16 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly IProvedoresCobranca _provedores;
+        private readonly ICriptografiaService _criptografia;
         private readonly INotificadorCobranca _notificador;
         private readonly ILogger<BaixaCobrancaPix> _logger;
 
-        public BaixaCobrancaPix(IUnitOfWork unitOfWork, IProvedoresCobranca provedores, INotificadorCobranca notificador, ILogger<BaixaCobrancaPix> logger)
+        public BaixaCobrancaPix(IUnitOfWork unitOfWork, IProvedoresCobranca provedores, ICriptografiaService criptografia,
+                                INotificadorCobranca notificador, ILogger<BaixaCobrancaPix> logger)
         {
             _unitOfWork = unitOfWork;
             _provedores = provedores;
+            _criptografia = criptografia;
             _notificador = notificador;
             _logger = logger;
         }
@@ -78,15 +81,18 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
 
             try
             {
-                // Sempre o provedor que gerou o Pix, nao o ativo.
+                // Sempre o provedor que gerou o Pix, nao o ativo; e a conta onde a order foi criada.
                 var provedor = _provedores.Do(cobranca.Provedor);
-                var consulta = await provedor.ConsultarCobrancaAsync(cobranca.PixIdExterno);
+                var tokenConta = !cobranca.RecebidaNaPlataforma && cobranca.Provedor == ProvedorCobranca.MercadoPago
+                    ? ContaMercadoPagoEmpresa.Token(await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(cobranca.EmpresaId), _criptografia)
+                    : null;
+                var consulta = await provedor.ConsultarCobrancaAsync(cobranca.PixIdExterno, tokenConta);
                 if (!consulta.Paga)
                 {
                     if (podeCancelar && cobranca.PixExpiraEm.HasValue && HorarioBrasilia.Agora() > cobranca.PixExpiraEm.Value + CancelarAposExpirar
                         && consulta.Pendente)
                     {
-                        await provedor.CancelarCobrancaAsync(cobranca.PixIdExterno);
+                        await provedor.CancelarCobrancaAsync(cobranca.PixIdExterno, tokenConta);
                         _logger.LogInformation("Pix {Provedor}: cobranca {CobrancaId} expirada sem pagamento, cancelada no provedor ({IdExterno}).",
                             provedor.Nome, cobranca.Id, cobranca.PixIdExterno);
                     }

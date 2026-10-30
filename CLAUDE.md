@@ -34,7 +34,10 @@ pipeline, templates Meta). Frontend em `../AngularContact` (mesma pasta pai
   orders na conta da Contact Solution, sem split) ou `ASAAS` (reserva). Cada `CobrancaCliente`
   guarda o `Provedor` que a gerou e a baixa/cancelamento sempre volta nele (nulo = Asaas).
   Webhook do Mercado Pago em `POST /api/webhook/mercadopago` (assinatura `x-signature` com
-  `MercadoPago:WebhookSecret`). **Cuidado:** `DbSession` e o Hangfire usam `ContactProdDB` (Azure
+  `MercadoPago:WebhookSecret`). Para onde vai o dinheiro de cada empresa é decidido em
+  `DestinoRecebimento`: conta Mercado Pago da empresa (OAuth, `marketplace_fee`) ou subconta
+  Asaas (split) — só a escolhida em `ProvedorRecebimento`, e só com comissão definida; faltando
+  qualquer dado, a cobrança é da Contact Solution. **Cuidado:** `DbSession` e o Hangfire usam `ContactProdDB` (Azure
   de produção) mesmo em Development — não suba a API local sem trocar essa connection string.
 - Scripts SQL em `BD/` são numerados e devem rodar em ordem (00 → 22, depois `Y01`/`Y02`).
   Pule `006_Create_MensagemRecebida.sql` — é uma versão antiga/duplicada, superada pelo

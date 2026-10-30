@@ -304,9 +304,10 @@ builder.Services.AddScoped<IDadosBancariosEmpresaRepository, DadosBancariosEmpre
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.CriptografiaConfiguration>(
     builder.Configuration.GetSection("Criptografia"));
 builder.Services.AddSingleton<ICriptografiaService, ProjetoMetaMensagem.Servico.Configuration.CriptografiaService>();
-// Pix das cobrancas aos clientes. Mercado Pago (orders na conta da plataforma) gera os novos;
-// Asaas (split para a subconta da empresa) fica de reserva e segue dando baixa nos dele.
-// Cobranca:Provedor escolhe o ativo. Singletons: guardam o HttpClient e o cache de customers.
+// Pix das cobrancas aos clientes. Cada empresa recebe na conta dela (Mercado Pago por OAuth ou
+// subconta Asaas, com comissao para a plataforma) ou, sem esses dados, a cobranca e da Contact
+// Solution no provedor ativo (Cobranca:Provedor) -- ver DestinoRecebimento.
+// Singletons: guardam o HttpClient e o cache de customers.
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.AsaasConfiguration>(
     builder.Configuration.GetSection("Asaas"));
 builder.Services.Configure<ProjetoMetaMensagem.Servico.Configuration.MercadoPagoConfiguration>(
@@ -319,6 +320,8 @@ builder.Services.AddSingleton<IPixService>(sp => sp.GetRequiredService<ProjetoMe
 builder.Services.AddSingleton<IProvedorCobranca>(sp => sp.GetRequiredService<ProjetoMetaMensagem.Servico.Cobranca.AsaasPixService>());
 builder.Services.AddSingleton<IProvedorCobranca, ProjetoMetaMensagem.Servico.Cobranca.MercadoPagoOrderService>();
 builder.Services.AddSingleton<IProvedoresCobranca, ProjetoMetaMensagem.Servico.Cobranca.ProvedoresCobranca>();
+builder.Services.AddSingleton<IMercadoPagoOAuth, ProjetoMetaMensagem.Servico.Cobranca.MercadoPagoOAuthService>();
+builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IRenovacaoContasMercadoPago, ProjetoMetaMensagem.Dominio.Servicos.RenovacaoContasMercadoPago>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IPreparadorCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.PreparadorCobrancaPix>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IBaixaCobrancaPix, ProjetoMetaMensagem.Dominio.Servicos.BaixaCobrancaPix>();
 builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IDisparoPorGatilho, ProjetoMetaMensagem.Dominio.Servicos.DisparoPorGatilho>();
@@ -483,6 +486,13 @@ try
         servico => servico.ConsultarPendentesAsync(),
         $"*/{intervaloPix} * * * *");
 
+    // Autorizacao das contas Mercado Pago das empresas: renova antes dos 180 dias, 1x por dia
+    // (11:00 UTC, fora do horario dos disparos de gatilho).
+    RecurringJob.AddOrUpdate<ProjetoMetaMensagem.Dominio.Servicos.IRenovacaoContasMercadoPago>(
+        "renova-contas-mercadopago",
+        servico => servico.RenovarVencendoAsync(),
+        "0 11 * * *");
+
     // Qual provedor gera os Pix novos e se ele esta pronto, logo no boot.
     var provedores = app.Services.GetRequiredService<IProvedoresCobranca>();
     var mercadoPago = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<ProjetoMetaMensagem.Servico.Configuration.MercadoPagoConfiguration>>().Value;
@@ -499,6 +509,8 @@ try
             if (string.IsNullOrWhiteSpace(mercadoPago.EmailPagadorPadrao))
                 app.Logger.LogWarning("MercadoPago: sem MercadoPago:EmailPagadorPadrao, contato sem e-mail nao recebe Pix.");
         }
+        if (!mercadoPago.OAuthConfigurado)
+            app.Logger.LogWarning("MercadoPago: sem MercadoPago:ClientId/ClientSecret, as empresas nao conseguem conectar a conta Mercado Pago (cobram pela conta da Contact Solution).");
     }
     catch (PixException ex)
     {

@@ -12,6 +12,9 @@ using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DeletaEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemDadosBancarios;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemEmpresa;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemSituacaoSubconta;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.DesconectaMercadoPago;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.IniciaConexaoMercadoPago;
+using ProjetoMetaMensagem.Dominio.UseCases.Empresa.ObtemProvedorCobranca;
 using ProjetoMetaMensagem.Dominio.UseCases.Empresa.SalvaDadosBancarios;
 using ProjetoMetaMensagem.WebAPI.Common;
 using System.Net;
@@ -243,6 +246,59 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Empresa
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.VincularSubcontaAsaas"), tipo = "Servico" });
+            }
+        }
+
+        // Inicio da conexao da conta Mercado Pago da empresa (OAuth). Mesma regra da subconta Asaas:
+        // e o admin da propria empresa quem autoriza, com a conta dele no Mercado Pago. O retorno
+        // chega em MercadoPagoOAuthController.
+        [HttpPost("api/v2/empresa/{empresaId}/dados-bancarios/mercadopago/conectar")]
+        public async Task<IActionResult> ConectarMercadoPago([FromRoute] Guid empresaId)
+        {
+            try
+            {
+                if (!this.EhAdmin() && !this.EhAdminDaPlataforma())
+                    return StatusCode(403, new { mensagem = "Apenas administradores podem conectar a conta de recebimento da empresa.", tipo = "Negocio" });
+
+                var resultado = await _mediator.Send(new IniciaConexaoMercadoPagoCommand { EmpresaId = empresaId });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.ConectarMercadoPago"), tipo = "Servico" });
+            }
+        }
+
+        [HttpDelete("api/v2/empresa/{empresaId}/dados-bancarios/mercadopago")]
+        public async Task<IActionResult> DesconectarMercadoPago([FromRoute] Guid empresaId)
+        {
+            try
+            {
+                if (!this.EhAdmin() && !this.EhAdminDaPlataforma())
+                    return StatusCode(403, new { mensagem = "Apenas administradores podem desconectar a conta de recebimento da empresa.", tipo = "Negocio" });
+
+                var resultado = await _mediator.Send(new DesconectaMercadoPagoCommand { EmpresaId = empresaId });
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.DesconectarMercadoPago"), tipo = "Servico" });
+            }
+        }
+
+        // Adquirente das cobrancas da empresa, para as telas de disparo. Qualquer usuario da
+        // empresa (o recorte por empresa fica com o EmpresaAccessFilter): so nomes, nada sensivel.
+        [HttpGet("api/v2/empresa/{empresaId}/provedor-cobranca")]
+        public async Task<IActionResult> ObterProvedorCobranca([FromRoute] Guid empresaId)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ObtemProvedorCobrancaCommand(empresaId));
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "EmpresasController.ObterProvedorCobranca"), tipo = "Servico" });
             }
         }
 
