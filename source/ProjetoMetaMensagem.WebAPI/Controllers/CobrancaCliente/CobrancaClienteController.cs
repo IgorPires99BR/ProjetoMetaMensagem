@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.EnviaRecorrenciaCobranca;
 using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.MarcaCobrancaClientePaga;
 using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.SimulaPagamentoSandbox;
@@ -66,6 +67,26 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.CobrancaCliente
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "CobrancaClienteController.MarcarPaga"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPost("api/cobranca-cliente/{id}/enviar-recorrencia")]
+        public async Task<IActionResult> EnviarRecorrencia(Guid id)
+        {
+            try
+            {
+                var command = new EnviaRecorrenciaCobrancaCommand
+                {
+                    CobrancaClienteId = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                };
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "CobrancaClienteController.EnviarRecorrencia"), tipo = "Servico" });
             }
         }
 

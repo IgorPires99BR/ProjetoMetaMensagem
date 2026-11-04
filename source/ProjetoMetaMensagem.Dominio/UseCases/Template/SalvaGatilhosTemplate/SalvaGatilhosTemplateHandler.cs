@@ -42,6 +42,12 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.SalvaGatilhosTemplate
                     return response;
                 }
 
+                if (template.GeraCobranca && command.Gatilhos.Any(g => g.Tipo == TemplateGatilho.RecorrenciaManual))
+                {
+                    response.AddErro("Este modelo gera cobrança: a recorrência abriria outra cobrança. Use um modelo com \"Gera cobrança\" desligado.");
+                    return response;
+                }
+
                 // Sem um valor para cada {{n}} do corpo a Meta recusa todo envio automatico, e
                 // ninguem esta olhando a tela na hora para perceber.
                 var totalVariaveis = Regex.Matches(template.Conteudo ?? string.Empty, @"\{\{\d+\}\}").Count;

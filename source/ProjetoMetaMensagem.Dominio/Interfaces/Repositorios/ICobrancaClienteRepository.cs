@@ -26,5 +26,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<CobrancaCliente?> ObterPorTxid(string txid);
         Task<IEnumerable<CobrancaCliente>> ObterPendentesComPix(DateTime expiradoDesde);
         Task<int> BaixarPix(Guid id, DateTime dataPagamento, decimal valorPago, string? endToEndId);
+
+        // Pix novo na mesma cobranca (recorrencia com o anterior vencido). Devolve 0 se ela deixou
+        // de estar pendente.
+        Task<int> AtualizarPix(CobrancaCliente cobranca);
     }
 }

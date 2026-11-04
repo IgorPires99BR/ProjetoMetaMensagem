@@ -15,7 +15,11 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // template com "gera cobranca".
         public const string AtrasoPagamento = "ATRASO_PAGAMENTO";
 
-        public static readonly string[] Tipos = { CadastroContato, AtrasoPagamento };
+        // Nao sai sozinho: marca o template do botao de recorrencia da tela de Cobrancas de Clientes
+        // e guarda de onde sai cada variavel, ja que quem clica nao preenche nada.
+        public const string RecorrenciaManual = "RECORRENCIA_MANUAL";
+
+        public static readonly string[] Tipos = { CadastroContato, AtrasoPagamento, RecorrenciaManual };
 
         public TemplateGatilho()
         {

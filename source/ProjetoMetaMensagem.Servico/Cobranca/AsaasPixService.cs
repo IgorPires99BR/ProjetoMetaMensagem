@@ -145,7 +145,9 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
                 }
             }
 
-            return new ConsultaCobrancaPix(status, valorPago, pagoEm, null);
+            // Cobranca removida mantem o ultimo status: sem isto pareceria pendente e seria cancelada de novo.
+            var removida = resposta["deleted"]?.ToString().Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+            return new ConsultaCobrancaPix(status, valorPago, pagoEm, null, AguardandoPagamento: removida ? false : null);
         }
 
         public async Task CancelarCobrancaAsync(string idExterno)

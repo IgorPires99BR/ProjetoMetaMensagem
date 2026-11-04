@@ -56,6 +56,11 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
     {
         Task<Dictionary<Guid, CobrancaPreparada>> PrepararAsync(Guid empresaId, Template template, IEnumerable<Contato> contatos, DateTime agora);
 
+        // Pix pagavel de uma cobranca ja gravada: reaproveita o atual se ainda vale; senao encerra
+        // o anterior e grava um novo, com os encargos do dia, na mesma cobranca e no mesmo link.
+        // Problema volta em Erro.
+        Task<CobrancaPreparada> GarantirPixAsync(CobrancaCliente cobranca, Contato contato, DateTime agora);
+
         // Cancela no Asaas o Pix das cobrancas que nao foram enviadas. Nunca lanca excecao.
         Task DescartarAsync(Guid empresaId, IEnumerable<CobrancaPreparada> naoEnviadas);
 
@@ -108,20 +113,133 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(empresaId);
             if (dados == null || !dados.CobrancaPixAtiva) return preparadas;
 
-            var destino = DestinoRecebimento.Resolver(dados, agora);
-            IProvedorCobranca provedor;
-            string? tokenConta = null;
+            ContextoDaEmpresa contexto;
             try
             {
-                provedor = destino.NaPlataforma ? _provedores.Ativo : _provedores.Do(destino.Provedor);
-                if (destino.Tipo == TipoDestinoRecebimento.ContaMercadoPagoEmpresa)
-                    tokenConta = _criptografia.Descriptografar(dados.MercadoPagoAccessTokenCriptografado!);
+                contexto = await ObterContextoAsync(empresaId, dados, agora);
             }
             catch (PixException ex)
             {
                 foreach (var preparada in preparadas.Values) preparada.Erro = $"Pix não gerado: {ex.Message}";
                 return preparadas;
             }
+
+            using var limite = new SemaphoreSlim(ChamadasSimultaneas);
+            var contatoPorId = contatos.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
+
+            await Task.WhenAll(preparadas.Values.Select(async preparada =>
+            {
+                await limite.WaitAsync();
+                try
+                {
+                    await GerarPix(contexto, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
+                }
+                finally
+                {
+                    limite.Release();
+                }
+            }));
+
+            return preparadas;
+        }
+
+        public async Task<CobrancaPreparada> GarantirPixAsync(CobrancaCliente cobranca, Contato contato, DateTime agora)
+        {
+            var preparada = new CobrancaPreparada { Cobranca = cobranca };
+
+            // Mesma folga do Pix novo (GerarPix): nao reenvia um que expira em minutos.
+            if (cobranca.Txid != null && cobranca.PixIdExterno != null && cobranca.PixExpiraEm >= agora.AddHours(1))
+            {
+                preparada.LinkPagamento = _pix.LinkPagamento(cobranca.Txid);
+                preparada.UrlQrCode = _pix.UrlQrCode(cobranca.Txid);
+                return preparada;
+            }
+
+            var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(cobranca.EmpresaId);
+            if (dados == null || !dados.CobrancaPixAtiva)
+            {
+                preparada.Erro = "A empresa não tem cobrança Pix ativa nos dados bancários.";
+                return preparada;
+            }
+
+            ContextoDaEmpresa contexto;
+            try
+            {
+                if (!await EncerrarPixAnteriorAsync(preparada)) return preparada;
+                contexto = await ObterContextoAsync(cobranca.EmpresaId, dados, agora);
+            }
+            catch (PixException ex)
+            {
+                // Sem confirmar que o anterior acabou, um Pix novo deixaria dois pagaveis ao mesmo tempo.
+                preparada.Erro = $"Pix não gerado: {ex.Message}";
+                return preparada;
+            }
+
+            var calculo = CalculoCobrancaPix.Calcular(cobranca.Valor, contato.TaxaJuros, contato.TaxaJurosMensal, cobranca.DataVencimento, agora);
+            cobranca.Multa = calculo.Multa;
+            cobranca.Juros = calculo.Juros;
+            cobranca.ValorCobrado = calculo.ValorCobrado;
+
+            await GerarPix(contexto, preparada, contato, agora);
+            if (preparada.Erro != null) return preparada;
+
+            // Gravado antes do envio: a pagina do link precisa dele, e se a Meta recusar a proxima
+            // tentativa reaproveita este Pix.
+            if (await _unitOfWork.CobrancaCliente.AtualizarPix(cobranca) == 0)
+            {
+                await DescartarAsync(cobranca.EmpresaId, new[] { preparada });
+                preparada.Erro = "Esta cobrança não está mais em aberto.";
+            }
+
+            return preparada;
+        }
+
+        // false = o cliente ja pagou; a baixa foi feita aqui e nao ha o que cobrar.
+        private async Task<bool> EncerrarPixAnteriorAsync(CobrancaPreparada preparada)
+        {
+            var cobranca = preparada.Cobranca;
+            if (string.IsNullOrEmpty(cobranca.PixIdExterno)) return true;
+
+            var provedor = _provedores.Do(cobranca.Provedor);
+            var token = cobranca.RecebidaNaPlataforma ? null : await TokenDaContaAsync(cobranca.EmpresaId, cobranca.Provedor);
+
+            ConsultaCobrancaPix consulta;
+            try
+            {
+                consulta = await provedor.ConsultarCobrancaAsync(cobranca.PixIdExterno, token);
+            }
+            catch (PixException ex) when (ex.StatusHttp == 404)
+            {
+                return true;
+            }
+
+            if (consulta.Paga)
+            {
+                await _unitOfWork.CobrancaCliente.BaixarPix(cobranca.Id, consulta.PagoEm ?? HorarioBrasilia.Agora(), consulta.ValorPago!.Value, consulta.EndToEndId);
+                preparada.Erro = "O cliente já pagou o Pix desta cobrança. A baixa foi feita agora e nada foi enviado.";
+                return false;
+            }
+
+            if (consulta.Pendente)
+            {
+                // A consulta periodica pode ter cancelado o mesmo Pix agora ha pouco.
+                try { await provedor.CancelarCobrancaAsync(cobranca.PixIdExterno, token); }
+                catch (PixException ex) when (ex.StatusHttp == 404) { }
+            }
+
+            return true;
+        }
+
+        private record ContextoDaEmpresa(IProvedorCobranca Provedor, DestinoRecebimento Destino, string? TokenConta,
+                                         DadosBancariosEmpresa Dados, PagadorPix? PagadorExterno);
+
+        private async Task<ContextoDaEmpresa> ObterContextoAsync(Guid empresaId, DadosBancariosEmpresa dados, DateTime agora)
+        {
+            var destino = DestinoRecebimento.Resolver(dados, agora);
+            var provedor = destino.NaPlataforma ? _provedores.Ativo : _provedores.Do(destino.Provedor);
+            var tokenConta = destino.Tipo == TipoDestinoRecebimento.ContaMercadoPagoEmpresa
+                ? _criptografia.Descriptografar(dados.MercadoPagoAccessTokenCriptografado!)
+                : null;
 
             // Conta Asaas propria da empresa: o GET /accounts da plataforma nao a enxerga, entao o
             // cliente padrao sai do cadastro da empresa. Na conta da plataforma tambem: pode nem
@@ -134,28 +252,12 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
                     pagadorExterno = new PagadorPix($"Clientes {empresa.Nome}", DocumentoHelper.SoDigitos(empresa.Cnpj)!, null);
             }
 
-            using var limite = new SemaphoreSlim(ChamadasSimultaneas);
-            var contatoPorId = contatos.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
-
-            await Task.WhenAll(preparadas.Values.Select(async preparada =>
-            {
-                await limite.WaitAsync();
-                try
-                {
-                    await GerarPix(provedor, destino, tokenConta, dados, pagadorExterno, preparada, contatoPorId[preparada.Cobranca.ContatoId], agora);
-                }
-                finally
-                {
-                    limite.Release();
-                }
-            }));
-
-            return preparadas;
+            return new ContextoDaEmpresa(provedor, destino, tokenConta, dados, pagadorExterno);
         }
 
-        private async Task GerarPix(IProvedorCobranca provedor, DestinoRecebimento destino, string? tokenConta, DadosBancariosEmpresa dados,
-                                    PagadorPix? pagadorExterno, CobrancaPreparada preparada, Contato contato, DateTime agora)
+        private async Task GerarPix(ContextoDaEmpresa contexto, CobrancaPreparada preparada, Contato contato, DateTime agora)
         {
+            var (provedor, destino, tokenConta, dados, pagadorExterno) = contexto;
             var cobranca = preparada.Cobranca;
             var faltando = FaltaDadoDeCobranca(contato);
             if (faltando != null)

@@ -35,7 +35,7 @@ public class CobrancaMercadoPagoTeste
         Assert.Equal("POST", metodo);
         Assert.Equal("/v1/orders", caminho);
         Assert.Equal("Bearer APP_USR-teste", cabecalhos["Authorization"]);
-        Assert.Equal("txid123", cabecalhos["X-Idempotency-Key"]);
+        Assert.Equal($"txid123-{DateTime.Today.AddDays(3):yyyyMMdd}", cabecalhos["X-Idempotency-Key"]);
 
         var json = JObject.Parse(corpo!);
         Assert.Equal("online", json["type"]!.ToString());

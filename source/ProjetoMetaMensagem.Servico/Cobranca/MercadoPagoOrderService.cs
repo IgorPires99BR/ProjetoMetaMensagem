@@ -95,7 +95,9 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
 
             // Idempotencia pelo txid: um retry depois de timeout devolve a mesma order em vez de
             // abrir um segundo Pix para a mesma cobranca.
-            var order = await EnviarAsync(HttpMethod.Post, "/v1/orders", corpo, "gerar a cobrança", cobranca.Txid, cobranca.TokenConta);
+            // Com a data na chave: a recorrencia gera outro Pix com o mesmo txid, e so o txid traria a order antiga de volta.
+            var order = await EnviarAsync(HttpMethod.Post, "/v1/orders", corpo, "gerar a cobrança",
+                $"{cobranca.Txid}-{cobranca.Vencimento:yyyyMMdd}", cobranca.TokenConta);
             var id = order["id"]?.ToString();
             if (string.IsNullOrWhiteSpace(id))
                 throw new PixException("O Mercado Pago criou a order mas não devolveu o identificador dela.");

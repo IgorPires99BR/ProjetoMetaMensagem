@@ -66,6 +66,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
         // ou conferir o que o cliente esta vendo. So mostra o que o cliente ja recebeu.
         public string? LinkPagamento { get; set; }
 
+        // A empresa tem modelo de recorrencia ligado: so entao a tela mostra o botao de envio.
+        public bool RecorrenciaDisponivel { get; set; }
+
         public Guid Id { get; set; }
         public Guid EmpresaId { get; set; }
         public Guid ContatoId { get; set; }

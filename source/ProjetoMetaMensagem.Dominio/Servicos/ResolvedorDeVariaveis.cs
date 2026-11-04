@@ -90,6 +90,31 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             return ResolverCampo(variavel.Origem, contato, hoje);
         }
 
+        // Mensagem sobre uma cobranca que ja existe: valor e vencimento sao os DELA, nao os do
+        // cadastro atual. Pelo contato, a recorrencia de uma fatura de outubro enviada em novembro
+        // sairia com vencimento em novembro e o valor nao bateria com o do Pix.
+        public static string ResolverDaCobranca(
+            AgendamentoVariavelDto variavel, Contato contato, CobrancaCliente cobranca,
+            IReadOnlyDictionary<Guid, Parametro> parametros, DateTime hoje)
+        {
+            var campo = variavel.Origem;
+            if (campo == ParametroCadastrado && variavel.ParametroId.HasValue
+                && parametros.TryGetValue(variavel.ParametroId.Value, out var parametro)
+                && parametro.Tipo == Parametro.CampoDoContato)
+            {
+                campo = parametro.Valor;
+            }
+
+            return campo switch
+            {
+                ValorFatura => $"R$ {cobranca.Valor.ToString("N2", Brasil)}",
+                ValorAtualizado => $"R$ {(cobranca.ValorCobrado ?? cobranca.Valor).ToString("N2", Brasil)}",
+                DiaVencimento => cobranca.DataVencimento.Day.ToString(),
+                DataVencimento => cobranca.DataVencimento.ToString("dd/MM/yyyy", Brasil),
+                _ => Resolver(variavel, contato, parametros, hoje)
+            };
+        }
+
         private static string ResolverCampo(string? campo, Contato? contato, DateTime hoje)
         {
             if (contato == null) return string.Empty;

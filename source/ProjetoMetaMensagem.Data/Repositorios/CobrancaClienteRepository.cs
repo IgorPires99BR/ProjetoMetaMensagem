@@ -125,5 +125,19 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 new { Id = id, DataPagamento = dataPagamento, ValorPago = valorPago, EndToEndId = endToEndId, DataAtualizacao = DateTime.Now },
                 transaction: _session.Transaction);
         }
+
+        public async Task<int> AtualizarPix(CobrancaCliente cobranca)
+        {
+            var sql = @"
+                UPDATE CobrancaCliente
+                SET Txid = @Txid, PixIdExterno = @PixIdExterno, PixCopiaECola = @PixCopiaECola, PixExpiraEm = @PixExpiraEm,
+                    Multa = @Multa, Juros = @Juros, ValorCobrado = @ValorCobrado,
+                    ValorComissao = @ValorComissao, ValorRepasse = @ValorRepasse, RecebidaNaPlataforma = @RecebidaNaPlataforma,
+                    Provedor = @Provedor, LinkPagamentoExterno = @LinkPagamentoExterno, DataAtualizacao = @DataAtualizacao
+                WHERE Id = @Id AND Status = 'PENDENTE'";
+
+            cobranca.DataAtualizacao = DateTime.Now;
+            return await _session.Connection.ExecuteAsync(sql, cobranca, transaction: _session.Transaction);
+        }
     }
 }

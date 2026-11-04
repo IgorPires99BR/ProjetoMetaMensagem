@@ -50,11 +50,15 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
                 // nao pro tipo -- mesmo motivo que EnviarMensagemTemplateMetaLoteHandler ja
                 // qualifica todo uso de Contato.
                 var contatoPorId = new Dictionary<Guid, Entidades.Contato>();
+                var empresasComRecorrencia = new HashSet<Guid>();
                 foreach (var grupo in cobrancas.GroupBy(c => c.EmpresaId))
                 {
                     var contatos = await _unitOfWork.Contato.ObterPorIds(grupo.Key, grupo.Select(c => c.ContatoId).Distinct());
                     foreach (var contato in contatos)
                         contatoPorId[contato.Id] = contato;
+
+                    if ((await _unitOfWork.Template.ObterGatilhosAtivos(grupo.Key, Entidades.TemplateGatilho.RecorrenciaManual)).Any())
+                        empresasComRecorrencia.Add(grupo.Key);
                 }
 
                 var resultado = new ListaCobrancaClienteResult
@@ -64,7 +68,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
                         {
                             contatoPorId.TryGetValue(c.ContatoId, out var contato);
                             return new CobrancaClienteResumo(c, contato?.NomeCliente, contato?.NomeContato, contato?.Telefone,
-                                c.Txid != null ? _pix.LinkPagamento(c.Txid) : null);
+                                c.Txid != null ? _pix.LinkPagamento(c.Txid) : null)
+                            {
+                                RecorrenciaDisponivel = empresasComRecorrencia.Contains(c.EmpresaId)
+                            };
                         })
                         .ToList()
                 };

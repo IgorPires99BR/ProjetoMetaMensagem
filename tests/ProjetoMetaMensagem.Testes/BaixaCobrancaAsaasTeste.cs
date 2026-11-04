@@ -374,6 +374,125 @@ public class BaixaCobrancaAsaasTeste
         Assert.Equal(new string?[] { null }, mp.TokensUsados);
     }
 
+    // --- Recorrencia: a mesma cobranca volta ao cliente, com Pix pagavel ---
+
+    [Fact]
+    public async Task Recorrencia_com_Pix_ainda_valido_reaproveita_o_mesmo_Pix()
+    {
+        var (pix, repositorio, cobranca, preparada) = await GarantirPix("PENDING", new DateTime(2026, 10, 26, 23, 59, 59));
+
+        Assert.Null(preparada.Erro);
+        Assert.Equal("pay_antigo", cobranca.PixIdExterno);
+        Assert.Equal($"https://teste/pix/{cobranca.Txid}", preparada.LinkPagamento);
+        Assert.Empty(pix.Criadas);
+        Assert.Empty(pix.Consultas);
+        Assert.Equal(0, repositorio.PixAtualizados);
+    }
+
+    [Fact]
+    public async Task Recorrencia_com_Pix_vencido_cancela_o_antigo_e_gera_outro_com_encargos_na_mesma_cobranca()
+    {
+        var (pix, repositorio, cobranca, preparada) = await GarantirPix("PENDING", new DateTime(2026, 10, 20, 23, 59, 59));
+        var txidOriginal = CobrancaCliente.TxidDe(cobranca.Id);
+
+        Assert.Null(preparada.Erro);
+        Assert.Equal(new[] { "pay_antigo" }, pix.Canceladas);
+        Assert.Equal(413.78m, Assert.Single(pix.Criadas).Valor); // 405 + multa 8,10 + juros 0,68 (5 dias)
+        Assert.Null(pix.Criadas.Single().WalletIdRepasse);
+        Assert.Equal("pay_novo", cobranca.PixIdExterno);
+        Assert.Equal(txidOriginal, cobranca.Txid);
+        Assert.Equal(405m, cobranca.Valor);
+        Assert.Equal(new DateTime(2026, 10, 25, 23, 59, 59), cobranca.PixExpiraEm);
+        Assert.Equal(1, repositorio.PixAtualizados);
+    }
+
+    [Fact]
+    public async Task Recorrencia_de_Pix_ja_pago_da_baixa_e_nao_gera_outro()
+    {
+        var (pix, repositorio, cobranca, preparada) = await GarantirPix("RECEIVED", new DateTime(2026, 10, 20, 23, 59, 59));
+
+        Assert.Contains("já pagou", preparada.Erro);
+        Assert.Equal(StatusCobrancaCliente.Paga, cobranca.Status);
+        Assert.Empty(pix.Criadas);
+        Assert.Empty(pix.Canceladas);
+        Assert.Equal(0, repositorio.PixAtualizados);
+    }
+
+    [Fact]
+    public async Task Recorrencia_sem_conseguir_cancelar_o_Pix_antigo_nao_deixa_dois_pagaveis()
+    {
+        var (pix, repositorio, _, preparada) = await GarantirPix("PENDING", new DateTime(2026, 10, 20, 23, 59, 59),
+            erroAoCancelar: new PixException("Asaas fora do ar", 500));
+
+        Assert.Contains("Asaas fora do ar", preparada.Erro);
+        Assert.Empty(pix.Criadas);
+        Assert.Equal(0, repositorio.PixAtualizados);
+    }
+
+    [Fact]
+    public async Task Recorrencia_com_Pix_antigo_ja_removido_no_provedor_gera_outro()
+    {
+        var (pix, repositorio, _, preparada) = await GarantirPix("PENDING", new DateTime(2026, 10, 20, 23, 59, 59),
+            erroAoCancelar: new PixException("não encontrada", 404));
+
+        Assert.Null(preparada.Erro);
+        Assert.Single(pix.Criadas);
+        Assert.Equal(1, repositorio.PixAtualizados);
+    }
+
+    [Fact]
+    public async Task Recorrencia_sem_Pix_ativo_na_empresa_nao_gera_Pix()
+    {
+        var (pix, _, _, preparada) = await GarantirPix("PENDING", new DateTime(2026, 10, 20, 23, 59, 59), pixAtivo: false);
+
+        Assert.Contains("Pix ativa", preparada.Erro);
+        Assert.Empty(pix.Canceladas);
+        Assert.Empty(pix.Criadas);
+    }
+
+    [Fact]
+    public void Variaveis_da_recorrencia_usam_o_valor_e_o_vencimento_da_cobranca_e_nao_os_do_cadastro()
+    {
+        var contato = new Contato { NomeContato = "Maria", ValorFatura = 999m, DiaVencimento = 5 };
+        var cobranca = new CobrancaCliente { Valor = 405m, ValorCobrado = 413.78m, DataVencimento = new DateTime(2026, 10, 20) };
+        string Valor(string origem) => ResolvedorDeVariaveis.ResolverDaCobranca(new AgendamentoVariavelDto { Origem = origem }, contato, cobranca,
+            new Dictionary<Guid, Parametro>(), new DateTime(2026, 11, 4));
+
+        Assert.Equal("Maria", Valor(ResolvedorDeVariaveis.Nome));
+        Assert.Equal("R$ 405,00", Valor(ResolvedorDeVariaveis.ValorFatura));
+        Assert.Equal("R$ 413,78", Valor(ResolvedorDeVariaveis.ValorAtualizado));
+        Assert.Equal("20/10/2026", Valor(ResolvedorDeVariaveis.DataVencimento));
+    }
+
+    private static async Task<(PixFalso, CobrancaRepositorioFalso, CobrancaCliente, CobrancaPreparada)> GarantirPix(
+        string statusNoProvedor, DateTime pixExpiraEm, PixException? erroAoCancelar = null, bool pixAtivo = true)
+    {
+        var empresaId = Guid.NewGuid();
+        var contato = new Contato
+        {
+            Id = Guid.NewGuid(), EmpresaId = empresaId, Telefone = "5511999990000", NomeCliente = "Maria Souza",
+            DiaVencimento = 20, ValorFatura = 405m, TaxaJuros = 2m, TaxaJurosMensal = 1m
+        };
+        var cobranca = new CobrancaCliente
+        {
+            EmpresaId = empresaId, ContatoId = contato.Id, Valor = 405m, ValorCobrado = 405m, DataVencimento = new DateTime(2026, 10, 20),
+            PixIdExterno = "pay_antigo", PixCopiaECola = "000201antigo", PixExpiraEm = pixExpiraEm,
+            Provedor = ProvedorCobranca.Asaas, RecebidaNaPlataforma = true
+        };
+        cobranca.Txid = CobrancaCliente.TxidDe(cobranca.Id);
+
+        var pix = new PixFalso(statusNoProvedor) { ErroAoCancelar = erroAoCancelar };
+        var repositorio = new CobrancaRepositorioFalso(cobranca);
+        var dados = new DadosBancariosEmpresa { EmpresaId = empresaId, CobrancaPixAtiva = pixAtivo, RecebimentoNaPlataforma = true };
+        var uow = new UnitOfWorkFalso(repositorio, new DadosBancariosFalso(dados),
+            new EmpresaFalsa(new Empresa { Id = empresaId, Nome = "Sebrecon", Cnpj = "19.183.412/0001-32" }));
+
+        var preparada = await new PreparadorCobrancaPix(uow, pix, new ProvedoresFalsos(pix), new CriptografiaFalsa(), NullLogger<PreparadorCobrancaPix>.Instance)
+            .GarantirPixAsync(cobranca, contato, new DateTime(2026, 10, 25, 12, 0, 0));
+
+        return (pix, repositorio, cobranca, preparada);
+    }
+
     private static async Task<(PixFalso, CobrancaPreparada)> PrepararPara(string? cpfCnpj, bool carteiraExterna = false,
         string cnpjEmpresa = "19.183.412/0001-32", bool semJuros = false, bool recebimentoNaPlataforma = false, bool semSubconta = false,
         IProvedorCobranca? ativo = null, string? email = null, string provedorRecebimento = ProvedorCobranca.Asaas,
@@ -508,8 +627,11 @@ public class BaixaCobrancaAsaasTeste
             return Task.FromResult(new ConsultaCobrancaPix(_status, _status == "RECEIVED" ? 405m : null, DateTime.Now, null));
         }
 
+        public PixException? ErroAoCancelar { get; set; }
+
         public Task CancelarCobrancaAsync(string idExterno)
         {
+            if (ErroAoCancelar != null) throw ErroAoCancelar;
             Canceladas.Add(idExterno);
             return Task.CompletedTask;
         }
@@ -635,6 +757,14 @@ public class BaixaCobrancaAsaasTeste
             _cobranca.Status = StatusCobrancaCliente.Paga;
             _cobranca.DataPagamento = dataPagamento;
             _cobranca.ValorPago = valorPago;
+            return Task.FromResult(1);
+        }
+
+        public int PixAtualizados { get; private set; }
+
+        public Task<int> AtualizarPix(CobrancaCliente cobranca)
+        {
+            PixAtualizados++;
             return Task.FromResult(1);
         }
 
