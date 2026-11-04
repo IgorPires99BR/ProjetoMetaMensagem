@@ -16,8 +16,9 @@ using System.Threading.Tasks;
 namespace ProjetoMetaMensagem.Servico.Cobranca
 {
     // Singleton: guarda um HttpClient e o cache de customers. Um HttpClient novo por chamada
-    // esgotaria sockets num disparo em lote. Desde o Mercado Pago (BD/58) e o provedor de reserva:
-    // so gera Pix com Cobranca:Provedor=ASAAS, mas continua dando baixa nas cobrancas dele.
+    // esgotaria sockets num disparo em lote. Provedor padrao das cobrancas da conta da Contact
+    // Solution (Cobranca:Provedor); o split so entra para quem tem subconta e nao esta forcado na
+    // plataforma (DestinoRecebimento).
     public class AsaasPixService : IPixService, IProvedorCobranca
     {
         public string Nome => ProvedorCobranca.Asaas;

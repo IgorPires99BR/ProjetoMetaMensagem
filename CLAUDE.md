@@ -30,8 +30,9 @@ pipeline, templates Meta). Frontend em `../AngularContact` (mesma pasta pai
   `Asaas__Ambiente=PRODUCAO` + `$aact_prod_...`. Chave do ambiente errado é barrada antes de
   chamar o Asaas e aparece como `fail` no log de boot. Para testar a baixa localmente (o webhook
   não alcança a máquina), `POST /api/cobranca-cliente/{id}/simular-pagamento-sandbox`.
-- Pix das cobranças: `Cobranca:Provedor` escolhe quem gera os Pix novos — `MERCADOPAGO` (padrão,
-  orders na conta da Contact Solution, sem split) ou `ASAAS` (reserva). Cada `CobrancaCliente`
+- Pix das cobranças: `Cobranca:Provedor` escolhe quem gera os Pix novos na conta da Contact
+  Solution — `ASAAS` (padrão) ou `MERCADOPAGO`. Para cobrar tudo nessa conta, sem subconta nem
+  split, marque `RecebimentoNaPlataforma` na empresa (só admin da plataforma). Cada `CobrancaCliente`
   guarda o `Provedor` que a gerou e a baixa/cancelamento sempre volta nele (nulo = Asaas).
   Webhook do Mercado Pago em `POST /api/webhook/mercadopago` (assinatura `x-signature` com
   `MercadoPago:WebhookSecret`). Para onde vai o dinheiro de cada empresa é decidido em

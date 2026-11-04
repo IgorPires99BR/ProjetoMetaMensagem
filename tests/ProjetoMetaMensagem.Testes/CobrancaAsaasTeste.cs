@@ -223,4 +223,29 @@ public class CobrancaAsaasTeste
         Assert.False(servico.Sandbox);
         await Assert.ThrowsAsync<PixException>(() => servico.ConfirmarPagamentoSandboxAsync("pay_123"));
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Sem_Cobranca_Provedor_os_Pix_novos_saem_pelo_Asaas(string? configurado)
+    {
+        var asaas = new AsaasPixService(Options.Create(new AsaasConfiguration()), NullLogger<AsaasPixService>.Instance);
+        var config = configurado == null ? new CobrancaConfiguration() : new CobrancaConfiguration { Provedor = configurado };
+
+        var provedores = new ProvedoresCobranca(new IProvedorCobranca[] { asaas }, Options.Create(config));
+
+        Assert.Equal(ProvedorCobranca.Asaas, provedores.Ativo.Nome);
+    }
+
+    [Theory]
+    [InlineData(true, "Sebrecon", true)]
+    [InlineData(false, "Sebrecon", false)]
+    [InlineData(true, "Contact Solution", false)]
+    [InlineData(true, "", false)]
+    public void Pagina_do_Pix_avisa_quem_recebe_so_na_conta_da_plataforma(bool naPlataforma, string empresa, bool avisa)
+    {
+        var nota = ProjetoMetaMensagem.WebAPI.Controllers.Cobranca.PagamentoPixController.NotaDeQuemRecebe(naPlataforma, empresa);
+
+        Assert.Equal(avisa, nota.Contains("Contact Solution"));
+    }
 }

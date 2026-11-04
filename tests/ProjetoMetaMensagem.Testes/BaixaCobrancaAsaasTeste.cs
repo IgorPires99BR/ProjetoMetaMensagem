@@ -128,6 +128,17 @@ public class BaixaCobrancaAsaasTeste
         Assert.Equal(0, pix.ConsultasDeSubconta);
     }
 
+    // CNPJ do seed Y03: sem o CNPJ real da empresa, contato sem documento nao tem cliente padrao.
+    [Fact]
+    public async Task Recebimento_na_plataforma_com_CNPJ_ficticio_nao_gera_Pix_para_contato_sem_documento()
+    {
+        var (pix, preparada) = await PrepararPara(cpfCnpj: null, recebimentoNaPlataforma: true, semSubconta: true, cnpjEmpresa: "00000000000100");
+
+        Assert.False(preparada.TemPix);
+        Assert.Contains("CNPJ", preparada.Erro);
+        Assert.Empty(pix.Criadas);
+    }
+
     [Fact]
     public async Task Com_subconta_o_Pix_continua_com_split()
     {

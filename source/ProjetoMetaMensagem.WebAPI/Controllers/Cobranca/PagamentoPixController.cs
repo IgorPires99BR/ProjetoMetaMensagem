@@ -75,6 +75,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Cobranca
                 corpo = $@"<p class=""linha""><span>Valor</span><strong>R$ {valor}</strong></p>
 <p class=""linha""><span>Vencimento</span><strong>{vencimento}</strong></p>
 {(encargos > 0 ? $@"<p class=""nota"">Inclui R$ {encargos.ToString("N2", Brasil)} de multa e juros por atraso.</p>" : "")}
+{NotaDeQuemRecebe(cobranca.RecebidaNaPlataforma, nomeEmpresa)}
 <img class=""qr"" src=""/pix/{cobranca.Txid}/qrcode.png"" alt=""QR Code do Pix"" width=""240"" height=""240"">
 <p class=""nota"">Abra o app do seu banco, escolha Pix &gt; Pix Copia e Cola e cole o código abaixo.</p>
 <textarea id=""codigo"" readonly rows=""4"">{copiaECola}</textarea>
@@ -95,6 +96,13 @@ document.getElementById('copiar').addEventListener('click', function () {{
             Response.Headers.CacheControl = "no-store";
             return Content(Montar(titulo, corpo), "text/html; charset=utf-8");
         }
+
+        // Na conta da plataforma o app do banco mostra outro recebedor, nao a empresa que o cliente
+        // conhece: sem este aviso, o Pix parece golpe.
+        public static string NotaDeQuemRecebe(bool recebidaNaPlataforma, string nomeEmpresa) =>
+            !recebidaNaPlataforma || nomeEmpresa == "" || nomeEmpresa.Equals("Contact Solution", StringComparison.OrdinalIgnoreCase)
+                ? ""
+                : $@"<p class=""nota"">O pagamento é recebido pela Contact Solution, responsável pela cobrança de {nomeEmpresa}.</p>";
 
         // O ticket_url vem da resposta do provedor, mas vira link numa pagina publica: so https do
         // proprio Mercado Pago.

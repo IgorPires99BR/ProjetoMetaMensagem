@@ -15,7 +15,7 @@ namespace ProjetoMetaMensagem.Servico.Cobranca
         public ProvedoresCobranca(IEnumerable<IProvedorCobranca> provedores, IOptions<CobrancaConfiguration> config)
         {
             _porNome = provedores.ToDictionary(p => p.Nome, StringComparer.OrdinalIgnoreCase);
-            _ativo = string.IsNullOrWhiteSpace(config.Value.Provedor) ? ProvedorCobranca.MercadoPago : config.Value.Provedor.Trim();
+            _ativo = string.IsNullOrWhiteSpace(config.Value.Provedor) ? ProvedorCobranca.Asaas : config.Value.Provedor.Trim();
         }
 
         // Nome invalido em Cobranca:Provedor so aparece aqui (e no log de boot): falha alta em vez

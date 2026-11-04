@@ -64,9 +64,9 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 new { chave = "CaktoConfiguration:TemplateBoasVindas", configurado = Existe("CaktoConfiguration:TemplateBoasVindas"), usadoPara = "Template aprovado enviado no WhatsApp assim que o cliente paga. Sem isto o contato e criado, mas nada e enviado." },
                 new { chave = "MetaConversoesConfiguration:PixelId", configurado = Existe("MetaConversoesConfiguration:PixelId"), usadoPara = "Pixel que recebe as conversoes reportadas pelo servidor." },
                 new { chave = "MetaConversoesConfiguration:AccessToken", configurado = Existe("MetaConversoesConfiguration:AccessToken"), usadoPara = "Token do Gerenciador de Eventos. Sem isto a Meta nunca sabe quais leads compraram, e o anuncio otimiza no escuro." },
-                new { chave = "Asaas:ApiKey", configurado = Existe("Asaas:ApiKey"), usadoPara = "Provedor de reserva (Cobranca:Provedor=ASAAS) e baixa dos Pix ja gerados no Asaas." },
+                new { chave = "Asaas:ApiKey", configurado = Existe("Asaas:ApiKey"), usadoPara = "Gerar e dar baixa nos Pix do Asaas (provedor padrao de Cobranca:Provedor). Sem isto nenhum Pix sai pelo Asaas." },
                 new { chave = "Asaas:WebhookToken", configurado = Existe("Asaas:WebhookToken"), usadoPara = "Validar o webhook de pagamento do Asaas. Sem isto o webhook aceita qualquer chamada (a baixa ainda reconsulta o Asaas)." },
-                new { chave = "MercadoPago:AccessToken", configurado = Existe("MercadoPago:AccessToken"), usadoPara = "Gerar e consultar as orders Pix das cobrancas aos clientes (provedor ativo). Sem isto nenhum Pix sai." },
+                new { chave = "MercadoPago:AccessToken", configurado = Existe("MercadoPago:AccessToken"), usadoPara = "Gerar e consultar as orders Pix quando Cobranca:Provedor=MERCADOPAGO, e dar baixa nas ja geradas nele." },
                 new { chave = "MercadoPago:WebhookSecret", configurado = Existe("MercadoPago:WebhookSecret"), usadoPara = "Validar a assinatura do webhook do Mercado Pago. Sem isto o webhook aceita qualquer chamada (a baixa ainda reconsulta a order)." },
                 new { chave = "MercadoPago:EmailPagadorPadrao", configurado = Existe("MercadoPago:EmailPagadorPadrao"), usadoPara = "E-mail exigido pelo Mercado Pago quando o contato nao tem e-mail. Sem isto esses contatos nao recebem Pix." },
                 new { chave = "MercadoPago:ClientId", configurado = Existe("MercadoPago:ClientId"), usadoPara = "App do OAuth: as empresas conectam a conta Mercado Pago delas. Sem isto todas cobram pela conta da Contact Solution." },
@@ -99,6 +99,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                 faltando,
                 itens,
                 asaas,
+                provedorCobranca = _configuration["Cobranca:Provedor"] ?? "(vazio = ASAAS)",
                 ambiente = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "desconhecido",
                 horaServidor = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
             });

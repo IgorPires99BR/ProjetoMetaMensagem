@@ -42,6 +42,6 @@ namespace ProjetoMetaMensagem.Servico.Configuration
     // geradas continuam no provedor delas.
     public class CobrancaConfiguration
     {
-        public string Provedor { get; set; } = Dominio.Interfaces.Servicos.ProvedorCobranca.MercadoPago;
+        public string Provedor { get; set; } = Dominio.Interfaces.Servicos.ProvedorCobranca.Asaas;
     }
 }
