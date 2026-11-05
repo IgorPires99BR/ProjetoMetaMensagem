@@ -10,7 +10,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
         // ListaAssinaturasCommand: null so pra admin da plataforma (ve todas as empresas).
         public Guid? EmpresaIdSolicitante { get; set; }
 
-        // PENDENTE, PAGA, VENCIDA (filtro calculado: pendente + vencimento no passado) ou
+        // PENDENTE, PAGA, VENCIDA (gravada pela recorrencia, ou pendente + vencimento no passado) ou
         // CANCELADA. Nulo = todas. E o que o futuro job de recorrencia vai consumir com VENCIDA.
         public string? Status { get; set; }
 
@@ -19,5 +19,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
         // neste periodo". Ambos opcionais e inclusivos (DataFim vale o dia inteiro).
         public DateTime? DataInicio { get; set; }
         public DateTime? DataFim { get; set; }
+
+        // Aba de inativas da tela; nas demais consultas, inativa nao entra na lista nem nos totais.
+        public bool ApenasInativas { get; set; }
     }
 }

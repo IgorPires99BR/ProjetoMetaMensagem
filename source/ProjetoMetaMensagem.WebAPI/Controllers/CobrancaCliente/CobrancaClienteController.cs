@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Help.Error;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.AlteraAtivoCobrancaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.EnviaRecorrenciaCobranca;
 using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.MarcaCobrancaClientePaga;
@@ -26,11 +27,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.CobrancaCliente
             _logger = logger;
         }
 
-        // status: PENDENTE, PAGA, VENCIDA (pendente + vencimento no passado) ou CANCELADA.
+        // status: PENDENTE, PAGA, VENCIDA (gravada pela recorrencia, ou pendente + vencimento no passado) ou CANCELADA.
         // Sem filtro = todas da empresa. E a lista que o futuro job de recorrencia vai consumir
         // com status=VENCIDA. dataInicio/dataFim (yyyy-MM-dd) filtram pela data de envio.
         [HttpGet("api/cobranca-cliente")]
-        public async Task<IActionResult> Listar([FromQuery] string? status, [FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
+        public async Task<IActionResult> Listar([FromQuery] string? status, [FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim, [FromQuery] bool inativas = false)
         {
             try
             {
@@ -39,7 +40,8 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.CobrancaCliente
                     EmpresaIdSolicitante = this.EmpresaDoEscopo(),
                     Status = status,
                     DataInicio = dataInicio,
-                    DataFim = dataFim
+                    DataFim = dataFim,
+                    ApenasInativas = inativas
                 };
 
                 var resultado = await _mediator.Send(command);
@@ -67,6 +69,23 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.CobrancaCliente
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "CobrancaClienteController.MarcarPaga"), tipo = "Servico" });
+            }
+        }
+
+        [HttpPatch("api/cobranca-cliente/{id}/ativo")]
+        public async Task<IActionResult> AlterarAtivo(Guid id, [FromBody] AlteraAtivoCobrancaClienteCommand command)
+        {
+            try
+            {
+                command.CobrancaClienteId = id;
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "CobrancaClienteController.AlterarAtivo"), tipo = "Servico" });
             }
         }
 

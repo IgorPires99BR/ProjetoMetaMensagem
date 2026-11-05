@@ -51,63 +51,6 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
             return contatos;
         }
 
-        // Troca os marcadores de Pix nas variaveis de cada destinatario, preenche botao/QR por
-        // contato e tira da lista quem nao pode receber (Pix nao gerado). Devolve as falhas
-        // desses destinatarios, no formato do resultado da Meta.
-        private List<ResultadoEnvioTemplate> AplicarCobrancas(
-            EnviarMensagemTemplateMetaLoteCommand command, Entidades.Template? template, Dictionary<Guid, CobrancaPreparada>? preparadas)
-        {
-            var falhas = new List<ResultadoEnvioTemplate>();
-            var telefones = command.Telefones ?? new List<string>();
-            var contatosIds = command.ContatosIds ?? new List<string>();
-            var botaoInformado = command.ParametrosButton?.Any(p => !string.IsNullOrWhiteSpace(p)) ?? false;
-            var preencherBotao = template != null && PixNoTemplate.TemBotaoUrlDinamico(template) && !botaoInformado;
-            var preencherCabecalho = template != null && PixNoTemplate.TemCabecalhoImagem(template)
-                && string.IsNullOrWhiteSpace(command.ParametroHeaderMediaUrl);
-
-            var novosTelefones = new List<string>();
-            var novosContatosIds = new List<string>();
-
-            for (var i = 0; i < telefones.Count; i++)
-            {
-                var contatoIdTexto = i < contatosIds.Count ? contatosIds[i] : null;
-                CobrancaPreparada? preparada = null;
-                if (preparadas != null && Guid.TryParse(contatoIdTexto, out var contatoId))
-                    preparadas.TryGetValue(contatoId, out preparada);
-
-                var erro = preparada?.Erro ?? PixNoTemplate.ErroDoBotaoSemPix(template, preparada, botaoInformado);
-                if (erro == null)
-                {
-                    // Copia: a lista pode ser a global (compartilhada entre destinatarios).
-                    var valores = command.ParametrosBodyDoDestinatario(i).ToList();
-                    erro = _preparadorPix.AplicarNasVariaveis(valores, preparada);
-                    if (erro == null && contatoIdTexto != null && preparada != null)
-                        command.ParametrosBodyPorContato[contatoIdTexto] = valores;
-                }
-
-                if (erro != null)
-                {
-                    falhas.Add(new ResultadoEnvioTemplate { Sucesso = false, Erro = erro, ContatoId = contatoIdTexto!, Telefone = telefones[i] });
-                    continue;
-                }
-
-                if (preparada != null && preparada.TemPix && contatoIdTexto != null)
-                {
-                    if (preencherBotao)
-                        command.ParametrosButtonPorContato[contatoIdTexto] = new List<string> { preparada.Cobranca.Txid! };
-                    if (preencherCabecalho)
-                        command.HeaderMediaUrlPorContato[contatoIdTexto] = preparada.UrlQrCode!;
-                }
-
-                novosTelefones.Add(telefones[i]);
-                if (i < contatosIds.Count) novosContatosIds.Add(contatosIds[i]);
-            }
-
-            command.Telefones = novosTelefones;
-            if (command.ContatosIds != null) command.ContatosIds = novosContatosIds;
-            return falhas;
-        }
-
         public async Task<Response<EnviarMensagemTemplateMetaLoteResult>> Handle(EnviarMensagemTemplateMetaLoteCommand command)
         {
 
@@ -154,6 +97,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
                     : null;
 
+                // A tela nao oferece template inativo, mas uma aba aberta antes de inativar ainda pode pedir.
+                if (templateEnviado is { Ativo: false })
+                {
+                    response.AddErro("Este modelo foi inativado. Reative em Templates para enviar.");
+                    return response;
+                }
+
                 // Cobranca (e o Pix dela) nasce ANTES do envio: o Pix vai dentro da mensagem.
                 // Quem ficou sem Pix sai da lista e volta como falha -- cobranca sem forma de
                 // pagamento nao deve chegar ao cliente.
@@ -163,7 +113,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     preparadas = await _preparadorPix.PrepararAsync(
                         command.IdEmpresa, templateEnviado, await ObterContatosDoLote(command), HorarioBrasilia.Agora());
                 }
-                var falhasAntesDoEnvio = AplicarCobrancas(command, templateEnviado, preparadas);
+                var falhasAntesDoEnvio = _preparadorPix.AplicarNoLote(command, templateEnviado, preparadas);
 
                 var resultadoDisparos = command.Telefones.Count > 0
                     ? await _metaService.EnviarTemplatesEmLoteAsync(command, phoneNumberId, token)

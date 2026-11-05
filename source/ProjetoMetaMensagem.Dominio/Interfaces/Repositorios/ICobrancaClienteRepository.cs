@@ -16,8 +16,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // status nulo = todas. Ordenado por vencimento: e a lista que a tela de gestao e o
         // futuro job de recorrencia (cobrancas vencidas e nao pagas) vao consumir.
         // dataInicio/dataFim filtram pela data de envio da cobranca (DataCriacao); nulos = sem limite.
+        // apenasInativas troca a lista das ativas pela das inativas (aba da tela).
         Task<IEnumerable<CobrancaCliente>> ObterPorEmpresa(Guid? empresaIdSolicitante, string? status,
-            DateTime? dataInicio = null, DateTime? dataFim = null);
+            DateTime? dataInicio = null, DateTime? dataFim = null, bool apenasInativas = false);
 
         Task<int> MarcarPaga(Guid id, Guid? empresaIdSolicitante, DateTime dataPagamento);
 
@@ -30,5 +31,12 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // Pix novo na mesma cobranca (recorrencia com o anterior vencido). Devolve 0 se ela deixou
         // de estar pendente.
         Task<int> AtualizarPix(CobrancaCliente cobranca);
+
+        // Recorrencia enviada: a cobranca passa a valer como vencida, mesmo antes da data.
+        Task<int> MarcarVencida(Guid id);
+
+        // Devolvem 0 se a cobranca nao existe no escopo ou ja esta na situacao pedida.
+        Task<int> Inativar(Guid id, Guid? empresaIdSolicitante, DateTime agora);
+        Task<int> Reativar(Guid id, Guid? empresaIdSolicitante);
     }
 }

@@ -3,6 +3,8 @@ using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Helpers;
 using ProjetoMetaMensagem.Dominio.Interfaces;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
+using ProjetoMetaMensagem.Dominio.Interfaces.Servicos.Meta;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -23,6 +25,9 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         // (Asaas fora, comissao maior que a fatura, contato sem valor). O destinatario nao
         // deve receber uma cobranca sem forma de pagamento.
         public string? Erro { get; set; }
+
+        // Provedor fora ou sem conexao, nao um dado errado: a fila tenta de novo.
+        public bool ErroTransitorio { get; set; }
 
         public bool TemPix => Cobranca.Txid != null;
         public string? LinkPagamento { get; set; }
@@ -61,12 +66,21 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         // Problema volta em Erro.
         Task<CobrancaPreparada> GarantirPixAsync(CobrancaCliente cobranca, Contato contato, DateTime agora);
 
+        // Tira do ar o Pix de uma cobranca que vai sair de cena. Devolve o motivo quando nao pode
+        // seguir: o cliente ja pagou (a baixa e feita aqui) ou o provedor nao confirmou o cancelamento.
+        Task<string?> EncerrarPixAsync(CobrancaCliente cobranca);
+
         // Cancela no Asaas o Pix das cobrancas que nao foram enviadas. Nunca lanca excecao.
         Task DescartarAsync(Guid empresaId, IEnumerable<CobrancaPreparada> naoEnviadas);
 
         // Troca os marcadores de Pix (ver ResolvedorDeVariaveis) pelos valores desta cobranca.
         // Devolve erro quando o template pede Pix e a cobranca nao tem.
         string? AplicarNasVariaveis(List<string> valores, CobrancaPreparada? preparada);
+
+        // Troca os marcadores de Pix nas variaveis de cada destinatario, preenche botao/QR por
+        // contato e tira da lista quem nao pode receber (Pix nao gerado). Devolve as falhas
+        // desses destinatarios, no formato do resultado da Meta.
+        List<ResultadoEnvioTemplate> AplicarNoLote(EnviarMensagemTemplateMetaLoteCommand command, Template? template, Dictionary<Guid, CobrancaPreparada>? preparadas);
     }
 
     public class PreparadorCobrancaPix : IPreparadorCobrancaPix
@@ -120,7 +134,11 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             }
             catch (PixException ex)
             {
-                foreach (var preparada in preparadas.Values) preparada.Erro = $"Pix não gerado: {ex.Message}";
+                foreach (var preparada in preparadas.Values)
+                {
+                    preparada.Erro = $"Pix não gerado: {ex.Message}";
+                    preparada.ErroTransitorio = EhTransitorio(ex);
+                }
                 return preparadas;
             }
 
@@ -192,6 +210,20 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             }
 
             return preparada;
+        }
+
+        public async Task<string?> EncerrarPixAsync(CobrancaCliente cobranca)
+        {
+            try
+            {
+                return await EncerrarPixAnteriorAsync(new CobrancaPreparada { Cobranca = cobranca })
+                    ? null
+                    : "O cliente já pagou o Pix desta cobrança. A baixa foi feita agora.";
+            }
+            catch (PixException ex)
+            {
+                return $"Não foi possível cancelar o Pix: {ex.Message}";
+            }
         }
 
         // false = o cliente ja pagou; a baixa foi feita aqui e nao ha o que cobrar.
@@ -333,13 +365,20 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             catch (PixException ex)
             {
                 preparada.Erro = $"Pix não gerado: {ex.Message}";
+                preparada.ErroTransitorio = EhTransitorio(ex);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Pix {Provedor}: erro inesperado ao gerar Pix do contato {ContatoId}", provedor.Nome, contato.Id);
                 preparada.Erro = "Pix não gerado: erro inesperado ao falar com o provedor de pagamento.";
+                preparada.ErroTransitorio = true;
             }
         }
+
+        // Sem status e com excecao interna = nao conseguiu falar com o provedor (ver EnviarAsync dos
+        // servicos). Sem status e sem excecao e configuracao ou dado errado: repetir nao adianta.
+        private static bool EhTransitorio(PixException ex) =>
+            ex.StatusHttp is null ? ex.InnerException != null : ex.StatusHttp == 429 || ex.StatusHttp >= 500;
 
         // Valor, vencimento e juros sao opcionais no cadastro do contato, mas sem eles o Pix sairia
         // com vencimento "hoje" e sem multa/juros, que ninguem combinou com o cliente. Zero vale
@@ -380,6 +419,60 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
             if (provedor != ProvedorCobranca.MercadoPago) return null;
             var dados = await _unitOfWork.DadosBancariosEmpresa.ObterPorEmpresa(empresaId);
             return ContaMercadoPagoEmpresa.Token(dados, _criptografia);
+        }
+
+        public List<ResultadoEnvioTemplate> AplicarNoLote(
+            EnviarMensagemTemplateMetaLoteCommand command, Template? template, Dictionary<Guid, CobrancaPreparada>? preparadas)
+        {
+            var falhas = new List<ResultadoEnvioTemplate>();
+            var telefones = command.Telefones ?? new List<string>();
+            var contatosIds = command.ContatosIds ?? new List<string>();
+            var botaoInformado = command.ParametrosButton?.Any(p => !string.IsNullOrWhiteSpace(p)) ?? false;
+            var preencherBotao = template != null && PixNoTemplate.TemBotaoUrlDinamico(template) && !botaoInformado;
+            var preencherCabecalho = template != null && PixNoTemplate.TemCabecalhoImagem(template)
+                && string.IsNullOrWhiteSpace(command.ParametroHeaderMediaUrl);
+
+            var novosTelefones = new List<string>();
+            var novosContatosIds = new List<string>();
+
+            for (var i = 0; i < telefones.Count; i++)
+            {
+                var contatoIdTexto = i < contatosIds.Count ? contatosIds[i] : null;
+                CobrancaPreparada? preparada = null;
+                if (preparadas != null && Guid.TryParse(contatoIdTexto, out var contatoId))
+                    preparadas.TryGetValue(contatoId, out preparada);
+
+                var erro = preparada?.Erro ?? PixNoTemplate.ErroDoBotaoSemPix(template, preparada, botaoInformado);
+                if (erro == null)
+                {
+                    // Copia: a lista pode ser a global (compartilhada entre destinatarios).
+                    var valores = command.ParametrosBodyDoDestinatario(i).ToList();
+                    erro = AplicarNasVariaveis(valores, preparada);
+                    if (erro == null && contatoIdTexto != null && preparada != null)
+                        command.ParametrosBodyPorContato[contatoIdTexto] = valores;
+                }
+
+                if (erro != null)
+                {
+                    falhas.Add(new ResultadoEnvioTemplate { Sucesso = false, Erro = erro, ContatoId = contatoIdTexto!, Telefone = telefones[i] });
+                    continue;
+                }
+
+                if (preparada != null && preparada.TemPix && contatoIdTexto != null)
+                {
+                    if (preencherBotao)
+                        command.ParametrosButtonPorContato[contatoIdTexto] = new List<string> { preparada.Cobranca.Txid! };
+                    if (preencherCabecalho)
+                        command.HeaderMediaUrlPorContato[contatoIdTexto] = preparada.UrlQrCode!;
+                }
+
+                novosTelefones.Add(telefones[i]);
+                if (i < contatosIds.Count) novosContatosIds.Add(contatosIds[i]);
+            }
+
+            command.Telefones = novosTelefones;
+            if (command.ContatosIds != null) command.ContatosIds = novosContatosIds;
+            return falhas;
         }
 
         public string? AplicarNasVariaveis(List<string> valores, CobrancaPreparada? preparada)

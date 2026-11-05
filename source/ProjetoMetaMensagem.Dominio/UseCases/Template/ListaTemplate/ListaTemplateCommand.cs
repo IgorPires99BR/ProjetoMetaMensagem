@@ -16,5 +16,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
         }
 
         public Guid IdEmpresa{ get; set; }
+
+        // So a aba de inativos da tela de Templates pede; Disparos, Agendamentos e os mapas nao.
+        public bool ApenasInativos { get; set; }
     }
 }

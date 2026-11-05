@@ -34,6 +34,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces
         IAgendamentoRepository Agendamento { get; }
         ICobrancaClienteRepository CobrancaCliente { get; }
         IDadosBancariosEmpresaRepository DadosBancariosEmpresa { get; }
+        IDisparoLoteRepository DisparoLote { get; }
         void Commit();
         void BeginTransaction();
         void Rollback();

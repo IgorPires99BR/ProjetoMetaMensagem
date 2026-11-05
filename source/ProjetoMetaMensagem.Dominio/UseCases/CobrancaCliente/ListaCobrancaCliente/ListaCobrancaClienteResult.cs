@@ -40,6 +40,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
             RecebidaNaPlataforma = cobranca.RecebidaNaPlataforma;
             Provedor = cobranca.Txid != null ? cobranca.Provedor ?? Interfaces.Servicos.ProvedorCobranca.Asaas : null;
             LinkPagamento = cobranca.Txid != null ? linkPagamento : null;
+            Ativo = cobranca.Ativo;
+            DataInativacao = cobranca.DataInativacao;
         }
 
         // Pix (ver BD/52). O copia e cola fica de fora: a tela nao precisa dele e a lista
@@ -79,6 +81,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
         public string Status { get; set; }
         public DateTime? DataPagamento { get; set; }
         public DateTime DataCriacao { get; set; }
+        public bool Ativo { get; set; }
+        public DateTime? DataInativacao { get; set; }
 
         // Dados do Contato pra exibir na tela sem consulta extra do front.
         public string? NomeCliente { get; set; }

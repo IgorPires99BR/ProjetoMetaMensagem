@@ -7,6 +7,9 @@ using ProjetoMetaMensagem.Dominio.UseCases.Messages.CriarTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMeta;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMetaLote;
 using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMidiaMeta;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.EnfileiraDisparoLote;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.ListaDisparosLote;
+using ProjetoMetaMensagem.Dominio.UseCases.Messages.ListaUltimosDisparos;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.WebAPI.Common;
 
@@ -104,6 +107,77 @@ namespace ProjetoMetaMensagem.Controllers.DisparadorDeMensagem
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnviarMensagemTemplateLote"), tipo = "Servico" });
+            }
+        }
+
+        // 202: o lote foi aceito na fila, nenhuma mensagem saiu ainda. O progresso vem de lotes/{id}.
+        [HttpPost("lotes")]
+        public async Task<IActionResult> EnfileirarLote([FromBody] EnfileiraDisparoLoteCommand command)
+        {
+            try
+            {
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse(StatusCodes.Status202Accepted, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.EnfileirarLote"), tipo = "Servico" });
+            }
+        }
+
+        [HttpGet("lotes/recentes/{empresaId}")]
+        public async Task<IActionResult> LotesRecentes(Guid empresaId)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ListaDisparosLoteCommand
+                {
+                    EmpresaId = empresaId,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse(StatusCodes.Status200OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.LotesRecentes"), tipo = "Servico" });
+            }
+        }
+
+        [HttpGet("lotes/{id:guid}")]
+        public async Task<IActionResult> ObterLote(Guid id)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ListaDisparosLoteCommand
+                {
+                    LoteId = id,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse(StatusCodes.Status200OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.ObterLote"), tipo = "Servico" });
+            }
+        }
+
+        [HttpGet("ultimos-disparos/{empresaId}")]
+        public async Task<IActionResult> UltimosDisparos(Guid empresaId)
+        {
+            try
+            {
+                var resultado = await _mediator.Send(new ListaUltimosDisparosCommand
+                {
+                    EmpresaId = empresaId,
+                    EmpresaIdSolicitante = this.EmpresaDoEscopo()
+                });
+                return this.ValidateResponse(StatusCodes.Status200OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "DisparadorController.UltimosDisparos"), tipo = "Servico" });
             }
         }
 

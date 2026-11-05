@@ -25,6 +25,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
             DataCriacao = template.DataCriacao;
             DataAtualizacao = template.DataAtualizacao;
             GeraCobranca = template.GeraCobranca;
+            Ativo = template.Ativo;
+            DataInativacao = template.DataInativacao;
         }
 
         public Guid Id { get; set; }
@@ -54,5 +56,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
         public bool GeraCobranca { get; set; }
+        public bool Ativo { get; set; }
+        public DateTime? DataInativacao { get; set; }
     }
 }

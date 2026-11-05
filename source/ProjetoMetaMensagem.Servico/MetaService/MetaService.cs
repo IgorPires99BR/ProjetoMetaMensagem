@@ -724,6 +724,7 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                     {
                         Sucesso = false,
                         Erro = ex.Message,
+                        TipoFalha = ProjetoMetaMensagem.Dominio.Servicos.ClassificadorFalhaMeta.DaExcecao(ex),
                         ContatoId = contatoId,
                         Telefone = telefone
                     };
@@ -878,7 +879,8 @@ namespace ProjetoMetaMensagem.Servico.MetaService
                 return new ResultadoEnvioTemplate
                 {
                     Sucesso = false,
-                    Erro = responseContent
+                    Erro = responseContent,
+                    TipoFalha = ProjetoMetaMensagem.Dominio.Servicos.ClassificadorFalhaMeta.DaResposta((int)response.StatusCode, responseContent)
                 };
             }
 

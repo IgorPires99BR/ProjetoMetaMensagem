@@ -18,7 +18,12 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // empresaIdSolicitante restringe a busca aos templates da empresa informada (null = admin, sem restricao)
         Task<Template?> ObterPorIdEEmpresa(Guid id, Guid? empresaIdSolicitante);
         Task<IEnumerable<Template>> Obter();
+        // Todos, inclusive inativos: a sincronizacao com a Meta precisa deles, senao importaria de
+        // novo como template novo cada um que foi inativado.
         Task<IEnumerable<Template>> ObterPorEmpresa(Guid empresaId);
+        // O que as telas mostram: os ativos ou, na aba de inativos, so eles.
+        Task<IEnumerable<Template>> ObterParaTela(Guid empresaId, bool apenasInativos);
+        Task<int> AlterarAtivo(Guid id, Guid? empresaIdSolicitante, bool ativo);
 
         // Templates das OUTRAS empresas que dividem o mesmo WABA (ex: Sebrecon usa o numero da
         // Contact Solution). A Meta lista tudo do WABA junto, entao a sincronizacao precisa
@@ -33,6 +38,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // Gatilhos de disparo automatico (BD/55). Ficam aqui e nao num repositorio proprio porque
         // so existem pendurados num template.
         Task<IEnumerable<TemplateGatilho>> ObterGatilhosPorEmpresa(Guid empresaId);
+        // Gatilho de template inativo fica de fora: o modelo nao aparece mais na tela e nao pode
+        // continuar saindo sozinho. Ao reativar, o gatilho volta a valer como estava.
         Task<IEnumerable<TemplateGatilho>> ObterGatilhosAtivos(Guid empresaId, string tipo);
         // Troca todos os gatilhos do template pelos informados (lista vazia = remove todos).
         Task SubstituirGatilhos(Guid templateId, Guid empresaId, IEnumerable<TemplateGatilho> gatilhos);

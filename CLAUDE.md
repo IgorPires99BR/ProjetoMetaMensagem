@@ -68,6 +68,16 @@ pipeline, templates Meta). Frontend em `../AngularContact` (mesma pasta pai
   `ConversationState`, `WebhookConfig`) — migração de nomenclatura pendente, documentada
   nos comentários da migration 21. Repositórios fazem a ponte via `nameof()`/constantes.
 
+## Fila do disparo em massa
+
+A tela de Disparos só enfileira (`POST /api/disparador/lotes`, tabelas `DisparoLote` e
+`DisparoLoteItem`, BD/62); o `DisparoLoteWorker` processa um contato por vez via
+`ProcessadorDisparoLote`. Regra central: depois de gravar `ENVIANDO`, o item nunca volta sozinho
+para a fila, porque a mensagem pode ter saído e a Meta não tem chave de idempotência. Só o que com
+certeza não saiu é repetido (`TipoFalhaEnvio.Transitoria`); o resto vira `INCERTO`, com a cobrança
+registrada, e o usuário decide. Agendamentos, gatilhos e recorrência ainda chamam
+`EnviarMensagemTemplateMetaLoteHandler` direto, fora da fila.
+
 ## Checklist de validação antes de commitar mudanças de lógica de negócio
 
 Não confie só em "buildou" — vários bugs neste projeto (serviços não registrados no DI,

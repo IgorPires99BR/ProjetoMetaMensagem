@@ -48,6 +48,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         // SaaS da propria Contact Solution, que e outra tabela/fluxo (Cakto).
         public bool GeraCobranca { get; set; }
 
+        // Inativo some das telas e para de ser enviado, mas continua no banco e na Meta (ver BD/60).
+        public bool Ativo { get; set; } = true;
+        public DateTime? DataInativacao { get; set; }
+
         [NotMapped]
         public List<TemplateComponenteDto> Componentes
         {

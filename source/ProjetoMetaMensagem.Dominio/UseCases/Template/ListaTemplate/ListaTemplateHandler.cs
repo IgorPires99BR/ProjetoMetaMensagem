@@ -44,7 +44,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.ListaTemplate
                     return response;
                 }
 
-                var templateBanco = await _unitOfWork.Template.ObterPorEmpresa(command.IdEmpresa);
+                var templateBanco = await _unitOfWork.Template.ObterParaTela(command.IdEmpresa, command.ApenasInativos);
 
                 if (templateBanco == null)
                 {

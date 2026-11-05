@@ -37,6 +37,7 @@ namespace ProjetoMetaMensagem.Data
         public IAgendamentoRepository Agendamento { get; set; }
         public ICobrancaClienteRepository CobrancaCliente { get; set; }
         public IDadosBancariosEmpresaRepository DadosBancariosEmpresa { get; set; }
+        public IDisparoLoteRepository DisparoLote { get; set; }
 
         public UnitOfWork(DbSession session,
             ICompaniesRepository companiesRepository,
@@ -63,7 +64,8 @@ namespace ProjetoMetaMensagem.Data
             IOrigemLeadRepository origemLeadRepository,
             IAgendamentoRepository agendamentoRepository,
             ICobrancaClienteRepository cobrancaClienteRepository,
-            IDadosBancariosEmpresaRepository dadosBancariosEmpresaRepository)
+            IDadosBancariosEmpresaRepository dadosBancariosEmpresaRepository,
+            IDisparoLoteRepository disparoLoteRepository)
         {
             _session = session;
             CompaniesRepository = companiesRepository;
@@ -91,6 +93,7 @@ namespace ProjetoMetaMensagem.Data
             Agendamento = agendamentoRepository;
             CobrancaCliente = cobrancaClienteRepository;
             DadosBancariosEmpresa = dadosBancariosEmpresaRepository;
+            DisparoLote = disparoLoteRepository;
         }
 
         public void Commit()

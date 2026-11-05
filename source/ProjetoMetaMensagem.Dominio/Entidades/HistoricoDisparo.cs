@@ -40,6 +40,12 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public string? Origem { get; set; }
     }
 
+    public class UltimoDisparoContato
+    {
+        public Guid ContatoId { get; set; }
+        public DateTime DataUltimoDisparo { get; set; }
+    }
+
     // Usado apenas em listagens que precisam do telefone do contato sem consulta extra (ex: chats ativos)
     public class HistoricoDisparoComTelefone : HistoricoDisparo
     {

@@ -136,6 +136,15 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
 
             new("BD/59", "DadosBancariosEmpresa", "ProvedorRecebimento"),
             new("BD/59", "DadosBancariosEmpresa", "MercadoPagoUserId"),
+
+            new("BD/60", "Template", "Ativo"),
+            new("BD/60", "Template", "DataInativacao"),
+
+            new("BD/61", "CobrancaCliente", "Ativo"),
+            new("BD/61", "CobrancaCliente", "DataInativacao"),
+
+            new("BD/62", "DisparoLote"),
+            new("BD/62", "DisparoLoteItem"),
         };
     }
 }

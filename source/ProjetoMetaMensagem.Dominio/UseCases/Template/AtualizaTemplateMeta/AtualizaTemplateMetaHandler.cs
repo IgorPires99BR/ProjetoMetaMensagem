@@ -70,7 +70,8 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta
                 // Nota: Se você não usar o Id da Meta como PK física, adapte o NomeTemplate ou crie um campo 'MetaTemplateId'
                 var nomesVindosDaMeta = templatesMeta.Select(t => t.Nome).ToList();
                 var templatesParaRemover = templatesNoBanco
-                    .Where(b => !nomesVindosDaMeta.Contains(b.NomeTemplate))
+                    // Inativo fica no banco mesmo que tenha saido da Meta: quem inativa conta com isso.
+                    .Where(b => b.Ativo && !nomesVindosDaMeta.Contains(b.NomeTemplate))
                     .ToList();
 
                 foreach (var templateExcluir in templatesParaRemover)

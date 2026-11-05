@@ -11,6 +11,10 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
         public const string Paga = "PAGA";
         public const string Vencida = "VENCIDA";
         public const string Cancelada = "CANCELADA";
+
+        // VENCIDA gravada (pelo envio de recorrencia) continua pagavel: quem da baixa, gera Pix ou
+        // abre a pagina de pagamento precisa aceitar os dois.
+        public static bool EmAberto(string? status) => status == Pendente || status == Vencida;
     }
 
     // Uma linha por disparo de Template com GeraCobranca = true: a cobranca do cliente final de
@@ -82,5 +86,9 @@ namespace ProjetoMetaMensagem.Dominio.Entidades
 
         public DateTime DataCriacao { get; set; }
         public DateTime? DataAtualizacao { get; set; }
+
+        // Inativa (antiga ou acertada por fora) sai da tela e dos avisos, sem mudar o Status (ver BD/61).
+        public bool Ativo { get; set; } = true;
+        public DateTime? DataInativacao { get; set; }
     }
 }

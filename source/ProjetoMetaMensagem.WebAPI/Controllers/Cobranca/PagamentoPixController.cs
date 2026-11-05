@@ -63,7 +63,7 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Cobranca
                 corpo = $@"<p class=""ok"">Pagamento confirmado{(pagoEm == "" ? "" : " em " + pagoEm)}.</p>
 <p class=""linha""><span>Valor</span><strong>R$ {valor}</strong></p>";
             }
-            else if (cobranca.Status != StatusCobrancaCliente.Pendente || (cobranca.PixExpiraEm.HasValue && cobranca.PixExpiraEm.Value < HorarioBrasilia.Agora()))
+            else if (!StatusCobrancaCliente.EmAberto(cobranca.Status) || (cobranca.PixExpiraEm.HasValue && cobranca.PixExpiraEm.Value < HorarioBrasilia.Agora()))
             {
                 corpo = $@"<p class=""aviso"">Este Pix não está mais disponível para pagamento. Fale com {(nomeEmpresa == "" ? "quem enviou a cobrança" : nomeEmpresa)} para receber um novo.</p>";
             }

@@ -1,6 +1,7 @@
 ﻿using ProjetoMetaMensagem.Dominio.Help.Error;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoMetaMensagem.Dominio.Interfaces.Mediator;
+using ProjetoMetaMensagem.Dominio.UseCases.Template.AlteraAtivoTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AlteraFlagCobrancaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplate;
 using ProjetoMetaMensagem.Dominio.UseCases.Template.AtualizaTemplateMeta;
@@ -76,11 +77,11 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
         }
 
         [HttpGet("api/template/Listar/{empresaId}")]
-        public async Task<IActionResult> Listar(Guid empresaId)
+        public async Task<IActionResult> Listar(Guid empresaId, [FromQuery] bool inativos = false)
         {
             try
             {
-                var resultado = await _mediator.Send(new ListaTemplateCommand(empresaId));
+                var resultado = await _mediator.Send(new ListaTemplateCommand(empresaId) { ApenasInativos = inativos });
                 return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
             }
             catch (Exception ex)
@@ -137,6 +138,24 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Template
             catch (Exception ex)
             {
                 return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.AlterarFlagCobranca"), tipo = "Servico" });
+            }
+        }
+
+        // Inativar/reativar e local: o template continua na Meta, pronto para voltar.
+        [HttpPatch("api/template/{id}/ativo")]
+        public async Task<IActionResult> AlterarAtivo(Guid id, [FromBody] AlteraAtivoTemplateCommand command)
+        {
+            try
+            {
+                command.TemplateId = id;
+                command.EmpresaIdSolicitante = this.EmpresaDoEscopo();
+
+                var resultado = await _mediator.Send(command);
+                return this.ValidateResponse((int)HttpStatusCode.OK, resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensagem = TratamentoErro.Tratar(ex, _logger, "TemplatesController.AlterarAtivo"), tipo = "Servico" });
             }
         }
 

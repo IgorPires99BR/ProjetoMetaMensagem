@@ -77,7 +77,7 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
         private async Task<bool> ConferirAsync(CobrancaCliente cobranca, bool podeCancelar)
         {
             // Sem PixIdExterno = Pix da Transfeera/Itau, que nenhum provedor atual conhece.
-            if (cobranca.Status != StatusCobrancaCliente.Pendente || string.IsNullOrEmpty(cobranca.PixIdExterno)) return false;
+            if (!StatusCobrancaCliente.EmAberto(cobranca.Status) || string.IsNullOrEmpty(cobranca.PixIdExterno)) return false;
 
             try
             {

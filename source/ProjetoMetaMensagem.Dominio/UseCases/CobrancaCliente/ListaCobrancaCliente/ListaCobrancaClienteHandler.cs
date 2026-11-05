@@ -40,7 +40,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
 
             try
             {
-                var cobrancas = (await _unitOfWork.CobrancaCliente.ObterPorEmpresa(command.EmpresaIdSolicitante, command.Status, command.DataInicio, command.DataFim)).ToList();
+                var cobrancas = (await _unitOfWork.CobrancaCliente.ObterPorEmpresa(command.EmpresaIdSolicitante, command.Status, command.DataInicio, command.DataFim, command.ApenasInativas)).ToList();
 
                 // IContatoRepository.ObterPorIds e escopado a UMA empresa (protecao contra
                 // vazamento entre empresas); admin da plataforma pode listar cobrancas de varias

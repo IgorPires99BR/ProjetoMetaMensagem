@@ -33,7 +33,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     {nameof(historico.MidiaId)},
                     {nameof(historico.TipoMidia)},
                     {nameof(historico.PayloadEnvio)},
-                    {nameof(historico.Origem)}
+                    {nameof(historico.Origem)},
+                    {nameof(historico.MotivoFalha)}
                 )
                 VALUES (
                     @{nameof(historico.Id)},
@@ -47,7 +48,8 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     @{nameof(historico.MidiaId)},
                     @{nameof(historico.TipoMidia)},
                     @{nameof(historico.PayloadEnvio)},
-                    @{nameof(historico.Origem)}
+                    @{nameof(historico.Origem)},
+                    @{nameof(historico.MotivoFalha)}
                 );";
 
             // Garante que a data seja preenchida caso não tenha sido setada na entidade
@@ -57,6 +59,23 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             }
 
             await _session.Connection.ExecuteAsync(sql, historico, transaction: _session.Transaction);
+        }
+
+        // So template: resposta no chat ("Livre") e etapa de flow nao sao disparo para o cliente.
+        // Envio que a Meta avisou ter falhado nao chegou ao contato, entao nao conta.
+        public async Task<IEnumerable<UltimoDisparoContato>> ObterUltimosDisparos(Guid empresaId)
+        {
+            var sql = $@"
+                SELECT {nameof(HistoricoDisparo.ContatoId)},
+                       MAX({nameof(HistoricoDisparo.DataEnvio)}) AS {nameof(UltimoDisparoContato.DataUltimoDisparo)}
+                FROM {nameof(HistoricoDisparo)}
+                WHERE {nameof(HistoricoDisparo.EmpresaId)} = @EmpresaId
+                  AND {nameof(HistoricoDisparo.TipoDisparo)} = 'Template'
+                  AND ISNULL({nameof(HistoricoDisparo.StatusEntrega)}, '') <> 'failed'
+                GROUP BY {nameof(HistoricoDisparo.ContatoId)}";
+
+            return await _session.Connection.QueryAsync<UltimoDisparoContato>(sql,
+                new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
         public async Task<HistoricoDisparo?> ObterPorId(Guid id)

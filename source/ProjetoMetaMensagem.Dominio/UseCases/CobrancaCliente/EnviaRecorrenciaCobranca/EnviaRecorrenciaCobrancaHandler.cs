@@ -52,9 +52,16 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.EnviaRecorrenciaC
                     return response;
                 }
 
-                if (cobranca.Status != StatusCobrancaCliente.Pendente)
+                // Vencida continua em aberto: o cliente pode precisar de uma segunda recorrencia.
+                if (!StatusCobrancaCliente.EmAberto(cobranca.Status))
                 {
                     response.AddErro("Esta cobrança não está mais em aberto.");
+                    return response;
+                }
+
+                if (!cobranca.Ativo)
+                {
+                    response.AddErro("Esta cobrança está inativa. Reative para enviar a recorrência.");
                     return response;
                 }
 
@@ -151,6 +158,17 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.EnviaRecorrenciaC
                     var motivo = string.Join(" | ", resultado.Value.RelatorioErros.Values.Distinct());
                     response.AddErro(string.IsNullOrWhiteSpace(motivo) ? "A Meta não aceitou o envio da mensagem." : motivo);
                     return response;
+                }
+
+                // So depois de a Meta aceitar: envio recusado nao muda a situacao da cobranca.
+                try
+                {
+                    await _unitOfWork.CobrancaCliente.MarcarVencida(cobranca.Id);
+                }
+                catch (Exception exStatus)
+                {
+                    // A mensagem ja saiu: responder erro levaria a reenviar para o mesmo cliente.
+                    _logger.LogError(exStatus, "Recorrencia enviada, mas a cobranca {CobrancaId} nao foi marcada como vencida.", cobranca.Id);
                 }
 
                 response.AddValue(new EnviaRecorrenciaCobrancaResult

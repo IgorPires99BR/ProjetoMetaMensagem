@@ -250,6 +250,11 @@ builder.Services.AddScoped<IWebhookDispatcherService, ProjetoMetaMensagem.Servic
 // para sempre, sem nenhum processo rodando pra efetivamente enviar as mensagens.
 builder.Services.AddHostedService<CampanhaWorker>();
 
+// Fila do disparo em massa da tela de Disparos (BD/62).
+builder.Services.AddScoped<IDisparoLoteRepository, ProjetoMetaMensagem.Data.Repositorios.DisparoLoteRepository>();
+builder.Services.AddScoped<ProjetoMetaMensagem.Dominio.Servicos.IProcessadorDisparoLote, ProjetoMetaMensagem.Dominio.Servicos.ProcessadorDisparoLote>();
+builder.Services.AddHostedService<ProjetoMetaMensagem.Servico.DisparoLote.DisparoLoteWorker>();
+
 // HangFire: cada Agendamento tem o proprio job recorrente, com o cron da recorrencia escolhida
 // (ver AgendamentoTarefaAgendador e a sincronizacao mais abaixo, depois de app.Build()). Mesma
 // connection string escolhida pelo DbSession (DEBUG local vs producao).

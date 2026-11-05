@@ -51,6 +51,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.EnviarMensagemTemplateMe
                     ? await _unitOfWork.Template.ObterPorIdEEmpresa(command.TemplateId.Value, command.IdEmpresa)
                     : null;
 
+                // Mesma regra do lote: template inativo nao sai (cobre tambem a Campanha).
+                if (templateEnviado is { Ativo: false })
+                {
+                    response.AddErro("Este modelo foi inativado. Reative em Templates para enviar.");
+                    return response;
+                }
+
                 // Mesma regra do lote: cobranca e Pix nascem antes do envio, porque o Pix vai
                 // dentro da mensagem.
                 CobrancaPreparada? preparada = null;

@@ -147,6 +147,14 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Agendamento.ProcessaAgendamento
                     agendamento.TemplateId, agendamento.Id);
                 falhas = contatos.Count;
             }
+            else if (!template.Ativo)
+            {
+                // Conta como falha para aparecer no historico do agendamento; reativar o modelo
+                // faz as proximas execucoes voltarem a enviar.
+                _logger.LogWarning("Template {TemplateId} do agendamento {AgendamentoId} esta inativo; nenhuma mensagem sera enviada.",
+                    agendamento.TemplateId, agendamento.Id);
+                falhas = contatos.Count;
+            }
             else if (contatos.Count > 0)
             {
                 // Disparo em lote (mesma estrutura usada pela tela de Disparos): um unico

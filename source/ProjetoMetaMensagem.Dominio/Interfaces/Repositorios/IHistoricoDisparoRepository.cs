@@ -20,5 +20,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // Usado pra confirmar que um MidiaId pertence a empresa antes de baixar a midia da Meta
         // usando o token dela -- sem isso, qualquer MidiaId (de qualquer empresa) era aceito.
         Task<bool> ExisteMidiaId(Guid empresaId, string midiaId);
+        // Ultimo template enviado a cada contato da empresa, para a tela de Disparos.
+        Task<IEnumerable<UltimoDisparoContato>> ObterUltimosDisparos(Guid empresaId);
     }
 }

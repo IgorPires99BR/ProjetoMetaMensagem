@@ -5,6 +5,7 @@ using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
 using ProjetoMetaMensagem.Dominio.Interfaces.Servicos;
 using ProjetoMetaMensagem.Dominio.Common;
 using ProjetoMetaMensagem.Dominio.Servicos;
+using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.AlteraAtivoCobrancaCliente;
 using ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.SimulaPagamentoSandbox;
 using Xunit;
 
@@ -450,6 +451,89 @@ public class BaixaCobrancaAsaasTeste
         Assert.Empty(pix.Criadas);
     }
 
+    // --- Depois da recorrencia a cobranca fica gravada como VENCIDA, e continua pagavel ---
+
+    [Fact]
+    public async Task Cobranca_marcada_como_vencida_continua_dando_baixa_quando_o_cliente_paga()
+    {
+        var cenario = new Cenario(statusNoAsaas: "RECEIVED");
+        cenario.Cobranca.Status = StatusCobrancaCliente.Vencida;
+
+        await cenario.Baixa.ProcessarWebhookAsync(new[] { cenario.Cobranca.Txid! });
+
+        Assert.Equal(StatusCobrancaCliente.Paga, cenario.Cobranca.Status);
+        Assert.Single(cenario.Notificador.Avisos);
+    }
+
+    // --- Inativar cobranca: sai da tela sem deixar um Pix pagavel para tras ---
+
+    [Fact]
+    public async Task Inativar_cobranca_em_aberto_cancela_o_Pix_e_tira_da_pagina_de_pagamento()
+    {
+        var cenario = new Cenario(statusNoAsaas: "PENDING");
+
+        var resultado = await cenario.AlterarAtivo(false);
+
+        Assert.False(resultado.HasValidations);
+        Assert.False(cenario.Cobranca.Ativo);
+        Assert.Equal(new[] { "pay_123" }, cenario.Pix.Canceladas);
+        Assert.True(cenario.Cobranca.PixExpiraEm <= HorarioBrasilia.Agora());
+        Assert.Equal(StatusCobrancaCliente.Pendente, cenario.Cobranca.Status);
+    }
+
+    [Fact]
+    public async Task Inativar_cobranca_que_o_cliente_ja_pagou_da_baixa_e_nao_inativa()
+    {
+        var cenario = new Cenario(statusNoAsaas: "RECEIVED");
+
+        var resultado = await cenario.AlterarAtivo(false);
+
+        Assert.True(resultado.HasValidations);
+        Assert.Contains(resultado.Erros, e => e.Mensagem.Contains("já pagou"));
+        Assert.True(cenario.Cobranca.Ativo);
+        Assert.Equal(StatusCobrancaCliente.Paga, cenario.Cobranca.Status);
+    }
+
+    [Fact]
+    public async Task Inativar_sem_conseguir_cancelar_o_Pix_mantem_a_cobranca_ativa()
+    {
+        var cenario = new Cenario(statusNoAsaas: "PENDING");
+        cenario.Pix.ErroAoCancelar = new PixException("Asaas fora do ar", 500);
+
+        var resultado = await cenario.AlterarAtivo(false);
+
+        Assert.True(resultado.HasValidations);
+        Assert.True(cenario.Cobranca.Ativo);
+    }
+
+    [Fact]
+    public async Task Inativar_cobranca_paga_nao_fala_com_o_provedor_e_ela_continua_paga()
+    {
+        var cenario = new Cenario(statusNoAsaas: "RECEIVED");
+        cenario.Cobranca.Status = StatusCobrancaCliente.Paga;
+
+        var resultado = await cenario.AlterarAtivo(false);
+
+        Assert.False(resultado.HasValidations);
+        Assert.False(cenario.Cobranca.Ativo);
+        Assert.Equal(StatusCobrancaCliente.Paga, cenario.Cobranca.Status);
+        Assert.Empty(cenario.Pix.Consultas);
+        Assert.Empty(cenario.Pix.Canceladas);
+    }
+
+    [Fact]
+    public async Task Reativar_cobranca_traz_de_volta_e_nao_mexe_no_Pix()
+    {
+        var cenario = new Cenario(statusNoAsaas: "PENDING");
+        cenario.Cobranca.Ativo = false;
+
+        var resultado = await cenario.AlterarAtivo(true);
+
+        Assert.False(resultado.HasValidations);
+        Assert.True(cenario.Cobranca.Ativo);
+        Assert.Empty(cenario.Pix.Canceladas);
+    }
+
     [Fact]
     public void Variaveis_da_recorrencia_usam_o_valor_e_o_vencimento_da_cobranca_e_nao_os_do_cadastro()
     {
@@ -605,6 +689,12 @@ public class BaixaCobrancaAsaasTeste
         public Task<Response<SimulaPagamentoSandboxResult>> SimularPagamento() =>
             new SimulaPagamentoSandboxHandler(_unitOfWork, Pix, Baixa, NullLogger<SimulaPagamentoSandboxHandler>.Instance)
                 .Handle(new SimulaPagamentoSandboxCommand { CobrancaClienteId = Cobranca.Id });
+
+        public Task<Response<AlteraAtivoCobrancaClienteResult>> AlterarAtivo(bool ativo) =>
+            new AlteraAtivoCobrancaClienteHandler(_unitOfWork,
+                    new PreparadorCobrancaPix(_unitOfWork, Pix, new ProvedoresFalsos(Pix), new CriptografiaFalsa(), NullLogger<PreparadorCobrancaPix>.Instance),
+                    NullLogger<AlteraAtivoCobrancaClienteHandler>.Instance)
+                .Handle(new AlteraAtivoCobrancaClienteCommand { CobrancaClienteId = Cobranca.Id, Ativo = ativo });
     }
 
     private class PixFalso : IPixService, IProvedorCobranca
@@ -753,7 +843,7 @@ public class BaixaCobrancaAsaasTeste
 
         public Task<int> BaixarPix(Guid id, DateTime dataPagamento, decimal valorPago, string? endToEndId)
         {
-            if (id != _cobranca.Id || _cobranca.Status != StatusCobrancaCliente.Pendente) return Task.FromResult(0);
+            if (id != _cobranca.Id || !StatusCobrancaCliente.EmAberto(_cobranca.Status)) return Task.FromResult(0);
             _cobranca.Status = StatusCobrancaCliente.Paga;
             _cobranca.DataPagamento = dataPagamento;
             _cobranca.ValorPago = valorPago;
@@ -770,8 +860,22 @@ public class BaixaCobrancaAsaasTeste
 
         public Task Incluir(CobrancaCliente cobranca) => throw new NotSupportedException();
         public Task<CobrancaCliente?> ObterPorId(Guid id, Guid? empresaIdSolicitante) => Task.FromResult<CobrancaCliente?>(id == _cobranca.Id ? _cobranca : null);
-        public Task<IEnumerable<CobrancaCliente>> ObterPorEmpresa(Guid? empresaIdSolicitante, string? status, DateTime? dataInicio = null, DateTime? dataFim = null) => throw new NotSupportedException();
+        public Task<IEnumerable<CobrancaCliente>> ObterPorEmpresa(Guid? empresaIdSolicitante, string? status, DateTime? dataInicio = null, DateTime? dataFim = null, bool apenasInativas = false) => throw new NotSupportedException();
         public Task<int> MarcarPaga(Guid id, Guid? empresaIdSolicitante, DateTime dataPagamento) => throw new NotSupportedException();
+        public Task<int> MarcarVencida(Guid id) => throw new NotSupportedException();
+
+        public Task<int> Inativar(Guid id, Guid? empresaIdSolicitante, DateTime agora)
+        {
+            _cobranca.Ativo = false;
+            _cobranca.PixExpiraEm = agora;
+            return Task.FromResult(1);
+        }
+
+        public Task<int> Reativar(Guid id, Guid? empresaIdSolicitante)
+        {
+            _cobranca.Ativo = true;
+            return Task.FromResult(1);
+        }
     }
 
     private class UnitOfWorkFalso : IUnitOfWork
@@ -812,6 +916,7 @@ public class BaixaCobrancaAsaasTeste
         public IOrigemLeadRepository OrigemLead => throw new NotSupportedException();
         public IAgendamentoRepository Agendamento => throw new NotSupportedException();
         public IDadosBancariosEmpresaRepository DadosBancariosEmpresa => _dadosBancarios ?? throw new NotSupportedException();
+        public IDisparoLoteRepository DisparoLote => throw new NotSupportedException();
         public void Commit() { }
         public void BeginTransaction() { }
         public void Rollback() { }

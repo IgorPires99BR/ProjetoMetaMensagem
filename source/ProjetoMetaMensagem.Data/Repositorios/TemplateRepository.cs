@@ -116,6 +116,33 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryAsync<Template>(sql, new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
+        public async Task<IEnumerable<Template>> ObterParaTela(Guid empresaId, bool apenasInativos)
+        {
+            var sql = $@"
+                SELECT * FROM {nameof(Template)}
+                WHERE {nameof(Template.EmpresaId)} = @EmpresaId
+                  AND {nameof(Template.Ativo)} = @Ativo
+                ORDER BY COALESCE({nameof(Template.NomeExibicao)}, {nameof(Template.NomeTemplate)})";
+
+            return await _session.Connection.QueryAsync<Template>(sql,
+                new { EmpresaId = empresaId, Ativo = !apenasInativos }, transaction: _session.Transaction);
+        }
+
+        public async Task<int> AlterarAtivo(Guid id, Guid? empresaIdSolicitante, bool ativo)
+        {
+            var sql = $@"
+                UPDATE {nameof(Template)}
+                SET {nameof(Template.Ativo)} = @Ativo,
+                    {nameof(Template.DataInativacao)} = CASE WHEN @Ativo = 1 THEN NULL ELSE GETDATE() END
+                WHERE {nameof(Template.Id)} = @Id
+                  AND {nameof(Template.Ativo)} <> @Ativo
+                {RecorteDaEmpresa}";
+
+            return await _session.Connection.ExecuteAsync(sql,
+                new { Id = id, Ativo = ativo, EmpresaIdSolicitante = empresaIdSolicitante },
+                transaction: _session.Transaction);
+        }
+
         public async Task<IEnumerable<Template>> ObterDeOutrasEmpresasDoWaba(Guid empresaId, string wabaId)
         {
             var sql = $@"
@@ -151,10 +178,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         public async Task<IEnumerable<TemplateGatilho>> ObterGatilhosAtivos(Guid empresaId, string tipo)
         {
             var sql = $@"
-                SELECT * FROM {nameof(TemplateGatilho)}
-                WHERE {nameof(TemplateGatilho.EmpresaId)} = @EmpresaId
-                  AND {nameof(TemplateGatilho.Tipo)} = @Tipo
-                  AND {nameof(TemplateGatilho.Ativo)} = 1";
+                SELECT g.* FROM {nameof(TemplateGatilho)} g
+                INNER JOIN {nameof(Template)} t ON t.{nameof(Template.Id)} = g.{nameof(TemplateGatilho.TemplateId)}
+                WHERE g.{nameof(TemplateGatilho.EmpresaId)} = @EmpresaId
+                  AND g.{nameof(TemplateGatilho.Tipo)} = @Tipo
+                  AND g.{nameof(TemplateGatilho.Ativo)} = 1
+                  AND t.{nameof(Template.Ativo)} = 1";
 
             return await _session.Connection.QueryAsync<TemplateGatilho>(sql,
                 new { EmpresaId = empresaId, Tipo = tipo }, transaction: _session.Transaction);
@@ -224,10 +253,13 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             var sql = $@"
                 SELECT g.Id AS GatilhoId, g.EmpresaId, c.Id AS CobrancaClienteId, c.ContatoId
                 FROM {nameof(TemplateGatilho)} g
+                INNER JOIN {nameof(Template)} t ON t.Id = g.TemplateId
                 INNER JOIN CobrancaCliente c ON c.EmpresaId = g.EmpresaId
                 LEFT JOIN HistoricoDisparo h ON h.Id = c.HistoricoDisparoId
                 WHERE g.Tipo = @Tipo
                   AND g.Ativo = 1
+                  AND t.Ativo = 1
+                  AND c.Ativo = 1
                   AND c.Status IN (@Pendente, @Vencida)
                   AND DATEADD(DAY, ISNULL(g.DiasAtraso, 0), CAST(c.DataVencimento AS DATE)) <= CAST(@Hoje AS DATE)
                   AND DATEADD(DAY, ISNULL(g.DiasAtraso, 0), CAST(c.DataVencimento AS DATE)) >= CAST(g.DataCriacao AS DATE)

@@ -243,6 +243,55 @@ namespace ProjetoMetaMensagem.WebAPI.Controllers.Health
                     MercadoPagoRefreshTokenCriptografado NVARCHAR(MAX) NULL,
                     MercadoPagoTokenExpiraEm DATETIME NULL,
                     MercadoPagoConectadoEm DATETIME NULL;"),
+
+            new("BD/60", "Template", "Ativo",
+                "ALTER TABLE Template ADD Ativo BIT NOT NULL CONSTRAINT DF_Template_Ativo DEFAULT (1);"),
+
+            new("BD/60", "Template", "DataInativacao",
+                "ALTER TABLE Template ADD DataInativacao DATETIME NULL;"),
+
+            new("BD/61", "CobrancaCliente", "Ativo",
+                "ALTER TABLE CobrancaCliente ADD Ativo BIT NOT NULL CONSTRAINT DF_CobrancaCliente_Ativo DEFAULT (1);"),
+
+            new("BD/61", "CobrancaCliente", "DataInativacao",
+                "ALTER TABLE CobrancaCliente ADD DataInativacao DATETIME NULL;"),
+
+            new("BD/62", "DisparoLote", null,
+                @"CREATE TABLE DisparoLote (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY,
+                    EmpresaId UNIQUEIDENTIFIER NOT NULL,
+                    TemplateId UNIQUEIDENTIFIER NOT NULL,
+                    ChaveIdempotencia UNIQUEIDENTIFIER NOT NULL,
+                    VariaveisJson NVARCHAR(MAX) NULL,
+                    ParametroHeaderMediaUrl NVARCHAR(1000) NULL,
+                    ParametrosButtonJson NVARCHAR(MAX) NULL,
+                    DataCriacao DATETIME NOT NULL,
+                    CONSTRAINT FK_DisparoLote_Empresa FOREIGN KEY (EmpresaId) REFERENCES Empresa(Id),
+                    CONSTRAINT FK_DisparoLote_Template FOREIGN KEY (TemplateId) REFERENCES Template(Id),
+                    CONSTRAINT UQ_DisparoLote_Chave UNIQUE (EmpresaId, ChaveIdempotencia)
+                  );
+                  CREATE INDEX IX_DisparoLote_Empresa_Data ON DisparoLote (EmpresaId, DataCriacao DESC);"),
+
+            new("BD/62", "DisparoLoteItem", null,
+                @"CREATE TABLE DisparoLoteItem (
+                    Id UNIQUEIDENTIFIER PRIMARY KEY,
+                    LoteId UNIQUEIDENTIFIER NOT NULL,
+                    ContatoId UNIQUEIDENTIFIER NOT NULL,
+                    Ordem INT NOT NULL,
+                    Status NVARCHAR(20) NOT NULL,
+                    Tentativas INT NOT NULL CONSTRAINT DF_DisparoLoteItem_Tentativas DEFAULT (0),
+                    ProximaTentativaEm DATETIME NOT NULL,
+                    ReservadoAte DATETIME NULL,
+                    Erro NVARCHAR(1000) NULL,
+                    EnvioJson NVARCHAR(MAX) NULL,
+                    CobrancaJson NVARCHAR(MAX) NULL,
+                    DataAtualizacao DATETIME NULL,
+                    CONSTRAINT FK_DisparoLoteItem_Lote FOREIGN KEY (LoteId) REFERENCES DisparoLote(Id) ON DELETE CASCADE,
+                    CONSTRAINT FK_DisparoLoteItem_Contato FOREIGN KEY (ContatoId) REFERENCES Contato(Id),
+                    CONSTRAINT UQ_DisparoLoteItem_Lote_Contato UNIQUE (LoteId, ContatoId)
+                  );
+                  CREATE INDEX IX_DisparoLoteItem_Fila ON DisparoLoteItem (Status, ProximaTentativaEm, Ordem);
+                  CREATE INDEX IX_DisparoLoteItem_Contato ON DisparoLoteItem (ContatoId, Status);"),
         };
     }
 }
