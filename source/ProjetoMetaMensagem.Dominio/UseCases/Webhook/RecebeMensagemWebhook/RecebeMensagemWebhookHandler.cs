@@ -69,16 +69,26 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                         // so quando a empresa nunca cadastrou um Numero com esse InstanciaId --
                         // sem esse fallback, empresas antigas que so tem PhoneNumberId direto na
                         // Empresa (sem linha em Numero) parariam de receber mensagens.
-                        Guid? empresaId = null;
+                        Guid? empresaDoNumero = null;
                         if (numeroOrigem != null)
                         {
                             var usuarioDoNumero = await _unitOfWork.Usuario.ObterPorId(numeroOrigem.UsuarioId);
-                            empresaId = usuarioDoNumero?.EmpresaId;
+                            empresaDoNumero = usuarioDoNumero?.EmpresaId;
                         }
-                        empresaId ??= await _unitOfWork.Empresa.ObterPorPhoneNumberId(metadata.PhoneNumberId);
+
+                        // A Meta so diz qual numero recebeu, e varias empresas podem dividir o mesmo
+                        // numero. A primeira da lista e a dona; a de cada evento e decidida abaixo.
+                        var empresasDoNumero = await _unitOfWork.Empresa.ObterTodasPorPhoneNumberId(metadata.PhoneNumberId);
+                        if (empresaDoNumero.HasValue)
+                        {
+                            empresasDoNumero.Remove(empresaDoNumero.Value);
+                            empresasDoNumero.Insert(0, empresaDoNumero.Value);
+                        }
 
                         // Se não encontrar uma empresa cadastrada para esse PhoneNumberId, pula o processamento
-                        if (!empresaId.HasValue) continue;
+                        if (empresasDoNumero.Count == 0) continue;
+
+                        var empresaDona = empresasDoNumero[0];
 
                         // Processa os statuses de entrega (sent/delivered/read/failed) do disparo
                         if (change.Value?.Statuses != null && change.Value.Statuses.Any())
@@ -97,11 +107,20 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
 
                                 await _unitOfWork.HistoricoDisparo.AtualizarStatusEntregaPorWamid(statusMeta.Id, statusMeta.Status, erroDetalhado);
 
+                                // O status e de quem enviou, nao da dona do numero.
+                                var empresaDoStatus = empresaDona;
+                                if (empresasDoNumero.Count > 1)
+                                {
+                                    var enviado = await _unitOfWork.HistoricoDisparo.ObterPorWamidMeta(statusMeta.Id);
+                                    if (enviado != null && empresasDoNumero.Contains(enviado.EmpresaId))
+                                        empresaDoStatus = enviado.EmpresaId;
+                                }
+
                                 var statusDto = new StatusAtualizadoBroadcastDto
                                 {
                                     WamidMeta = statusMeta.Id,
                                     Status = statusMeta.Status,
-                                    EmpresaId = empresaId.Value,
+                                    EmpresaId = empresaDoStatus,
                                     Erro = erroDetalhado
                                 };
                                 statusAtualizados.Add(statusDto);
@@ -112,7 +131,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                 // do evento da Meta.
                                 try
                                 {
-                                    await _webhookDispatcherService.Disparar("status_atualizado", statusDto, empresaId.Value);
+                                    await _webhookDispatcherService.Disparar("status_atualizado", statusDto, empresaDoStatus);
                                 }
                                 catch (Exception exWebhook)
                                 {
@@ -139,8 +158,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             // mensagem do cliente duas vezes -- visto ao vivo com um lead real
                             // do anuncio: duas conversas criadas e a mesma pergunta enviada
                             // duas vezes pro mesmo cliente.
-                            if (!string.IsNullOrEmpty(msgMeta.Id) &&
-                                await _unitOfWork.MensagemRecebida.ExistePorWamid(empresaId.Value, msgMeta.Id))
+                            // Em todas as empresas do numero: a reentrega pode chegar depois de outro
+                            // envio e ser atribuida a outra empresa, que nao a teria visto.
+                            if (!string.IsNullOrEmpty(msgMeta.Id) && await JaProcessadaAsync(empresasDoNumero, msgMeta.Id))
                             {
                                 _logger.LogInformation("Webhook duplicado ignorado (wamid {Wamid} ja processado)", msgMeta.Id);
                                 continue;
@@ -156,8 +176,10 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                 continue;
                             }
 
+                            var empresaId = await ResolverEmpresaDaMensagemAsync(empresasDoNumero, msgMeta);
+
                             // Busca o contato se existir, mas não bloqueia caso não exista
-                            var contato = await _unitOfWork.Contato.ObterPorTelefone(empresaId.Value, msgMeta.From);
+                            var contato = await _unitOfWork.Contato.ObterPorTelefone(empresaId, msgMeta.From);
 
                             // Quem manda mensagem e nao esta na base vira contato aqui.
                             //
@@ -168,7 +190,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             if (contato == null)
                             {
                                 contato = await CriarContatoDoRemetenteAsync(
-                                    empresaId.Value,
+                                    empresaId,
                                     msgMeta.From,
                                     change.Value.Contacts?.FirstOrDefault()?.Profile?.Name);
                             }
@@ -176,7 +198,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                             var novaMensagem = new Entidades.MensagemRecebida
                             {
                                 Id = Guid.NewGuid(),
-                                EmpresaId = empresaId.Value,
+                                EmpresaId = empresaId,
                                 TelefoneRemetente = msgMeta.From,
                                 Tipo = "recebida",
                                 Lida = false,
@@ -242,7 +264,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                 {
                                     await _unitOfWork.OrigemLead.Incluir(new Entidades.OrigemLead
                                     {
-                                        EmpresaId = empresaId.Value,
+                                        EmpresaId = empresaId,
                                         ContatoId = contato?.Id,
                                         Telefone = msgMeta.From!,
                                         CtwaClid = msgMeta.Referral.CtwaClid,
@@ -279,7 +301,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                     DataRecebimento = novaMensagem.DataRecebimento,
                                     MidiaId = novaMensagem.MidiaId,
                                     TipoMidia = novaMensagem.TipoMidia
-                                }, empresaId.Value);
+                                }, empresaId);
                             }
                             catch (Exception exWebhook)
                             {
@@ -303,9 +325,13 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
                                     // O referral (e com ele o id do anuncio) so vem na PRIMEIRA
                                     // mensagem de quem chega por Click-to-WhatsApp -- que e
                                     // exatamente quando o flow precisa dele pra escolher certo.
+                                    // Numero cadastrado por outra empresa nao seleciona flow desta:
+                                    // sem ele, valem os flows genericos da empresa da mensagem.
+                                    var numeroDoFlow = empresaId == empresaDoNumero ? numeroOrigem?.Id : null;
+
                                     await _flowOrchestratorService.ProcessarMensagem(
-                                        empresaId.Value, contato.Id, msgMeta.From, novaMensagem.Conteudo,
-                                        metadata.PhoneNumberId, numeroOrigem?.Id, msgMeta.Referral?.SourceId);
+                                        empresaId, contato.Id, msgMeta.From, novaMensagem.Conteudo,
+                                        metadata.PhoneNumberId, numeroDoFlow, msgMeta.Referral?.SourceId);
                                 }
                                 catch (Exception exFlow)
                                 {
@@ -348,6 +374,40 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
             }
 
             return response;
+        }
+
+        private async Task<bool> JaProcessadaAsync(List<Guid> empresas, string wamid)
+        {
+            foreach (var empresa in empresas)
+            {
+                if (await _unitOfWork.MensagemRecebida.ExistePorWamid(empresa, wamid)) return true;
+            }
+            return false;
+        }
+
+        // Com numero compartilhado a Meta nao diz com qual empresa o cliente esta falando. Do sinal
+        // mais forte para o mais fraco: a mensagem que ele respondeu, quem mandou o ultimo template
+        // para ele, quem tem o telefone dele cadastrado. Sem nenhum, e lead novo: fica com a dona.
+        private async Task<Guid> ResolverEmpresaDaMensagemAsync(List<Guid> empresas, WebhookMessageCommand mensagem)
+        {
+            var dona = empresas[0];
+            if (empresas.Count == 1) return dona;
+
+            if (!string.IsNullOrEmpty(mensagem.Context?.Id))
+            {
+                var respondida = await _unitOfWork.HistoricoDisparo.ObterPorWamidMeta(mensagem.Context.Id);
+                if (respondida != null && empresas.Contains(respondida.EmpresaId)) return respondida.EmpresaId;
+            }
+
+            var telefones = Helpers.TelefoneHelper.VariantesParaBusca(mensagem.From!);
+
+            var doUltimoTemplate = await _unitOfWork.HistoricoDisparo.ObterEmpresaDoUltimoTemplate(empresas, telefones);
+            if (doUltimoTemplate.HasValue) return doUltimoTemplate.Value;
+
+            var comContato = (await _unitOfWork.Contato.ObterEmpresasComTelefone(empresas, telefones)).ToList();
+            if (comContato.Count > 0 && !comContato.Contains(dona)) return comContato[0];
+
+            return dona;
         }
 
         // O Contato pertence a um usuario, nao a empresa direto: usa o primeiro admin dela, que e

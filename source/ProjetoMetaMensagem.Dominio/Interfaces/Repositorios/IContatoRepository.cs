@@ -19,6 +19,8 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // Devolve 0 se o contato nao existe, e de outra empresa ou ja esta ativo.
         Task<int> Reativar(Guid id, Guid? empresaIdSolicitante);
         Task<Contato?> ObterPorTelefone(Guid empresaId, string telefone);
+        // Quais destas empresas tem este telefone cadastrado num contato ativo.
+        Task<IEnumerable<Guid>> ObterEmpresasComTelefone(IEnumerable<Guid> empresas, IEnumerable<string> telefones);
         // null = administrador (sem restricao).
         Task<Contato?> ObterPorId(Guid id, Guid? empresaIdSolicitante);
         // null = administrador (sem restricao, ve contatos de todas as empresas).

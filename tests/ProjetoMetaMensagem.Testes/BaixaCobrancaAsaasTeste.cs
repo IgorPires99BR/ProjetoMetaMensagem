@@ -640,7 +640,7 @@ public class BaixaCobrancaAsaasTeste
         public Task<string?> ObterWabaId(Guid id) => throw new NotSupportedException();
         public Task<string?> ObterPhoneNumberId(Guid id) => throw new NotSupportedException();
         public Task<string?> ObterAppIdMeta(Guid id) => throw new NotSupportedException();
-        public Task<Guid?> ObterPorPhoneNumberId(string phoneNumberId) => throw new NotSupportedException();
+        public Task<List<Guid>> ObterTodasPorPhoneNumberId(string phoneNumberId) => throw new NotSupportedException();
         public Task AtualizarWabaId(Guid id, string wabaId) => throw new NotSupportedException();
         public Task AtualizarCredenciaisMeta(Guid id, string? wabaId, string? phoneNumberId, string? metaAccessToken) => throw new NotSupportedException();
         public Task<List<Empresa>> Obter() => throw new NotSupportedException();

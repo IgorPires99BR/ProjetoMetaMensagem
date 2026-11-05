@@ -202,6 +202,19 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Webhook.RecebeMensagemWebhook
         [JsonPropertyName("referral")]
         [JsonProperty("referral")]
         public WebhookReferralCommand? Referral { get; set; }
+
+        // Presente quando o cliente tocou num botao ou respondeu direto a uma mensagem nossa: diz
+        // qual foi. Com numero compartilhado, e a prova mais forte de com qual empresa ele fala.
+        [JsonPropertyName("context")]
+        [JsonProperty("context")]
+        public WebhookContextCommand? Context { get; set; }
+    }
+
+    public class WebhookContextCommand
+    {
+        [JsonPropertyName("id")]
+        [JsonProperty("id")]
+        public string? Id { get; set; }
     }
 
     public class WebhookReferralCommand

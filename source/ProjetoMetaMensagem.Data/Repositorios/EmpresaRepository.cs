@@ -158,17 +158,14 @@ namespace ProjetoMetaMensagem.Data.Repositorios
             return await _session.Connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id }, transaction: _session.Transaction);
         }
 
-        public async Task<Guid?> ObterPorPhoneNumberId(string phoneNumberId)
+        public async Task<List<Guid>> ObterTodasPorPhoneNumberId(string phoneNumberId)
         {
             var sql = $@"SELECT {nameof(Empresa.Id)}
                  FROM {nameof(Empresa)}
-                 WHERE {nameof(Empresa.PhoneNumberId)} = @PhoneNumberId";
+                 WHERE {nameof(Empresa.PhoneNumberId)} = @PhoneNumberId
+                 ORDER BY {nameof(Empresa.DataCriacao)}, {nameof(Empresa.Id)}";
 
-            // QueryFirstOrDefaultAsync<Guid> (nao Guid?) retorna Guid.Empty quando nao ha
-            // match -- isso virava um "empresaId encontrado" falso (HasValue=true,
-            // Guid.Empty) pra qualquer phone_number_id desconhecido, e o webhook tentava
-            // gravar MensagemRecebida com um EmpresaId inexistente (erro de FK).
-            return await _session.Connection.QueryFirstOrDefaultAsync<Guid?>(sql, new { PhoneNumberId = phoneNumberId }, transaction: _session.Transaction);
+            return (await _session.Connection.QueryAsync<Guid>(sql, new { PhoneNumberId = phoneNumberId }, transaction: _session.Transaction)).ToList();
         }
 
         public async Task<Empresa?> ObterPorId(Guid id)

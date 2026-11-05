@@ -78,6 +78,25 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                 new { EmpresaId = empresaId }, transaction: _session.Transaction);
         }
 
+        // So template, de proposito: e o que inicia a conversa. Resposta de flow ou de atendente nao
+        // conta, senao um bot que respondeu por engano prenderia o cliente na empresa errada.
+        public async Task<Guid?> ObterEmpresaDoUltimoTemplate(IEnumerable<Guid> empresas, IEnumerable<string> telefones)
+        {
+            var sql = @"
+                SELECT TOP 1 h.EmpresaId
+                FROM HistoricoDisparo h
+                INNER JOIN Contato c ON c.Id = h.ContatoId
+                WHERE h.EmpresaId IN @Empresas
+                  AND h.TipoDisparo = 'Template'
+                  AND ISNULL(h.StatusEntrega, '') <> 'failed'
+                  AND (REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') IN @Telefones
+                       OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone2, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') IN @Telefones)
+                ORDER BY h.DataEnvio DESC";
+
+            return await _session.Connection.QueryFirstOrDefaultAsync<Guid?>(sql,
+                new { Empresas = empresas, Telefones = telefones }, transaction: _session.Transaction);
+        }
+
         public async Task<HistoricoDisparo?> ObterPorId(Guid id)
         {
             var sql = $@"

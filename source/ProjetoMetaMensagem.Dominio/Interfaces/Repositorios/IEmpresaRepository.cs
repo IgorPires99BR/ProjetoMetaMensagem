@@ -18,7 +18,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<string?> ObterWabaId(Guid id);
         Task<string?> ObterPhoneNumberId(Guid id);
         Task<string?> ObterAppIdMeta(Guid id);
-        Task<Guid?> ObterPorPhoneNumberId(string phoneNumberId);
+        // Mais de uma quando dividem o numero (ex: Sebrecon no da Contact Solution). A mais antiga
+        // vem primeiro: e a dona original do numero.
+        Task<List<Guid>> ObterTodasPorPhoneNumberId(string phoneNumberId);
 
         Task AtualizarWabaId(Guid id, string wabaId);
         // Usado pelo Embedded Signup a nivel de Empresa (ConectaContaMetaHandler): grava

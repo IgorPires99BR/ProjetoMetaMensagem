@@ -22,5 +22,7 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         Task<bool> ExisteMidiaId(Guid empresaId, string midiaId);
         // Ultimo template enviado a cada contato da empresa, para a tela de Disparos.
         Task<IEnumerable<UltimoDisparoContato>> ObterUltimosDisparos(Guid empresaId);
+        // Entre as empresas que dividem um numero, a que mandou o ultimo template a este telefone.
+        Task<Guid?> ObterEmpresaDoUltimoTemplate(IEnumerable<Guid> empresas, IEnumerable<string> telefones);
     }
 }

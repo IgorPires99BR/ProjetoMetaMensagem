@@ -187,10 +187,10 @@ namespace ProjetoMetaMensagem.Data.Repositorios
         SELECT TOP 1 c.* FROM Contato c
         WHERE c.EmpresaId = @EmpresaId
           AND c.Ativo = 1
-          AND (REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
-               OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone2, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone)
+          AND (REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') IN @Telefones
+               OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone2, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') IN @Telefones)
         ORDER BY
-          CASE WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') = @Telefone
+          CASE WHEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') IN @Telefones
                THEN 0 ELSE 1 END,
           CASE WHEN EXISTS (SELECT 1 FROM EstadoConversa e
                             WHERE e.EmpresaId = c.EmpresaId AND e.ContatoId = c.Id AND e.Finalizado = 0)
@@ -200,13 +200,27 @@ namespace ProjetoMetaMensagem.Data.Repositorios
           c.DataCriacao ASC,
           c.Id";
 
-            var telefoneNormalizado = new string(telefone.Where(char.IsDigit).ToArray());
+            var telefones = ProjetoMetaMensagem.Dominio.Helpers.TelefoneHelper.VariantesParaBusca(telefone);
+            if (telefones.Count == 0) return null;
 
             return await _session.Connection.QueryFirstOrDefaultAsync<Contato>(
                 sql,
-                new { EmpresaId = empresaId, Telefone = telefoneNormalizado },
+                new { EmpresaId = empresaId, Telefones = telefones },
                 transaction: _session.Transaction
             );
+        }
+
+        public async Task<IEnumerable<Guid>> ObterEmpresasComTelefone(IEnumerable<Guid> empresas, IEnumerable<string> telefones)
+        {
+            var sql = @"
+                SELECT DISTINCT c.EmpresaId FROM Contato c
+                WHERE c.EmpresaId IN @Empresas
+                  AND c.Ativo = 1
+                  AND (REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') IN @Telefones
+                       OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.Telefone2, '+', ''), ' ', ''), '-', ''), '(', ''), ')', '') IN @Telefones)";
+
+            return await _session.Connection.QueryAsync<Guid>(sql,
+                new { Empresas = empresas, Telefones = telefones }, transaction: _session.Transaction);
         }
 
         public async Task<Contato?> ObterPorId(Guid id, Guid? empresaIdSolicitante)
