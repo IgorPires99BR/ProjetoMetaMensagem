@@ -15,6 +15,9 @@ namespace ProjetoMetaMensagem.Dominio.Interfaces.Repositorios
         // De onde saiu o disparo (ver OrigemDisparo). Nulo pra mensagem "Recebida" -- nao ha
         // origem de disparo pra uma mensagem que o contato mandou.
         public string? Origem { get; set; }
+        // Erro que a Meta devolve no webhook quando a entrega falha depois de aceita, ou o aviso
+        // de envio incerto da fila. Sem isso o relatorio so dizia "falhou", sem o porque.
+        public string? MotivoFalha { get; set; }
     }
 
     public class GastoEmpresaMesDto
