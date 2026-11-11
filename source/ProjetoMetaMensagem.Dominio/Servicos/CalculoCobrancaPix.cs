@@ -48,6 +48,14 @@ namespace ProjetoMetaMensagem.Dominio.Servicos
 
         public static DateTime ParaBrasilia(DateTimeOffset momento) => TimeZoneInfo.ConvertTime(momento, Fuso).DateTime;
 
+        // Para colunas gravadas com DateTime.Now (relogio do servidor, UTC em producao).
+        public static DateTime DoServidorParaBrasilia(DateTime horaDoServidor) =>
+            ParaBrasilia(new DateTimeOffset(horaDoServidor, TimeZoneInfo.Local.GetUtcOffset(horaDoServidor)));
+
+        // Caminho inverso, para filtrar essas colunas por um periodo escolhido no horario de Brasilia.
+        public static DateTime DeBrasiliaParaServidor(DateTime horaDeBrasilia) =>
+            TimeZoneInfo.ConvertTime(DateTime.SpecifyKind(horaDeBrasilia, DateTimeKind.Unspecified), Fuso, TimeZoneInfo.Local);
+
         private static TimeZoneInfo ObterFuso()
         {
             foreach (var id in new[] { "America/Sao_Paulo", "E. South America Standard Time" })

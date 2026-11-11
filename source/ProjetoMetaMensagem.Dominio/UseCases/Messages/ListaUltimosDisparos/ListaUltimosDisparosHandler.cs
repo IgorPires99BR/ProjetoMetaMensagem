@@ -43,7 +43,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.ListaUltimosDisparos
                 response.AddValue(ultimos.Select(u => new ListaUltimosDisparosResult
                 {
                     ContatoId = u.ContatoId,
-                    DataUltimoDisparo = ParaBrasilia(u.DataUltimoDisparo)
+                    DataUltimoDisparo = HorarioBrasilia.DoServidorParaBrasilia(u.DataUltimoDisparo)
                 }).ToList());
             }
             catch (Exception ex)
@@ -54,9 +54,7 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.Messages.ListaUltimosDisparos
             return response;
         }
 
-        // DataEnvio e gravada com o relogio do servidor (UTC em producao). Sem converter, um envio
-        // depois das 21h apareceria na tela com a data do dia seguinte e erraria a conta dos 5 dias.
-        private static DateTime ParaBrasilia(DateTime horaDoServidor) =>
-            HorarioBrasilia.ParaBrasilia(new DateTimeOffset(horaDoServidor, TimeZoneInfo.Local.GetUtcOffset(horaDoServidor)));
+        // DataEnvio e gravada com o relogio do servidor (UTC em producao): sem converter (acima), um
+        // envio depois das 21h apareceria na tela com a data do dia seguinte e erraria a conta dos 5 dias.
     }
 }

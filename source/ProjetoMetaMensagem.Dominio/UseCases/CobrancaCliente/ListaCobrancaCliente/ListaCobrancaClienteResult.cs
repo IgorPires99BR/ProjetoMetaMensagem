@@ -22,7 +22,9 @@ namespace ProjetoMetaMensagem.Dominio.UseCases.CobrancaCliente.ListaCobrancaClie
             DataVencimento = cobranca.DataVencimento;
             Status = cobranca.Status;
             DataPagamento = cobranca.DataPagamento;
-            DataCriacao = cobranca.DataCriacao;
+            // Gravada com o relogio do servidor (UTC em producao); sem converter, a tela mostra o
+            // envio 3h adiantado. Os demais horarios da cobranca ja sao gravados em Brasilia.
+            DataCriacao = Servicos.HorarioBrasilia.DoServidorParaBrasilia(cobranca.DataCriacao);
             NomeCliente = nomeCliente;
             NomeContato = nomeContato;
             Telefone = telefone;

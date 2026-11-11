@@ -1,6 +1,7 @@
 using Dapper;
 using ProjetoMetaMensagem.Dominio.Entidades;
 using ProjetoMetaMensagem.Dominio.Interfaces.Repositorios;
+using ProjetoMetaMensagem.Dominio.Servicos;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -72,10 +73,12 @@ namespace ProjetoMetaMensagem.Data.Repositorios
                     EmpresaIdSolicitante = empresaIdSolicitante,
                     Status = status,
                     Ativo = !apenasInativas,
-                    DataInicio = dataInicio?.Date,
+                    // O periodo e o dia de Brasilia, mas DataCriacao esta no relogio do servidor (UTC
+                    // em producao): sem converter, envio apos as 21h cairia no dia seguinte.
+                    DataInicio = dataInicio.HasValue ? HorarioBrasilia.DeBrasiliaParaServidor(dataInicio.Value.Date) : (DateTime?)null,
                     // <input type="date"> manda 00:00; sem empurrar pro fim do dia, "de hoje ate
                     // hoje" nao traria nada (mesmo caso do RelatorioRepository.ListarMensagens).
-                    DataFim = dataFim?.Date.AddDays(1).AddTicks(-1)
+                    DataFim = dataFim.HasValue ? HorarioBrasilia.DeBrasiliaParaServidor(dataFim.Value.Date.AddDays(1).AddTicks(-1)) : (DateTime?)null
                 },
                 transaction: _session.Transaction);
         }
